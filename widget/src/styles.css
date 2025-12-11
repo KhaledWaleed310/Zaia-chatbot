@@ -1,0 +1,453 @@
+/* ZAIA Chat Widget Styles */
+:root {
+  --zaia-primary: #4F46E5;
+  --zaia-primary-dark: #4338CA;
+}
+
+.zaia-widget {
+  --zaia-bg: #ffffff;
+  --zaia-text: #1f2937;
+  --zaia-text-secondary: #6b7280;
+  --zaia-border: #e5e7eb;
+  --zaia-msg-user-bg: var(--zaia-primary);
+  --zaia-msg-user-text: #ffffff;
+  --zaia-msg-assistant-bg: #f3f4f6;
+  --zaia-msg-assistant-text: #1f2937;
+  --zaia-input-bg: #ffffff;
+  --zaia-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  position: fixed;
+  z-index: 99999;
+}
+
+.zaia-widget.zaia-dark {
+  --zaia-bg: #1f2937;
+  --zaia-text: #f9fafb;
+  --zaia-text-secondary: #9ca3af;
+  --zaia-border: #374151;
+  --zaia-msg-assistant-bg: #374151;
+  --zaia-msg-assistant-text: #f9fafb;
+  --zaia-input-bg: #374151;
+}
+
+.zaia-widget[data-position="bottom-right"] {
+  bottom: 20px;
+  right: 20px;
+}
+
+.zaia-widget[data-position="bottom-left"] {
+  bottom: 20px;
+  left: 20px;
+}
+
+/* Trigger Button */
+.zaia-trigger {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: var(--zaia-primary);
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  transition: transform 0.2s, box-shadow 0.2s;
+  color: white;
+}
+
+.zaia-trigger:hover {
+  transform: scale(1.05);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+}
+
+.zaia-trigger svg {
+  width: 24px;
+  height: 24px;
+}
+
+.zaia-trigger .zaia-icon-close {
+  display: none;
+}
+
+.zaia-widget.zaia-open .zaia-trigger .zaia-icon-chat {
+  display: none;
+}
+
+.zaia-widget.zaia-open .zaia-trigger .zaia-icon-close {
+  display: block;
+}
+
+/* Chat Window */
+.zaia-chat-window {
+  position: absolute;
+  bottom: 70px;
+  width: 380px;
+  height: 520px;
+  background: var(--zaia-bg);
+  border-radius: 16px;
+  box-shadow: var(--zaia-shadow);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(20px) scale(0.95);
+  transition: opacity 0.2s, transform 0.2s, visibility 0.2s;
+}
+
+.zaia-widget[data-position="bottom-right"] .zaia-chat-window {
+  right: 0;
+}
+
+.zaia-widget[data-position="bottom-left"] .zaia-chat-window {
+  left: 0;
+}
+
+.zaia-widget.zaia-open .zaia-chat-window {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0) scale(1);
+}
+
+/* Header */
+.zaia-header {
+  padding: 16px;
+  background: var(--zaia-primary);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.zaia-header-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+}
+
+.zaia-status-dot {
+  width: 8px;
+  height: 8px;
+  background: #34D399;
+  border-radius: 50%;
+}
+
+.zaia-header-close {
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  transition: background 0.2s;
+}
+
+.zaia-header-close:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.zaia-header-close svg {
+  width: 18px;
+  height: 18px;
+}
+
+/* Messages Container */
+.zaia-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Message Bubbles */
+.zaia-message {
+  max-width: 85%;
+  animation: zaia-fade-in 0.2s ease;
+}
+
+@keyframes zaia-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.zaia-message-user {
+  align-self: flex-end;
+}
+
+.zaia-message-assistant {
+  align-self: flex-start;
+}
+
+.zaia-message-content {
+  padding: 10px 14px;
+  border-radius: 12px;
+  word-break: break-word;
+}
+
+.zaia-message-user .zaia-message-content {
+  background: var(--zaia-msg-user-bg);
+  color: var(--zaia-msg-user-text);
+  border-bottom-right-radius: 4px;
+}
+
+.zaia-message-assistant .zaia-message-content {
+  background: var(--zaia-msg-assistant-bg);
+  color: var(--zaia-msg-assistant-text);
+  border-bottom-left-radius: 4px;
+}
+
+.zaia-message-content code {
+  background: rgba(0, 0, 0, 0.1);
+  padding: 2px 4px;
+  border-radius: 4px;
+  font-family: monospace;
+  font-size: 13px;
+}
+
+.zaia-message-content pre {
+  background: rgba(0, 0, 0, 0.1);
+  padding: 8px;
+  border-radius: 6px;
+  overflow-x: auto;
+  margin: 8px 0;
+}
+
+.zaia-message-content a {
+  color: inherit;
+  text-decoration: underline;
+}
+
+/* Sources */
+.zaia-message-sources {
+  margin-top: 8px;
+}
+
+.zaia-sources-toggle {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  background: transparent;
+  border: 1px solid var(--zaia-border);
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 12px;
+  color: var(--zaia-text-secondary);
+  transition: background 0.2s;
+}
+
+.zaia-sources-toggle:hover {
+  background: var(--zaia-msg-assistant-bg);
+}
+
+.zaia-sources-list {
+  margin-top: 8px;
+  padding: 8px;
+  background: var(--zaia-input-bg);
+  border-radius: 8px;
+  border: 1px solid var(--zaia-border);
+}
+
+.zaia-source-item {
+  display: flex;
+  gap: 8px;
+  padding: 6px 0;
+  font-size: 12px;
+  color: var(--zaia-text-secondary);
+  border-bottom: 1px solid var(--zaia-border);
+}
+
+.zaia-source-item:last-child {
+  border-bottom: none;
+}
+
+.zaia-source-num {
+  color: var(--zaia-primary);
+  font-weight: 600;
+}
+
+/* Feedback */
+.zaia-message-feedback {
+  display: flex;
+  gap: 4px;
+  margin-top: 6px;
+}
+
+.zaia-feedback-btn {
+  width: 28px;
+  height: 28px;
+  border: none;
+  background: transparent;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--zaia-text-secondary);
+  transition: background 0.2s, color 0.2s;
+}
+
+.zaia-feedback-btn:hover {
+  background: var(--zaia-msg-assistant-bg);
+  color: var(--zaia-text);
+}
+
+.zaia-feedback-btn.zaia-active {
+  color: var(--zaia-primary);
+}
+
+/* Typing Indicator */
+.zaia-typing-indicator {
+  display: flex;
+  gap: 4px;
+  padding: 12px 14px;
+  background: var(--zaia-msg-assistant-bg);
+  border-radius: 12px;
+  border-bottom-left-radius: 4px;
+}
+
+.zaia-typing-indicator span {
+  width: 8px;
+  height: 8px;
+  background: var(--zaia-text-secondary);
+  border-radius: 50%;
+  animation: zaia-bounce 1.4s infinite ease-in-out;
+}
+
+.zaia-typing-indicator span:nth-child(1) {
+  animation-delay: 0s;
+}
+
+.zaia-typing-indicator span:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.zaia-typing-indicator span:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+@keyframes zaia-bounce {
+  0%, 60%, 100% {
+    transform: translateY(0);
+  }
+  30% {
+    transform: translateY(-4px);
+  }
+}
+
+/* Input Area */
+.zaia-input-area {
+  padding: 12px 16px 16px;
+  border-top: 1px solid var(--zaia-border);
+}
+
+.zaia-input-form {
+  display: flex;
+  gap: 8px;
+}
+
+.zaia-input {
+  flex: 1;
+  padding: 10px 14px;
+  border: 1px solid var(--zaia-border);
+  border-radius: 10px;
+  background: var(--zaia-input-bg);
+  color: var(--zaia-text);
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.zaia-input:focus {
+  border-color: var(--zaia-primary);
+}
+
+.zaia-input::placeholder {
+  color: var(--zaia-text-secondary);
+}
+
+.zaia-send-btn {
+  width: 40px;
+  height: 40px;
+  border: none;
+  background: var(--zaia-primary);
+  border-radius: 10px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  transition: background 0.2s;
+}
+
+.zaia-send-btn:hover {
+  background: var(--zaia-primary-dark);
+}
+
+.zaia-send-btn svg {
+  width: 18px;
+  height: 18px;
+}
+
+/* Branding */
+.zaia-branding {
+  text-align: center;
+  margin-top: 8px;
+  font-size: 11px;
+  color: var(--zaia-text-secondary);
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 480px) {
+  .zaia-chat-window {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    height: 100%;
+    border-radius: 0;
+  }
+
+  .zaia-widget[data-position="bottom-right"] .zaia-chat-window,
+  .zaia-widget[data-position="bottom-left"] .zaia-chat-window {
+    right: 0;
+    left: 0;
+  }
+}
+
+/* Scrollbar */
+.zaia-messages::-webkit-scrollbar {
+  width: 6px;
+}
+
+.zaia-messages::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.zaia-messages::-webkit-scrollbar-thumb {
+  background: var(--zaia-border);
+  border-radius: 3px;
+}
+
+.zaia-messages::-webkit-scrollbar-thumb:hover {
+  background: var(--zaia-text-secondary);
+}

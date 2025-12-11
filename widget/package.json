@@ -1,0 +1,35 @@
+{
+  "name": "@zaia/chatbot-widget",
+  "version": "1.0.0",
+  "description": "ZAIA Embeddable Chatbot Widget",
+  "main": "dist/widget.min.js",
+  "module": "dist/widget.esm.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "dev": "rollup -c -w",
+    "build": "rollup -c --environment BUILD:production",
+    "lint": "eslint src --ext .ts",
+    "test": "jest"
+  },
+  "devDependencies": {
+    "@rollup/plugin-commonjs": "^25.0.7",
+    "@rollup/plugin-node-resolve": "^15.2.3",
+    "@rollup/plugin-terser": "^0.4.4",
+    "@rollup/plugin-typescript": "^11.1.6",
+    "postcss": "^8.4.33",
+    "rollup": "^4.9.6",
+    "rollup-plugin-postcss": "^4.0.2",
+    "typescript": "^5.3.3"
+  },
+  "keywords": [
+    "chatbot",
+    "widget",
+    "embeddable",
+    "rag"
+  ],
+  "author": "ZAIA",
+  "license": "MIT"
+}
