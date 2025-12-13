@@ -1,0 +1,112 @@
+from fastapi import APIRouter, HTTPException, status, Depends
+from datetime import datetime
+import uuid
+from ..schemas.user import UserCreate, UserLogin, UserResponse, TokenResponse
+from ..core.security import get_password_hash, verify_password, create_access_token, is_admin, get_current_user, ADMIN_EMAILS
+from ..core.database import get_mongodb
+from ..services.limits import get_user_usage
+
+router = APIRouter(prefix="/auth", tags=["Authentication"])
+
+
+@router.post("/register", response_model=TokenResponse)
+async def register(user_data: UserCreate):
+    db = get_mongodb()
+
+    # Check if user exists
+    existing = await db.users.find_one({"email": user_data.email})
+    if existing:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Email already registered"
+        )
+
+    # Create user
+    user_id = str(uuid.uuid4())
+    user_doc = {
+        "_id": user_id,
+        "email": user_data.email,
+        "password_hash": get_password_hash(user_data.password),
+        "company_name": user_data.company_name,
+        "company_size": user_data.company_size,
+        "industry": user_data.industry,
+        "use_case": user_data.use_case,
+        "phone": user_data.phone,
+        "job_title": user_data.job_title,
+        "country": user_data.country,
+        "referral_source": user_data.referral_source,
+        "subscription_tier": "free",
+        "status": "active",
+        "created_at": datetime.utcnow()
+    }
+
+    await db.users.insert_one(user_doc)
+
+    # Generate token
+    token = create_access_token({"sub": user_id})
+
+    user_is_admin = user_data.email in ADMIN_EMAILS
+
+    return TokenResponse(
+        access_token=token,
+        user=UserResponse(
+            id=user_id,
+            email=user_data.email,
+            company_name=user_data.company_name,
+            role="admin" if user_is_admin else "user",
+            is_admin=user_is_admin,
+            created_at=user_doc["created_at"]
+        )
+    )
+
+
+@router.post("/login", response_model=TokenResponse)
+async def login(credentials: UserLogin):
+    db = get_mongodb()
+
+    user = await db.users.find_one({"email": credentials.email})
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid email or password"
+        )
+
+    if not verify_password(credentials.password, user["password_hash"]):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid email or password"
+        )
+
+    # Update last login
+    await db.users.update_one(
+        {"_id": user["_id"]},
+        {"$set": {"last_login": datetime.utcnow()}}
+    )
+
+    token = create_access_token({"sub": user["_id"]})
+    user_is_admin = is_admin(user)
+
+    return TokenResponse(
+        access_token=token,
+        user=UserResponse(
+            id=user["_id"],
+            email=user["email"],
+            company_name=user.get("company_name"),
+            role=user.get("role", "admin" if user_is_admin else "user"),
+            is_admin=user_is_admin,
+            created_at=user["created_at"]
+        )
+    )
+
+
+@router.get("/me", response_model=UserResponse)
+async def get_me(current_user: dict = Depends(get_current_user)):
+    user_is_admin = is_admin(current_user)
+    return UserResponse(
+        id=current_user["_id"],
+        email=current_user["email"],
+        company_name=current_user.get("company_name"),
+        role=current_user.get("role", "admin" if user_is_admin else "user"),
+        is_admin=user_is_admin,
+        created_at=current_user["created_at"]
+    )
