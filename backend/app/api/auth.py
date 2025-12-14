@@ -1,17 +1,29 @@
-from fastapi import APIRouter, HTTPException, status, Depends
+from fastapi import APIRouter, HTTPException, status, Depends, Request
 from datetime import datetime
 import uuid
+from slowapi import Limiter
+from slowapi.util import get_remote_address
 from ..schemas.user import UserCreate, UserLogin, UserResponse, TokenResponse
 from ..core.security import get_password_hash, verify_password, create_access_token, is_admin, get_current_user, ADMIN_EMAILS
 from ..core.database import get_mongodb
 from ..services.limits import get_user_usage
 
+limiter = Limiter(key_func=get_remote_address)
+
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
 
 @router.post("/register", response_model=TokenResponse)
-async def register(user_data: UserCreate):
+@limiter.limit("5/minute")
+async def register(request: Request, user_data: UserCreate):
     db = get_mongodb()
+
+    # Validate password strength
+    if len(user_data.password) < 8:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Password must be at least 8 characters long"
+        )
 
     # Check if user exists
     existing = await db.users.find_one({"email": user_data.email})
@@ -63,7 +75,8 @@ async def register(user_data: UserCreate):
 
 
 @router.post("/login", response_model=TokenResponse)
-async def login(credentials: UserLogin):
+@limiter.limit("10/minute")
+async def login(request: Request, credentials: UserLogin):
     db = get_mongodb()
 
     user = await db.users.find_one({"email": credentials.email})

@@ -10,6 +10,9 @@ from ..schemas.admin import (
 )
 import uuid
 import math
+import logging
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/admin", tags=["admin"])
 
@@ -505,6 +508,8 @@ async def create_user(
 
     await db.users.insert_one(new_user)
 
+    logger.info(f"Admin {current_admin['email']} created user {user_data.email} (ID: {user_id}) with role: {user_data.role}, tier: {user_data.subscription_tier}")
+
     return {
         "id": user_id,
         "email": user_data.email,
@@ -545,6 +550,8 @@ async def update_user(
         update_dict["updated_by"] = current_admin["_id"]
         await db.users.update_one({"_id": user_id}, {"$set": update_dict})
 
+        logger.info(f"Admin {current_admin['email']} updated user {user.get('email')} (ID: {user_id}), fields: {list(update_dict.keys())}")
+
     return {"message": "User updated successfully", "updated_fields": list(update_dict.keys())}
 
 
@@ -571,6 +578,8 @@ async def delete_user(user_id: str, current_admin: dict = Depends(get_current_ad
         }}
     )
 
+    logger.warning(f"Admin {current_admin['email']} deleted user {user.get('email')} (ID: {user_id})")
+
     return {"message": "User deleted successfully"}
 
 
@@ -591,6 +600,8 @@ async def suspend_user(user_id: str, current_admin: dict = Depends(get_current_a
         {"$set": {"status": "suspended", "suspended_at": datetime.utcnow(), "suspended_by": current_admin["_id"]}}
     )
 
+    logger.info(f"Admin {current_admin['email']} suspended user {user.get('email')} (ID: {user_id})")
+
     return {"message": "User suspended successfully"}
 
 
@@ -607,6 +618,8 @@ async def unsuspend_user(user_id: str, current_admin: dict = Depends(get_current
         {"_id": user_id},
         {"$set": {"status": "active"}, "$unset": {"suspended_at": "", "suspended_by": ""}}
     )
+
+    logger.info(f"Admin {current_admin['email']} unsuspended user {user.get('email')} (ID: {user_id})")
 
     return {"message": "User unsuspended successfully"}
 
@@ -729,6 +742,8 @@ async def delete_chatbot(bot_id: str, current_admin: dict = Depends(get_current_
 
     # Delete chatbot
     await db.chatbots.delete_one({"_id": bot_id})
+
+    logger.warning(f"Admin {current_admin['email']} deleted chatbot {bot.get('name')} (ID: {bot_id})")
 
     return {"message": "Chatbot and all related data deleted successfully"}
 

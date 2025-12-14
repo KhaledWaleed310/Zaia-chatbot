@@ -6,6 +6,7 @@ passlib[bcrypt]==1.7.4
 bcrypt==4.0.1
 pydantic[email]==2.5.3
 pydantic-settings==2.1.0
+slowapi==0.1.9
 
 # Databases
 motor==3.3.2

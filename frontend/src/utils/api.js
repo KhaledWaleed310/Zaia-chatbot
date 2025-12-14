@@ -4,6 +4,7 @@ const API_BASE = '/api/v1';
 
 const api = axios.create({
   baseURL: API_BASE,
+  timeout: 30000,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -18,15 +19,34 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// Handle auth errors
+// Handle auth errors and other response errors
 api.interceptors.response.use(
   (response) => response,
   (error) => {
+    // Handle 401 Unauthorized
     if (error.response?.status === 401) {
       localStorage.removeItem('token');
       localStorage.removeItem('user');
       window.location.href = '/login';
+      return Promise.reject(error);
     }
+
+    // Handle network errors
+    if (!error.response) {
+      console.error('Network error:', error.message);
+      return Promise.reject(new Error('Network error. Please check your connection.'));
+    }
+
+    // Handle timeout
+    if (error.code === 'ECONNABORTED') {
+      return Promise.reject(new Error('Request timed out. Please try again.'));
+    }
+
+    // Handle server errors
+    if (error.response.status >= 500) {
+      return Promise.reject(new Error('Server error. Please try again later.'));
+    }
+
     return Promise.reject(error);
   }
 );

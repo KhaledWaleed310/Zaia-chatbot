@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Depends, WebSocket, WebSocketDisconnect
+from fastapi import APIRouter, HTTPException, Depends, WebSocket, WebSocketDisconnect, Query
 from typing import Optional, Any
 import json
 from datetime import datetime
@@ -403,12 +403,24 @@ manager = ConnectionManager()
 async def websocket_handoff_chat(
     websocket: WebSocket,
     bot_id: str,
-    handoff_id: str
+    handoff_id: str,
+    token: Optional[str] = Query(None)
 ):
     """WebSocket endpoint for real-time handoff chat (agent side)."""
     db = get_mongodb()
 
-    # Get handoff to verify it exists
+    # Validate token if provided (for authenticated users)
+    user = None
+    if token:
+        try:
+            from ..core.security import decode_token
+            payload = decode_token(token)
+            if payload:
+                user = await db.users.find_one({"_id": payload.get("sub")})
+        except Exception:
+            pass  # Continue without auth for public access
+
+    # Validate handoff exists and belongs to bot
     handoff = await db.handoffs.find_one({"_id": handoff_id, "bot_id": bot_id})
     if not handoff:
         await websocket.close(code=4004)
@@ -426,7 +438,13 @@ async def websocket_handoff_chat(
         })
 
         while True:
-            data = await websocket.receive_json()
+            try:
+                data = await websocket.receive_json()
+            except json.JSONDecodeError:
+                await websocket.send_json({"type": "error", "message": "Invalid JSON format"})
+                continue
+            except WebSocketDisconnect:
+                break
 
             if data.get("type") == "message":
                 # Add message to database
@@ -489,7 +507,13 @@ async def websocket_visitor_chat(
         })
 
         while True:
-            data = await websocket.receive_json()
+            try:
+                data = await websocket.receive_json()
+            except json.JSONDecodeError:
+                await websocket.send_json({"type": "error", "message": "Invalid JSON format"})
+                continue
+            except WebSocketDisconnect:
+                break
 
             if data.get("type") == "message":
                 # Add visitor message

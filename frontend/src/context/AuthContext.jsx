@@ -6,6 +6,7 @@ const AuthContext = createContext(null);
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -38,44 +39,63 @@ export const AuthProvider = ({ children }) => {
   };
 
   const login = async (email, password) => {
-    const response = await auth.login({ email, password });
-    const { access_token, user } = response.data;
+    try {
+      setError(null);
+      const response = await auth.login({ email, password });
+      const { access_token, user } = response.data;
 
-    localStorage.setItem('token', access_token);
-    localStorage.setItem('user', JSON.stringify(user));
-    setUser(user);
+      localStorage.setItem('token', access_token);
+      localStorage.setItem('user', JSON.stringify(user));
+      setUser(user);
 
-    return user;
+      return user;
+    } catch (err) {
+      const errorMessage = err.response?.data?.detail || err.message || 'Login failed';
+      setError(errorMessage);
+      throw err;
+    }
   };
 
   const register = async (email, password, company_name, company_size, industry, use_case, country, referral_source) => {
-    const response = await auth.register({
-      email,
-      password,
-      company_name,
-      company_size,
-      industry,
-      use_case,
-      country,
-      referral_source
-    });
-    const { access_token, user } = response.data;
+    try {
+      setError(null);
+      const response = await auth.register({
+        email,
+        password,
+        company_name,
+        company_size,
+        industry,
+        use_case,
+        country,
+        referral_source
+      });
+      const { access_token, user } = response.data;
 
-    localStorage.setItem('token', access_token);
-    localStorage.setItem('user', JSON.stringify(user));
-    setUser(user);
+      localStorage.setItem('token', access_token);
+      localStorage.setItem('user', JSON.stringify(user));
+      setUser(user);
 
-    return user;
+      return user;
+    } catch (err) {
+      const errorMessage = err.response?.data?.detail || err.message || 'Registration failed';
+      setError(errorMessage);
+      throw err;
+    }
   };
 
   const logout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     setUser(null);
+    setError(null);
+  };
+
+  const clearError = () => {
+    setError(null);
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout, refreshUser }}>
+    <AuthContext.Provider value={{ user, loading, error, login, register, logout, refreshUser, clearError }}>
       {children}
     </AuthContext.Provider>
   );

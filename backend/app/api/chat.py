@@ -44,192 +44,202 @@ async def send_message(
     - Contextual compression
     - Chain-of-thought prompting
     """
-    db = get_mongodb()
+    try:
+        db = get_mongodb()
 
-    # Get chatbot
-    bot = await db.chatbots.find_one({"_id": bot_id})
-    if not bot:
-        raise HTTPException(status_code=404, detail="Chatbot not found")
+        # Validate bot exists
+        bot = await db.chatbots.find_one({"_id": bot_id})
+        if not bot:
+            raise HTTPException(status_code=404, detail="Chatbot not found")
 
-    tenant_id = bot["tenant_id"]
+        tenant_id = bot["tenant_id"]
 
-    # Check message limit for the tenant
-    await check_message_limit(tenant_id)
+        # Check message limit for the tenant
+        await check_message_limit(tenant_id)
 
-    # Get or create session
-    session_id = message.session_id or str(uuid.uuid4())
+        # Get or create session
+        session_id = message.session_id or str(uuid.uuid4())
 
-    # Get conversation history
-    conversation = await db.conversations.find_one({
-        "session_id": session_id,
-        "bot_id": bot_id
-    })
+        # Get conversation history
+        conversation = await db.conversations.find_one({
+            "session_id": session_id,
+            "bot_id": bot_id
+        })
 
-    history = []
-    if conversation:
-        history = conversation.get("messages", [])[-5:]  # Last 5 messages (reduced for speed)
+        history = []
+        if conversation:
+            history = conversation.get("messages", [])[-5:]  # Last 5 messages (reduced for speed)
 
-    # Analyze query for adaptive processing
-    query_analysis = analyze_query(message.message)
-    logger.info(f"Query analysis: intent={query_analysis['intent']}, complexity={query_analysis['complexity']}")
+        # Analyze query for adaptive processing
+        query_analysis = analyze_query(message.message)
+        logger.info(f"Query analysis: intent={query_analysis['intent']}, complexity={query_analysis['complexity']}")
 
-    # Use enhanced or basic retrieval based on flag
-    if enhanced:
-        # World-class enhanced retrieval pipeline
-        # NOTE: Query enhancement disabled by default for faster response times
-        # It adds 10-30s latency with minimal quality improvement for most queries
-        retrieval_result = await enhanced_triple_retrieval(
-            query=message.message,
-            tenant_id=tenant_id,
-            bot_id=bot_id,
-            top_k=5,
-            use_reranking=True,
-            use_query_enhancement=False,  # Disabled for speed - saves 10-30s
-            use_mmr=True,
-            use_compression=True,
-            verbose=False
-        )
-        context = retrieval_result["contexts"]
-        query_analysis = retrieval_result.get("query_analysis", query_analysis)
-    else:
-        # Fallback to basic triple retrieval
-        context = await triple_retrieval(
-            query=message.message,
-            tenant_id=tenant_id,
-            bot_id=bot_id,
-            top_k=5
-        )
-
-    # Generate response with enhanced LLM
-    if enhanced:
-        llm_result = await generate_enhanced_response(
-            query=message.message,
-            context=context,
-            system_prompt=bot.get("system_prompt", "You are a helpful assistant."),
-            conversation_history=history,
-            query_analysis=query_analysis,
-            tenant_id=tenant_id,
-            bot_id=bot_id,
-            session_id=session_id
-        )
-        response_text = llm_result["response"]
-        confidence = llm_result.get("confidence", 0.5)
-        logger.info(f"Response generated with confidence: {confidence:.2f}")
-    else:
-        response_text = await generate_response(
-            query=message.message,
-            context=context,
-            system_prompt=bot.get("system_prompt", "You are a helpful assistant."),
-            conversation_history=history,
-            tenant_id=tenant_id,
-            bot_id=bot_id,
-            session_id=session_id
-        )
-
-    # Run analytics in background to not block the response
-    # These operations are important but shouldn't delay the user
-    async def run_analytics_background():
-        try:
-            user_sentiment = await analyze_sentiment(message.message)
-            quality_score = await calculate_quality_score(
+        # Use enhanced or basic retrieval based on flag
+        if enhanced:
+            # World-class enhanced retrieval pipeline
+            # NOTE: Query enhancement disabled by default for faster response times
+            # It adds 10-30s latency with minimal quality improvement for most queries
+            retrieval_result = await enhanced_triple_retrieval(
                 query=message.message,
-                response=response_text,
-                context=context
+                tenant_id=tenant_id,
+                bot_id=bot_id,
+                top_k=5,
+                use_reranking=True,
+                use_query_enhancement=False,  # Disabled for speed - saves 10-30s
+                use_mmr=True,
+                use_compression=True,
+                verbose=False
             )
-            await detect_unanswered_question(
+            context = retrieval_result["contexts"]
+            query_analysis = retrieval_result.get("query_analysis", query_analysis)
+        else:
+            # Fallback to basic triple retrieval
+            context = await triple_retrieval(
                 query=message.message,
-                response=response_text,
+                tenant_id=tenant_id,
+                bot_id=bot_id,
+                top_k=5
+            )
+
+        # Generate response with enhanced LLM
+        if enhanced:
+            llm_result = await generate_enhanced_response(
+                query=message.message,
                 context=context,
+                system_prompt=bot.get("system_prompt", "You are a helpful assistant."),
+                conversation_history=history,
+                query_analysis=query_analysis,
                 tenant_id=tenant_id,
                 bot_id=bot_id,
                 session_id=session_id
             )
-            await track_usage_realtime(bot_id, session_id)
-            return user_sentiment, quality_score
-        except Exception as e:
-            logger.warning(f"Background analytics failed: {e}")
-            return "neutral", 0.5
+            response_text = llm_result["response"]
+            confidence = llm_result.get("confidence", 0.5)
+            logger.info(f"Response generated with confidence: {confidence:.2f}")
+        else:
+            response_text = await generate_response(
+                query=message.message,
+                context=context,
+                system_prompt=bot.get("system_prompt", "You are a helpful assistant."),
+                conversation_history=history,
+                tenant_id=tenant_id,
+                bot_id=bot_id,
+                session_id=session_id
+            )
 
-    # Start analytics in background (non-blocking)
-    import asyncio
-    analytics_task = asyncio.create_task(run_analytics_background())
+        # Run analytics in background to not block the response
+        # These operations are important but shouldn't delay the user
+        async def run_analytics_background():
+            try:
+                user_sentiment = await analyze_sentiment(message.message)
+                quality_score = await calculate_quality_score(
+                    query=message.message,
+                    response=response_text,
+                    context=context
+                )
+                await detect_unanswered_question(
+                    query=message.message,
+                    response=response_text,
+                    context=context,
+                    tenant_id=tenant_id,
+                    bot_id=bot_id,
+                    session_id=session_id
+                )
+                await track_usage_realtime(bot_id, session_id)
+                return user_sentiment, quality_score
+            except Exception as e:
+                logger.warning(f"Background analytics failed: {e}")
+                return "neutral", 0.5
 
-    # Use default values for immediate response
-    user_sentiment = "neutral"
-    quality_score = 0.5
+        # Start analytics in background (non-blocking)
+        import asyncio
+        analytics_task = asyncio.create_task(run_analytics_background())
 
-    # Store messages with analytics data
-    user_msg = {
-        "role": "user",
-        "content": message.message,
-        "timestamp": datetime.utcnow(),
-        "sentiment": user_sentiment
-    }
+        # Use default values for immediate response
+        user_sentiment = "neutral"
+        quality_score = 0.5
 
-    assistant_msg = {
-        "role": "assistant",
-        "content": response_text,
-        "timestamp": datetime.utcnow(),
-        "quality_score": quality_score,
-        "query": message.message  # Store the original query for quality analysis
-    }
+        # Store messages with analytics data
+        user_msg = {
+            "role": "user",
+            "content": message.message,
+            "timestamp": datetime.utcnow(),
+            "sentiment": user_sentiment
+        }
 
-    # Update conversation
-    if conversation:
-        await db.conversations.update_one(
-            {"session_id": session_id},
+        assistant_msg = {
+            "role": "assistant",
+            "content": response_text,
+            "timestamp": datetime.utcnow(),
+            "quality_score": quality_score,
+            "query": message.message  # Store the original query for quality analysis
+        }
+
+        # Update conversation
+        if conversation:
+            await db.conversations.update_one(
+                {"session_id": session_id},
+                {
+                    "$push": {"messages": {"$each": [user_msg, assistant_msg]}},
+                    "$set": {"updated_at": datetime.utcnow()}
+                }
+            )
+        else:
+            await db.conversations.insert_one({
+                "_id": str(uuid.uuid4()),
+                "session_id": session_id,
+                "bot_id": bot_id,
+                "tenant_id": tenant_id,
+                "messages": [user_msg, assistant_msg],
+                "created_at": datetime.utcnow(),
+                "updated_at": datetime.utcnow()
+            })
+
+        # Store individual messages for analytics
+        await db.messages.insert_many([
             {
-                "$push": {"messages": {"$each": [user_msg, assistant_msg]}},
-                "$set": {"updated_at": datetime.utcnow()}
+                "_id": str(uuid.uuid4()),
+                "session_id": session_id,
+                "bot_id": bot_id,
+                "tenant_id": tenant_id,
+                **user_msg
+            },
+            {
+                "_id": str(uuid.uuid4()),
+                "session_id": session_id,
+                "bot_id": bot_id,
+                "tenant_id": tenant_id,
+                **assistant_msg
             }
+        ])
+
+        # Format sources with enhanced metadata
+        sources = []
+        for c in context:
+            source_info = {
+                "content": c["content"][:200] + "..." if len(c["content"]) > 200 else c["content"],
+                "source": c.get("source", "document"),
+                "score": c.get("reranker_score", c.get("fused_score", c.get("score", 0)))
+            }
+            # Add filename if available
+            if "metadata" in c and "filename" in c["metadata"]:
+                source_info["filename"] = c["metadata"]["filename"]
+            sources.append(source_info)
+
+        return ChatResponse(
+            response=response_text,
+            session_id=session_id,
+            sources=sources
         )
-    else:
-        await db.conversations.insert_one({
-            "_id": str(uuid.uuid4()),
-            "session_id": session_id,
-            "bot_id": bot_id,
-            "tenant_id": tenant_id,
-            "messages": [user_msg, assistant_msg],
-            "created_at": datetime.utcnow(),
-            "updated_at": datetime.utcnow()
-        })
 
-    # Store individual messages for analytics
-    await db.messages.insert_many([
-        {
-            "_id": str(uuid.uuid4()),
-            "session_id": session_id,
-            "bot_id": bot_id,
-            "tenant_id": tenant_id,
-            **user_msg
-        },
-        {
-            "_id": str(uuid.uuid4()),
-            "session_id": session_id,
-            "bot_id": bot_id,
-            "tenant_id": tenant_id,
-            **assistant_msg
-        }
-    ])
-
-    # Format sources with enhanced metadata
-    sources = []
-    for c in context:
-        source_info = {
-            "content": c["content"][:200] + "..." if len(c["content"]) > 200 else c["content"],
-            "source": c.get("source", "document"),
-            "score": c.get("reranker_score", c.get("fused_score", c.get("score", 0)))
-        }
-        # Add filename if available
-        if "metadata" in c and "filename" in c["metadata"]:
-            source_info["filename"] = c["metadata"]["filename"]
-        sources.append(source_info)
-
-    return ChatResponse(
-        response=response_text,
-        session_id=session_id,
-        sources=sources
-    )
+    except HTTPException:
+        raise  # Re-raise HTTP exceptions as-is
+    except Exception as e:
+        logger.error(f"Chat error for bot {bot_id}: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail="An error occurred processing your message. Please try again."
+        )
 
 
 @router.post("/{bot_id}/message/stream")

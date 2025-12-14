@@ -18,7 +18,14 @@ db = Database()
 
 
 async def connect_mongodb():
-    db.client = AsyncIOMotorClient(settings.MONGODB_URL)
+    db.client = AsyncIOMotorClient(
+        settings.MONGODB_URL,
+        maxPoolSize=100,
+        minPoolSize=10,
+        serverSelectionTimeoutMS=5000,
+        socketTimeoutMS=30000,
+        connectTimeoutMS=5000
+    )
     # Create text index for full-text search
     await db.client[settings.MONGODB_DB_NAME].chunks.create_index([("content", "text")])
     await db.client[settings.MONGODB_DB_NAME].chunks.create_index([("tenant_id", 1)])
@@ -44,6 +51,14 @@ async def connect_mongodb():
     await db.client[settings.MONGODB_DB_NAME].messages.create_index([("bot_id", 1), ("timestamp", -1)])
     await db.client[settings.MONGODB_DB_NAME].messages.create_index([("bot_id", 1), ("role", 1), ("sentiment.label", 1)])
     await db.client[settings.MONGODB_DB_NAME].messages.create_index([("bot_id", 1), ("quality_score.overall", 1)])
+
+    # Performance indexes
+    await db.client[settings.MONGODB_DB_NAME].messages.create_index([("bot_id", 1), ("tenant_id", 1), ("timestamp", -1)])
+    await db.client[settings.MONGODB_DB_NAME].messages.create_index([("session_id", 1)])
+    await db.client[settings.MONGODB_DB_NAME].conversations.create_index([("session_id", 1), ("bot_id", 1)])
+    await db.client[settings.MONGODB_DB_NAME].unanswered_questions.create_index([("bot_id", 1), ("resolved", 1)])
+    await db.client[settings.MONGODB_DB_NAME].leads.create_index([("bot_id", 1), ("created_at", -1)])
+    await db.client[settings.MONGODB_DB_NAME].handoffs.create_index([("bot_id", 1), ("status", 1)])
 
     print("Connected to MongoDB")
 
@@ -88,7 +103,14 @@ async def connect_neo4j():
 
 
 async def connect_redis():
-    db.redis_client = redis.from_url(settings.REDIS_URL, encoding="utf-8", decode_responses=True)
+    db.redis_client = redis.from_url(
+        settings.REDIS_URL,
+        encoding="utf-8",
+        decode_responses=True,
+        max_connections=50,
+        socket_connect_timeout=5,
+        socket_keepalive=True
+    )
     print("Connected to Redis")
 
 

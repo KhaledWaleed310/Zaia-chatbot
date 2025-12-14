@@ -112,21 +112,37 @@ def build_chatbot_response(bot: dict, doc_count: int = 0, msg_count: int = 0) ->
 async def list_chatbots(current_user: dict = Depends(get_current_user)):
     db = get_mongodb()
 
+    # Get all chatbots with document and message counts in one aggregation
+    pipeline = [
+        {"$match": {"tenant_id": current_user["_id"]}},
+        {"$lookup": {
+            "from": "documents",
+            "let": {"bot_id": "$_id"},
+            "pipeline": [
+                {"$match": {"$expr": {"$eq": ["$bot_id", "$$bot_id"]}}},
+                {"$count": "count"}
+            ],
+            "as": "doc_stats"
+        }},
+        {"$lookup": {
+            "from": "messages",
+            "let": {"bot_id": "$_id"},
+            "pipeline": [
+                {"$match": {"$expr": {"$eq": ["$bot_id", "$$bot_id"]}}},
+                {"$count": "count"}
+            ],
+            "as": "msg_stats"
+        }},
+        {"$addFields": {
+            "document_count": {"$ifNull": [{"$arrayElemAt": ["$doc_stats.count", 0]}, 0]},
+            "message_count": {"$ifNull": [{"$arrayElemAt": ["$msg_stats.count", 0]}, 0]}
+        }},
+        {"$project": {"doc_stats": 0, "msg_stats": 0}}
+    ]
+
     chatbots = []
-    async for bot in db.chatbots.find({"tenant_id": current_user["_id"]}):
-        # Get document count
-        doc_count = await db.documents.count_documents({
-            "tenant_id": current_user["_id"],
-            "bot_id": bot["_id"]
-        })
-
-        # Get message count
-        msg_count = await db.messages.count_documents({
-            "tenant_id": current_user["_id"],
-            "bot_id": bot["_id"]
-        })
-
-        chatbots.append(build_chatbot_response(bot, doc_count, msg_count))
+    async for bot in db.chatbots.aggregate(pipeline):
+        chatbots.append(build_chatbot_response(bot, bot.get("document_count", 0), bot.get("message_count", 0)))
 
     return chatbots
 

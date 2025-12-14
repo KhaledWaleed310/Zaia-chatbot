@@ -356,7 +356,7 @@
     <div class="zaia-chat-window">
       <div class="zaia-header">
         <div>
-          <span class="zaia-header-title">${config.name}</span>
+          <span class="zaia-header-title"></span>
           <div class="zaia-header-status" style="display:none">
             <span class="zaia-status-dot"></span>
             <span class="zaia-status-text">Connected</span>
@@ -412,6 +412,9 @@
   const statusText = widget.querySelector('.zaia-status-text');
   const handoffBtn = widget.querySelector('.zaia-handoff-btn');
   const handoffNotice = widget.querySelector('.zaia-handoff-notice');
+
+  // Set initial title safely
+  if (headerTitle) headerTitle.textContent = config.name;
 
   // Load config
   async function loadConfig() {
@@ -479,10 +482,12 @@
   }
 
   function formatMessage(text) {
-    // Simple markdown-like formatting for streaming
-    return escapeHtml(text)
-      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-      .replace(/\*(.*?)\*/g, '<em>$1</em>')
+    // First escape HTML to prevent XSS
+    const escaped = escapeHtml(text);
+    // Then apply safe formatting
+    return escaped
+      .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+      .replace(/\*([^*]+)\*/g, '<em>$1</em>')
       .replace(/\n/g, '<br>');
   }
 
@@ -549,28 +554,33 @@
     };
 
     handoffWs.onmessage = (event) => {
-      const data = JSON.parse(event.data);
+      try {
+        const data = JSON.parse(event.data);
 
-      if (data.type === 'init') {
-        handoffData = data;
-        updateHandoffStatus(data.status, data.assigned_to_name);
+        if (data.type === 'init') {
+          handoffData = data;
+          updateHandoffStatus(data.status, data.assigned_to_name);
 
-        // Show existing handoff messages
-        if (data.messages && data.messages.length > 0) {
-          addDivider('Live Chat Started');
-          data.messages.forEach(msg => {
-            const type = msg.sender_type === 'visitor' ? 'user' : 'agent';
-            addMessage(msg.content, type, msg.sender_type === 'agent' ? msg.sender_name : null);
-          });
+          // Show existing handoff messages
+          if (data.messages && data.messages.length > 0) {
+            addDivider('Live Chat Started');
+            data.messages.forEach(msg => {
+              const type = msg.sender_type === 'visitor' ? 'user' : 'agent';
+              addMessage(msg.content, type, false);
+            });
+          }
+        } else if (data.type === 'message') {
+          const msg = data.message;
+          // Only show agent messages (our messages are already shown)
+          if (msg.sender_type === 'agent') {
+            addMessage(msg.content, 'agent', false);
+          }
+        } else if (data.type === 'status_change') {
+          updateHandoffStatus(data.status, handoffData?.assigned_to_name);
         }
-      } else if (data.type === 'message') {
-        const msg = data.message;
-        // Only show agent messages (our messages are already shown)
-        if (msg.sender_type === 'agent') {
-          addMessage(msg.content, 'agent', msg.sender_name || 'Agent');
-        }
-      } else if (data.type === 'status_change') {
-        updateHandoffStatus(data.status, handoffData?.assigned_to_name);
+      } catch (e) {
+        console.error('Invalid WebSocket message:', e);
+        return;
       }
     };
 
