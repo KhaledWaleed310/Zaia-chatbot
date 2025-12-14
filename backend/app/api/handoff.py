@@ -1,6 +1,7 @@
 from fastapi import APIRouter, HTTPException, Depends, WebSocket, WebSocketDisconnect
-from typing import Optional
+from typing import Optional, Any
 import json
+from datetime import datetime
 from ..schemas.handoff import (
     HandoffConfig, HandoffRequest, HandoffCreate, HandoffUpdate,
     HandoffMessage, HandoffResponse, HandoffListResponse, HandoffStats,
@@ -16,6 +17,17 @@ from ..core.database import get_mongodb, get_redis
 from ..schemas.handoff import HandoffTrigger, HandoffPriority
 
 router = APIRouter(prefix="/handoff", tags=["Handoff"])
+
+
+def serialize_for_json(obj: Any) -> Any:
+    """Recursively serialize objects for JSON, converting datetime to ISO string."""
+    if isinstance(obj, datetime):
+        return obj.isoformat()
+    elif isinstance(obj, dict):
+        return {k: serialize_for_json(v) for k, v in obj.items()}
+    elif isinstance(obj, list):
+        return [serialize_for_json(item) for item in obj]
+    return obj
 
 
 def handoff_to_response(h: dict) -> dict:
@@ -234,6 +246,12 @@ async def send_handoff_message(
         sender_name=user.get("name", "Agent")
     )
 
+    # Broadcast to WebSocket connections (so visitor sees it immediately)
+    await manager.broadcast(handoff_id, {
+        "type": "message",
+        "message": msg
+    })
+
     return msg
 
 
@@ -331,6 +349,12 @@ async def send_visitor_message(
         sender_type="visitor"
     )
 
+    # Broadcast to WebSocket connections (so agent sees it immediately)
+    await manager.broadcast(handoff["_id"], {
+        "type": "message",
+        "message": msg
+    })
+
     return msg
 
 
@@ -393,11 +417,11 @@ async def websocket_handoff_chat(
     await manager.connect(websocket, handoff_id)
 
     try:
-        # Send current messages on connect
+        # Send current messages on connect (serialize to handle datetime objects)
         await websocket.send_json({
             "type": "init",
-            "messages": handoff.get("messages", []),
-            "conversation_context": handoff.get("conversation_context", []),
+            "messages": serialize_for_json(handoff.get("messages", [])),
+            "conversation_context": serialize_for_json(handoff.get("conversation_context", [])),
             "status": handoff.get("status")
         })
 
@@ -455,11 +479,11 @@ async def websocket_visitor_chat(
     await manager.connect(websocket, handoff_id)
 
     try:
-        # Send current state on connect
+        # Send current state on connect (serialize to handle datetime objects)
         await websocket.send_json({
             "type": "init",
             "handoff_id": handoff_id,
-            "messages": handoff.get("messages", []),
+            "messages": serialize_for_json(handoff.get("messages", [])),
             "status": handoff.get("status"),
             "assigned_to_name": handoff.get("assigned_to_name")
         })

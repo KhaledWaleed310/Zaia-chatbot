@@ -55,6 +55,8 @@ async def register(user_data: UserCreate):
             company_name=user_data.company_name,
             role="admin" if user_is_admin else "user",
             is_admin=user_is_admin,
+            subscription_tier="free",
+            status="active",
             created_at=user_doc["created_at"]
         )
     )
@@ -94,6 +96,8 @@ async def login(credentials: UserLogin):
             company_name=user.get("company_name"),
             role=user.get("role", "admin" if user_is_admin else "user"),
             is_admin=user_is_admin,
+            subscription_tier=user.get("subscription_tier", "free"),
+            status=user.get("status", "active"),
             created_at=user["created_at"]
         )
     )
@@ -108,5 +112,7 @@ async def get_me(current_user: dict = Depends(get_current_user)):
         company_name=current_user.get("company_name"),
         role=current_user.get("role", "admin" if user_is_admin else "user"),
         is_admin=user_is_admin,
+        subscription_tier=current_user.get("subscription_tier", "free"),
+        status=current_user.get("status", "active"),
         created_at=current_user["created_at"]
     )

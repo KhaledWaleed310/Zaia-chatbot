@@ -13,12 +13,83 @@
   --color-primary-900: #1e3a8a;
 }
 
+/* Prevent iOS zoom on input focus - minimum 16px font */
+input, select, textarea {
+  font-size: 16px !important;
+}
+
+/* Prevent double-tap zoom and pinch zoom on interactive elements */
+* {
+  touch-action: manipulation;
+}
+
+/* Smooth scrolling for iOS */
+html {
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Prevent text size adjustment on orientation change */
 body {
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
   margin: 0;
   min-height: 100vh;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
 }
 
 #root {
   min-height: 100vh;
+}
+
+/* Fixed layout ONLY for shared chat page */
+.shared-chat-layout {
+  height: 100vh;
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+}
+
+/* Smooth scroll container for chat messages */
+.chat-messages-container {
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(156, 163, 175, 0.5) transparent;
+}
+
+/* Custom scrollbar for webkit browsers */
+.chat-messages-container::-webkit-scrollbar {
+  width: 6px;
+}
+
+.chat-messages-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.chat-messages-container::-webkit-scrollbar-thumb {
+  background-color: rgba(156, 163, 175, 0.5);
+  border-radius: 3px;
+}
+
+.chat-messages-container::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(156, 163, 175, 0.7);
+}
+
+/* Hide scrollbar on mobile for cleaner look */
+@media (max-width: 640px) {
+  .chat-messages-container::-webkit-scrollbar {
+    width: 0;
+    display: none;
+  }
+  .chat-messages-container {
+    scrollbar-width: none;
+  }
 }

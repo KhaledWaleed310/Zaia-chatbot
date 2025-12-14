@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import Layout from '../components/Layout';
 import { chatbots } from '../utils/api';
 import api from '../utils/api';
@@ -15,6 +16,47 @@ import {
   FileText,
   Search,
 } from 'lucide-react';
+
+// Custom component to render source citations as badges
+const SourceBadge = ({ number }) => (
+  <span className="inline-flex items-center justify-center w-4 h-4 mx-0.5 text-[9px] font-bold bg-blue-100 text-blue-600 rounded-full align-text-top border border-blue-200">
+    {number}
+  </span>
+);
+
+// Clean up citation formats to a single consistent format
+const normalizeCitations = (text) => {
+  return text
+    .replace(/\*+\s*(\[)/g, ' $1')
+    .replace(/(\])\s*\*+/g, '$1')
+    .replace(/\[\[\[(\d+)\]\]\]/g, '[$1]')
+    .replace(/\[\[(\d+)\]\]/g, '[$1]')
+    .replace(/\[Source\s*(\d+)\]/gi, '[$1]')
+    .replace(/<<(\d+)>>/g, '[$1]')
+    .replace(/\[Sources?:?\s*([\d,\s]+)\]/gi, (match, nums) => {
+      return nums.split(',').map(n => `[${n.trim()}]`).join('');
+    });
+};
+
+// Component to render text with inline citation badges
+const TextWithCitations = ({ children }) => {
+  if (typeof children !== 'string') {
+    return children;
+  }
+
+  const text = normalizeCitations(children);
+  const parts = text.split(/(\[\d+\])/g);
+
+  return parts.map((part, i) => {
+    const match = part.match(/^\[(\d+)\]$/);
+    if (match) {
+      return <SourceBadge key={i} number={match[1]} />;
+    }
+    return part;
+  });
+};
+
+const formatSourceCitations = (text) => normalizeCitations(text);
 
 const TestChatbot = () => {
   const [botList, setBotList] = useState([]);
@@ -89,17 +131,92 @@ const TestChatbot = () => {
     setLoading(true);
 
     try {
-      const response = await api.post(`/chat/${selectedBot.id}/message`, {
-        message: userMessage,
-        session_id: sessionId,
+      // Use streaming endpoint for faster perceived response
+      const response = await fetch(`/api/v1/chat/${selectedBot.id}/message/stream`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: userMessage,
+          session_id: sessionId,
+        }),
       });
 
-      setSessionId(response.data.session_id);
-      setMessages(prev => [...prev, {
-        role: 'assistant',
-        content: response.data.response,
-        sources: response.data.sources,
-      }]);
+      if (!response.ok) throw new Error('Failed to send message');
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let fullContent = '';
+      let sources = [];
+      let newSessionId = sessionId;
+      let messageAdded = false;
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const chunk = decoder.decode(value, { stream: true });
+        const lines = chunk.split('\n');
+
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            const data = line.slice(6);
+            if (data === '[DONE]') continue;
+
+            try {
+              const parsed = JSON.parse(data);
+              if (parsed.session_id) {
+                newSessionId = parsed.session_id;
+                setSessionId(parsed.session_id);
+              }
+              if (parsed.content) {
+                fullContent += parsed.content;
+
+                // Add message on first content, then update it
+                if (!messageAdded) {
+                  messageAdded = true;
+                  setLoading(false); // Hide "Thinking..." indicator
+                  setMessages(prev => [...prev, {
+                    role: 'assistant',
+                    content: fullContent,
+                    isStreaming: true,
+                  }]);
+                } else {
+                  // Update the streaming message in real-time
+                  setMessages(prev => {
+                    const updated = [...prev];
+                    updated[updated.length - 1] = {
+                      role: 'assistant',
+                      content: fullContent,
+                      isStreaming: true,
+                    };
+                    return updated;
+                  });
+                }
+              }
+              if (parsed.sources) {
+                sources = parsed.sources;
+              }
+            } catch (e) {
+              // Ignore parse errors for incomplete chunks
+            }
+          }
+        }
+      }
+
+      // Finalize the message with sources
+      if (messageAdded) {
+        setMessages(prev => {
+          const updated = [...prev];
+          updated[updated.length - 1] = {
+            role: 'assistant',
+            content: fullContent,
+            sources: sources,
+            isStreaming: false,
+          };
+          return updated;
+        });
+      }
+
     } catch (error) {
       console.error('Failed to send message:', error);
       setMessages(prev => [...prev, {
@@ -169,12 +286,12 @@ const TestChatbot = () => {
     <Layout>
       <div className="h-[calc(100vh-8rem)] md:h-[calc(100vh-4rem)] flex flex-col">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 mb-3 sm:mb-4">
           <div>
-            <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Test Chatbot</h1>
-            <p className="text-sm text-gray-500">Test your chatbots before deploying</p>
+            <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900">Test Chatbot</h1>
+            <p className="text-xs sm:text-sm text-gray-500">Test your chatbots before deploying</p>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
             {/* Bot Selector */}
             <div className="relative flex-1 sm:flex-none">
               <select
@@ -183,21 +300,21 @@ const TestChatbot = () => {
                   const bot = botList.find(b => b.id === e.target.value);
                   if (bot) handleBotChange(bot);
                 }}
-                className="w-full sm:w-auto appearance-none bg-white border border-gray-300 rounded-lg px-4 py-2 pr-10 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 min-h-[44px]"
+                className="w-full sm:w-auto appearance-none bg-white border border-gray-300 rounded-lg px-3 sm:px-4 py-2 pr-8 sm:pr-10 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 min-h-[38px] sm:min-h-[42px]"
               >
                 {botList.map(bot => (
                   <option key={bot.id} value={bot.id}>{bot.name}</option>
                 ))}
               </select>
-              <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+              <ChevronDown className="absolute right-2 sm:right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
             </div>
             {/* Reset Button */}
             <button
               onClick={resetConversation}
-              className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
+              className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors min-h-[38px] min-w-[38px] sm:min-h-[42px] sm:min-w-[42px] flex items-center justify-center flex-shrink-0"
               title="Reset conversation"
             >
-              <RefreshCw className="w-5 h-5" />
+              <RefreshCw className="w-4 h-4 sm:w-5 sm:h-5" />
             </button>
           </div>
         </div>
@@ -236,8 +353,9 @@ const TestChatbot = () => {
                   ) : (
                     <div className="text-sm sm:text-base prose prose-sm max-w-none prose-p:my-1 prose-headings:my-2 prose-ul:my-1 prose-ol:my-1 prose-li:my-0">
                       <ReactMarkdown
+                        remarkPlugins={[remarkGfm]}
                         components={{
-                          p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
+                          p: ({ children }) => <p className="mb-2 last:mb-0"><TextWithCitations>{children}</TextWithCitations></p>,
                           strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
                           em: ({ children }) => <em className="italic">{children}</em>,
                           h1: ({ children }) => <h1 className="text-lg font-bold mt-3 mb-2">{children}</h1>,
@@ -245,7 +363,13 @@ const TestChatbot = () => {
                           h3: ({ children }) => <h3 className="text-sm font-bold mt-2 mb-1">{children}</h3>,
                           ul: ({ children }) => <ul className="list-disc list-inside my-2 space-y-1">{children}</ul>,
                           ol: ({ children }) => <ol className="list-decimal list-inside my-2 space-y-1">{children}</ol>,
-                          li: ({ children }) => <li className="ml-2">{children}</li>,
+                          li: ({ children }) => <li className="ml-2"><TextWithCitations>{children}</TextWithCitations></li>,
+                          td: ({ children }) => <td className="border border-gray-300 px-3 py-2 text-sm"><TextWithCitations>{children}</TextWithCitations></td>,
+                          th: ({ children }) => <th className="border border-gray-300 px-3 py-2 text-sm font-semibold bg-gray-100">{children}</th>,
+                          table: ({ children }) => <div className="overflow-x-auto my-3"><table className="min-w-full border-collapse border border-gray-300 rounded">{children}</table></div>,
+                          thead: ({ children }) => <thead className="bg-gray-100">{children}</thead>,
+                          tbody: ({ children }) => <tbody>{children}</tbody>,
+                          tr: ({ children }) => <tr className="border-b border-gray-200">{children}</tr>,
                           code: ({ inline, children }) =>
                             inline ? (
                               <code className="bg-gray-200 px-1 py-0.5 rounded text-sm font-mono">{children}</code>
@@ -261,7 +385,7 @@ const TestChatbot = () => {
                           ),
                         }}
                       >
-                        {msg.content}
+                        {formatSourceCitations(msg.content)}
                       </ReactMarkdown>
                     </div>
                   )}
@@ -302,8 +426,8 @@ const TestChatbot = () => {
           </div>
 
           {/* Input */}
-          <form onSubmit={sendMessage} className="p-4 border-t border-gray-200">
-            <div className="flex items-center gap-3">
+          <form onSubmit={sendMessage} className="p-3 sm:p-4 border-t border-gray-200">
+            <div className="flex items-center gap-2 sm:gap-3">
               <input
                 ref={inputRef}
                 type="text"
@@ -311,14 +435,14 @@ const TestChatbot = () => {
                 onChange={(e) => setInput(e.target.value)}
                 placeholder="Type a message..."
                 disabled={loading}
-                className="flex-1 px-4 py-3 border border-gray-300 rounded-full focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm sm:text-base disabled:opacity-50 min-h-[44px]"
+                className="flex-1 px-3 sm:px-4 py-2 sm:py-2.5 border border-gray-300 rounded-full focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm disabled:opacity-50 min-h-[40px] sm:min-h-[44px]"
               />
               <button
                 type="submit"
                 disabled={!input.trim() || loading}
-                className="p-3 bg-blue-600 text-white rounded-full hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
+                className="p-2 sm:p-2.5 bg-blue-600 text-white rounded-full hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors min-h-[40px] min-w-[40px] sm:min-h-[44px] sm:min-w-[44px] flex items-center justify-center"
               >
-                <Send className="w-5 h-5" />
+                <Send className="w-4 h-4 sm:w-5 sm:h-5" />
               </button>
             </div>
           </form>

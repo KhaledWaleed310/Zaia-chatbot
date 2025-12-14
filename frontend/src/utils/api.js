@@ -31,6 +31,14 @@ api.interceptors.response.use(
   }
 );
 
+// Helper to build query string, filtering out undefined/null values
+const buildQueryString = (params) => {
+  const filtered = Object.fromEntries(
+    Object.entries(params).filter(([_, v]) => v !== undefined && v !== null && v !== '')
+  );
+  return new URLSearchParams(filtered).toString();
+};
+
 export const auth = {
   register: (data) => api.post('/auth/register', data),
   login: (data) => api.post('/auth/login', data),
@@ -94,7 +102,7 @@ export const admin = {
 
   // User management
   listUsers: (params = {}) => {
-    const query = new URLSearchParams(params).toString();
+    const query = buildQueryString(params);
     return api.get(`/admin/users${query ? '?' + query : ''}`);
   },
   getUser: (userId) => api.get(`/admin/users/${userId}`),
@@ -106,7 +114,7 @@ export const admin = {
 
   // Chatbot management
   listChatbots: (params = {}) => {
-    const query = new URLSearchParams(params).toString();
+    const query = buildQueryString(params);
     return api.get(`/admin/chatbots${query ? '?' + query : ''}`);
   },
   getChatbot: (botId) => api.get(`/admin/chatbots/${botId}`),
@@ -122,7 +130,7 @@ export const admin = {
 
   // Audit logs
   getAuditLogs: (params = {}) => {
-    const query = new URLSearchParams(params).toString();
+    const query = buildQueryString(params);
     return api.get(`/admin/audit-logs${query ? '?' + query : ''}`);
   },
 };
@@ -158,7 +166,7 @@ export const feedback = {
 
   // List feedback
   list: (botId, params = {}) => {
-    const query = new URLSearchParams(params).toString();
+    const query = buildQueryString(params);
     return api.get(`/feedback/${botId}${query ? '?' + query : ''}`);
   },
 
@@ -167,7 +175,7 @@ export const feedback = {
 
   // Training pairs
   listTraining: (botId, params = {}) => {
-    const query = new URLSearchParams(params).toString();
+    const query = buildQueryString(params);
     return api.get(`/feedback/${botId}/training${query ? '?' + query : ''}`);
   },
 
@@ -207,7 +215,7 @@ export const translation = {
 export const handoff = {
   // List handoffs for a chatbot
   list: (botId, params = {}) => {
-    const query = new URLSearchParams(params).toString();
+    const query = buildQueryString(params);
     return api.get(`/handoff/${botId}${query ? '?' + query : ''}`);
   },
 
@@ -242,7 +250,7 @@ export const handoff = {
 export const leads = {
   // List leads for a chatbot
   list: (botId, params = {}) => {
-    const query = new URLSearchParams(params).toString();
+    const query = buildQueryString(params);
     return api.get(`/leads/${botId}${query ? '?' + query : ''}`);
   },
 
@@ -282,7 +290,7 @@ export const analytics = {
 
   // Unanswered Questions
   listUnansweredQuestions: (botId, params = {}) => {
-    const query = new URLSearchParams(params).toString();
+    const query = buildQueryString(params);
     return api.get(`/analytics/${botId}/unanswered-questions${query ? '?' + query : ''}`);
   },
   updateUnansweredQuestion: (botId, questionId, data) =>
@@ -300,7 +308,7 @@ export const analytics = {
   getQualitySummary: (botId, days = 30) =>
     api.get(`/analytics/${botId}/quality/summary?days=${days}`),
   listQualityResponses: (botId, params = {}) => {
-    const query = new URLSearchParams(params).toString();
+    const query = buildQueryString(params);
     return api.get(`/analytics/${botId}/quality/responses${query ? '?' + query : ''}`);
   },
 

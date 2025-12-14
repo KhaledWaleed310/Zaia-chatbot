@@ -94,23 +94,81 @@ class DatabaseStats(BaseModel):
 
 # Settings Schemas
 class SystemSettings(BaseModel):
+    # General
+    app_name: str = "Aiden"
+    app_description: str = "AI-powered chatbot platform"
+    support_email: str = "support@aidenlink.cloud"
+
+    # Registration
     maintenance_mode: bool = False
-    max_free_chatbots: int = 3
-    max_free_documents: int = 50
-    max_pro_chatbots: int = 10
-    max_pro_documents: int = 500
     allow_registration: bool = True
-    default_llm_model: str = "deepseek-chat"
+    require_email_verification: bool = False
+    default_subscription_tier: str = "free"
+
+    # Free tier limits
+    free_max_chatbots: int = 1
+    free_max_documents: int = 5
+    free_max_messages_per_day: int = 50
+    free_max_file_size_mb: int = 5
+
+    # Pro tier limits
+    pro_max_chatbots: int = 10
+    pro_max_documents: int = 50
+    pro_max_messages_per_day: int = 1000
+    pro_max_file_size_mb: int = 25
+
+    # Enterprise tier limits
+    enterprise_max_chatbots: int = -1  # -1 = unlimited
+    enterprise_max_documents: int = -1
+    enterprise_max_messages_per_day: int = -1
+    enterprise_max_file_size_mb: int = 100
+
+    # AI Settings
+    default_model: str = "deepseek-chat"
+    max_context_chunks: int = 10
+    temperature: float = 0.7
+
+    # Maintenance
+    maintenance_message: str = "We are currently performing maintenance. Please try again later."
 
 
 class SystemSettingsUpdate(BaseModel):
+    # General
+    app_name: Optional[str] = None
+    app_description: Optional[str] = None
+    support_email: Optional[str] = None
+
+    # Registration
     maintenance_mode: Optional[bool] = None
-    max_free_chatbots: Optional[int] = None
-    max_free_documents: Optional[int] = None
-    max_pro_chatbots: Optional[int] = None
-    max_pro_documents: Optional[int] = None
     allow_registration: Optional[bool] = None
-    default_llm_model: Optional[str] = None
+    require_email_verification: Optional[bool] = None
+    default_subscription_tier: Optional[str] = None
+
+    # Free tier limits
+    free_max_chatbots: Optional[int] = None
+    free_max_documents: Optional[int] = None
+    free_max_messages_per_day: Optional[int] = None
+    free_max_file_size_mb: Optional[int] = None
+
+    # Pro tier limits
+    pro_max_chatbots: Optional[int] = None
+    pro_max_documents: Optional[int] = None
+    pro_max_messages_per_day: Optional[int] = None
+    pro_max_file_size_mb: Optional[int] = None
+
+    # Enterprise tier limits
+    enterprise_max_chatbots: Optional[int] = None
+    enterprise_max_documents: Optional[int] = None
+    enterprise_max_messages_per_day: Optional[int] = None
+    enterprise_max_file_size_mb: Optional[int] = None
+
+    # AI Settings
+    default_model: Optional[str] = None
+    max_context_chunks: Optional[int] = None
+    temperature: Optional[float] = None
+
+    # Maintenance
+    maintenance_message: Optional[str] = None
 
 
 # Pagination

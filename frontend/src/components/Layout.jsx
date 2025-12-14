@@ -182,7 +182,7 @@ const Layout = ({ children }) => {
 
       {/* Main content */}
       <main className="min-h-screen pt-16 md:pt-0 md:ml-64">
-        <div className="p-8">{children}</div>
+        <div className="p-4 sm:p-6 lg:p-8">{children}</div>
       </main>
     </div>
   );

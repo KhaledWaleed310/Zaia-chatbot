@@ -5,12 +5,18 @@ import { User, Mail, Building, Crown, Zap, Check, Lock, MessageSquare, FileText,
 import { apiKeys } from '../utils/api';
 
 const Settings = () => {
-  const { user } = useAuth();
+  const { user, refreshUser } = useAuth();
   const [saved, setSaved] = useState(false);
   const [usage, setUsage] = useState({
     chatbots: 0,
     documents: 0,
     messages_today: 0
+  });
+  const [limits, setLimits] = useState({
+    max_chatbots: 1,
+    max_documents_per_chatbot: 5,
+    max_messages_per_day: 50,
+    max_file_size_mb: 5
   });
 
   // API Keys state
@@ -23,17 +29,22 @@ const Settings = () => {
   const [visibleKeys, setVisibleKeys] = useState({});
   const [creating, setCreating] = useState(false);
 
-  // Free plan limits
-  const FREE_LIMITS = {
-    chatbots: 1,
-    documents: 5,
-    messages_per_day: 50,
-    file_size_mb: 5
+  // Get the user's subscription tier
+  const subscriptionTier = user?.subscription_tier || 'free';
+
+  // Plan display info
+  const planInfo = {
+    free: { name: 'Free Plan', color: 'bg-gray-100 text-gray-800' },
+    pro: { name: 'Pro Plan', color: 'bg-blue-100 text-blue-800' },
+    enterprise: { name: 'Enterprise Plan', color: 'bg-purple-100 text-purple-800' }
   };
 
   useEffect(() => {
-    // Fetch user usage stats
-    const fetchUsage = async () => {
+    // Refresh user data to get latest subscription info
+    refreshUser();
+
+    // Fetch user usage and limits
+    const fetchUsageAndLimits = async () => {
       try {
         const token = localStorage.getItem('token');
         const res = await fetch('/api/v1/users/me/usage', {
@@ -41,13 +52,21 @@ const Settings = () => {
         });
         if (res.ok) {
           const data = await res.json();
-          setUsage(data);
+          setUsage({
+            chatbots: data.usage?.chatbots || data.chatbots || 0,
+            documents: data.usage?.documents || data.documents || 0,
+            messages_today: data.usage?.messages_today || data.messages_today || 0
+          });
+          // Set limits if returned from API
+          if (data.limits) {
+            setLimits(data.limits);
+          }
         }
       } catch (err) {
         console.error('Failed to fetch usage:', err);
       }
     };
-    fetchUsage();
+    fetchUsageAndLimits();
     fetchApiKeys();
   }, []);
 
@@ -179,8 +198,8 @@ const Settings = () => {
         <div className="bg-white rounded-xl shadow-sm p-6">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-lg font-semibold text-gray-900">Your Plan</h2>
-            <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-800">
-              Free Plan
+            <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${planInfo[subscriptionTier]?.color || 'bg-gray-100 text-gray-800'}`}>
+              {planInfo[subscriptionTier]?.name || 'Free Plan'}
             </span>
           </div>
 
@@ -193,13 +212,13 @@ const Settings = () => {
                   Chatbots
                 </span>
                 <span className="text-sm font-medium text-gray-900">
-                  {usage.chatbots} / {FREE_LIMITS.chatbots}
+                  {usage.chatbots} / {limits.max_chatbots === -1 ? '∞' : limits.max_chatbots}
                 </span>
               </div>
               <div className="w-full bg-gray-200 rounded-full h-2">
                 <div
-                  className={`h-2 rounded-full ${getUsageColor(getUsagePercentage(usage.chatbots, FREE_LIMITS.chatbots))}`}
-                  style={{ width: `${getUsagePercentage(usage.chatbots, FREE_LIMITS.chatbots)}%` }}
+                  className={`h-2 rounded-full ${limits.max_chatbots === -1 ? 'bg-green-500' : getUsageColor(getUsagePercentage(usage.chatbots, limits.max_chatbots))}`}
+                  style={{ width: limits.max_chatbots === -1 ? '20%' : `${getUsagePercentage(usage.chatbots, limits.max_chatbots)}%` }}
                 />
               </div>
             </div>
@@ -211,13 +230,13 @@ const Settings = () => {
                   Documents (per chatbot)
                 </span>
                 <span className="text-sm font-medium text-gray-900">
-                  {usage.documents} / {FREE_LIMITS.documents}
+                  {usage.documents} / {limits.max_documents_per_chatbot === -1 ? '∞' : limits.max_documents_per_chatbot}
                 </span>
               </div>
               <div className="w-full bg-gray-200 rounded-full h-2">
                 <div
-                  className={`h-2 rounded-full ${getUsageColor(getUsagePercentage(usage.documents, FREE_LIMITS.documents))}`}
-                  style={{ width: `${getUsagePercentage(usage.documents, FREE_LIMITS.documents)}%` }}
+                  className={`h-2 rounded-full ${limits.max_documents_per_chatbot === -1 ? 'bg-green-500' : getUsageColor(getUsagePercentage(usage.documents, limits.max_documents_per_chatbot))}`}
+                  style={{ width: limits.max_documents_per_chatbot === -1 ? '20%' : `${getUsagePercentage(usage.documents, limits.max_documents_per_chatbot)}%` }}
                 />
               </div>
             </div>
@@ -229,13 +248,13 @@ const Settings = () => {
                   Messages Today
                 </span>
                 <span className="text-sm font-medium text-gray-900">
-                  {usage.messages_today} / {FREE_LIMITS.messages_per_day}
+                  {usage.messages_today} / {limits.max_messages_per_day === -1 ? '∞' : limits.max_messages_per_day}
                 </span>
               </div>
               <div className="w-full bg-gray-200 rounded-full h-2">
                 <div
-                  className={`h-2 rounded-full ${getUsageColor(getUsagePercentage(usage.messages_today, FREE_LIMITS.messages_per_day))}`}
-                  style={{ width: `${getUsagePercentage(usage.messages_today, FREE_LIMITS.messages_per_day)}%` }}
+                  className={`h-2 rounded-full ${limits.max_messages_per_day === -1 ? 'bg-green-500' : getUsageColor(getUsagePercentage(usage.messages_today, limits.max_messages_per_day))}`}
+                  style={{ width: limits.max_messages_per_day === -1 ? '20%' : `${getUsagePercentage(usage.messages_today, limits.max_messages_per_day)}%` }}
                 />
               </div>
             </div>
@@ -243,24 +262,24 @@ const Settings = () => {
 
           <div className="bg-gray-50 rounded-lg p-4">
             <p className="text-sm text-gray-600">
-              <strong>Free Plan Includes:</strong>
+              <strong>{planInfo[subscriptionTier]?.name || 'Your Plan'} Includes:</strong>
             </p>
             <ul className="mt-2 space-y-1 text-sm text-gray-600">
               <li className="flex items-center gap-2">
                 <Check className="w-4 h-4 text-green-500" />
-                {FREE_LIMITS.chatbots} Chatbot
+                {limits.max_chatbots === -1 ? 'Unlimited' : limits.max_chatbots} Chatbot{limits.max_chatbots !== 1 ? 's' : ''}
               </li>
               <li className="flex items-center gap-2">
                 <Check className="w-4 h-4 text-green-500" />
-                {FREE_LIMITS.documents} Documents per chatbot
+                {limits.max_documents_per_chatbot === -1 ? 'Unlimited' : limits.max_documents_per_chatbot} Documents per chatbot
               </li>
               <li className="flex items-center gap-2">
                 <Check className="w-4 h-4 text-green-500" />
-                {FREE_LIMITS.messages_per_day} Messages per day
+                {limits.max_messages_per_day === -1 ? 'Unlimited' : limits.max_messages_per_day} Messages per day
               </li>
               <li className="flex items-center gap-2">
                 <Check className="w-4 h-4 text-green-500" />
-                {FREE_LIMITS.file_size_mb}MB max file size
+                {limits.max_file_size_mb}MB max file size
               </li>
             </ul>
           </div>
@@ -566,8 +585,8 @@ const Settings = () => {
           </div>
           <div className="flex items-center justify-between py-3">
             <span className="text-gray-600">Plan</span>
-            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-              Free
+            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${planInfo[subscriptionTier]?.color || 'bg-gray-100 text-gray-800'}`}>
+              {planInfo[subscriptionTier]?.name?.replace(' Plan', '') || 'Free'}
             </span>
           </div>
         </div>

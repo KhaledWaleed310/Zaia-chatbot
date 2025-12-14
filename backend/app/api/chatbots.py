@@ -285,7 +285,7 @@ async def upload_document(
     content = await file.read()
 
     # Check file size limit
-    check_file_size_limit(len(content), current_user)
+    await check_file_size_limit(len(content), current_user)
 
     # Save file
     document_id = str(uuid.uuid4())

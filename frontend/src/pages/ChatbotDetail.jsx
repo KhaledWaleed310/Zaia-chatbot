@@ -723,38 +723,40 @@ const ChatbotDetail = () => {
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Share Link</label>
-                  <div className="flex gap-2">
+                  <div className="flex flex-col sm:flex-row gap-2">
                     <input
                       type="text"
                       value={bot?.share_link || `${window.location.origin}/chat/${id}`}
                       readOnly
-                      className="flex-1 px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg text-sm text-gray-600"
+                      className="flex-1 px-3 sm:px-4 py-2.5 sm:py-3 bg-gray-50 border border-gray-300 rounded-lg text-xs sm:text-sm text-gray-600"
                     />
-                    <button
-                      onClick={copyShareLink}
-                      className="px-4 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors flex items-center gap-2"
-                    >
-                      {shareCopied ? (
-                        <>
-                          <Check className="w-4 h-4 text-green-500" />
-                          Copied
-                        </>
-                      ) : (
-                        <>
-                          <Copy className="w-4 h-4" />
-                          Copy
-                        </>
-                      )}
-                    </button>
-                    <a
-                      href={bot?.share_link || `/chat/${id}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
-                    >
-                      <ExternalLink className="w-4 h-4" />
-                      Open
-                    </a>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={copyShareLink}
+                        className="flex-1 sm:flex-none px-3 sm:px-4 py-2.5 sm:py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors flex items-center justify-center gap-1.5 sm:gap-2 text-sm min-h-[42px]"
+                      >
+                        {shareCopied ? (
+                          <>
+                            <Check className="w-4 h-4 text-green-500" />
+                            <span>Copied</span>
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="w-4 h-4" />
+                            <span>Copy</span>
+                          </>
+                        )}
+                      </button>
+                      <a
+                        href={bot?.share_link || `/chat/${id}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex-1 sm:flex-none px-3 sm:px-4 py-2.5 sm:py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-1.5 sm:gap-2 text-sm min-h-[42px]"
+                      >
+                        <ExternalLink className="w-4 h-4" />
+                        <span>Open</span>
+                      </a>
+                    </div>
                   </div>
                 </div>
 

@@ -13,9 +13,29 @@ export const AuthProvider = ({ children }) => {
 
     if (token && savedUser) {
       setUser(JSON.parse(savedUser));
+      // Refresh user data in background to get latest subscription info
+      refreshUser();
     }
     setLoading(false);
   }, []);
+
+  const refreshUser = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) return;
+
+      const response = await auth.me();
+      const updatedUser = response.data;
+
+      localStorage.setItem('user', JSON.stringify(updatedUser));
+      setUser(updatedUser);
+      return updatedUser;
+    } catch (err) {
+      // Token might be expired, don't logout automatically
+      console.log('Failed to refresh user data');
+      return null;
+    }
+  };
 
   const login = async (email, password) => {
     const response = await auth.login({ email, password });
@@ -55,7 +75,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout }}>
+    <AuthContext.Provider value={{ user, loading, login, register, logout, refreshUser }}>
       {children}
     </AuthContext.Provider>
   );

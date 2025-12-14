@@ -67,6 +67,8 @@ class UserResponse(BaseModel):
     company_name: Optional[str] = None
     role: str = "user"
     is_admin: bool = False
+    subscription_tier: str = "free"
+    status: str = "active"
     created_at: datetime
 
 

@@ -1,5 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import Layout from '../components/Layout';
 import { handoff, chatbots } from '../utils/api';
 import {
@@ -18,6 +20,39 @@ import {
   Loader2,
   X
 } from 'lucide-react';
+
+// Source citation badge
+const SourceBadge = ({ number }) => (
+  <span className="inline-flex items-center justify-center w-4 h-4 mx-0.5 text-[9px] font-bold bg-blue-100 text-blue-600 rounded-full align-text-top border border-blue-200">
+    {number}
+  </span>
+);
+
+// Normalize citations
+const normalizeCitations = (text) => {
+  return text
+    .replace(/\*+\s*(\[)/g, ' $1')
+    .replace(/(\])\s*\*+/g, '$1')
+    .replace(/\[\[\[(\d+)\]\]\]/g, '[$1]')
+    .replace(/\[\[(\d+)\]\]/g, '[$1]')
+    .replace(/\[Source\s*(\d+)\]/gi, '[$1]')
+    .replace(/<<(\d+)>>/g, '[$1]')
+    .replace(/\[Sources?:?\s*([\d,\s]+)\]/gi, (match, nums) => {
+      return nums.split(',').map(n => `[${n.trim()}]`).join('');
+    });
+};
+
+// Text with inline citation badges
+const TextWithCitations = ({ children }) => {
+  if (typeof children !== 'string') return children;
+  const text = normalizeCitations(children);
+  const parts = text.split(/(\[\d+\])/g);
+  return parts.map((part, i) => {
+    const match = part.match(/^\[(\d+)\]$/);
+    if (match) return <SourceBadge key={i} number={match[1]} />;
+    return part;
+  });
+};
 
 const STATUS_COLORS = {
   pending: 'bg-yellow-100 text-yellow-700',
@@ -46,6 +81,9 @@ const ChatbotHandoff = () => {
   const [showConfigModal, setShowConfigModal] = useState(false);
   const [messageInput, setMessageInput] = useState('');
   const [wsConnected, setWsConnected] = useState(false);
+  const [showAcceptModal, setShowAcceptModal] = useState(false);
+  const [agentName, setAgentName] = useState(() => localStorage.getItem('handoff_agent_name') || '');
+  const [agentNameInput, setAgentNameInput] = useState('');
   const messagesEndRef = useRef(null);
   const wsRef = useRef(null);
 
@@ -68,9 +106,9 @@ const ChatbotHandoff = () => {
       wsRef.current.close();
     }
 
-    // Determine WebSocket URL
+    // Determine WebSocket URL - use same host as frontend (nginx will proxy)
     const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const wsHost = import.meta.env.VITE_WS_URL || `${wsProtocol}//${window.location.hostname}:8000`;
+    const wsHost = import.meta.env.VITE_WS_URL || `${wsProtocol}//${window.location.host}`;
     const wsUrl = `${wsHost}/api/v1/handoff/${id}/${selectedHandoff.id}/ws`;
 
     const ws = new WebSocket(wsUrl);
@@ -160,16 +198,37 @@ const ChatbotHandoff = () => {
     }
   };
 
-  const handleStatusChange = async (handoffId, newStatus) => {
+  const handleStatusChange = async (handoffId, newStatus, assignedName = null) => {
     try {
-      await handoff.update(id, handoffId, { status: newStatus });
+      const updateData = { status: newStatus };
+      if (assignedName) {
+        updateData.assigned_to_name = assignedName;
+      }
+      await handoff.update(id, handoffId, updateData);
       loadData();
       if (selectedHandoff?.id === handoffId) {
-        setSelectedHandoff(prev => ({ ...prev, status: newStatus }));
+        setSelectedHandoff(prev => ({ ...prev, status: newStatus, assigned_to_name: assignedName || prev.assigned_to_name }));
       }
     } catch (error) {
       console.error('Failed to update status:', error);
     }
+  };
+
+  const handleAcceptChat = () => {
+    setAgentNameInput(agentName || '');
+    setShowAcceptModal(true);
+  };
+
+  const confirmAcceptChat = async () => {
+    if (!agentNameInput.trim()) return;
+
+    // Save agent name to localStorage for future use
+    localStorage.setItem('handoff_agent_name', agentNameInput.trim());
+    setAgentName(agentNameInput.trim());
+    setShowAcceptModal(false);
+
+    // Accept the chat with the agent's name
+    await handleStatusChange(selectedHandoff.id, 'active', agentNameInput.trim());
   };
 
   const handleSendMessage = async () => {
@@ -181,7 +240,7 @@ const ChatbotHandoff = () => {
         type: 'message',
         content: messageInput,
         sender_type: 'agent',
-        sender_name: 'Agent'
+        sender_name: agentName || selectedHandoff.assigned_to_name || 'Agent'
       }));
       setMessageInput('');
     } else {
@@ -379,7 +438,7 @@ const ChatbotHandoff = () => {
                     <div className="flex gap-2">
                       {selectedHandoff.status === 'pending' && (
                         <button
-                          onClick={() => handleStatusChange(selectedHandoff.id, 'active')}
+                          onClick={handleAcceptChat}
                           className="px-3 py-1 bg-green-600 text-white rounded-lg text-sm hover:bg-green-700"
                         >
                           Accept
@@ -415,7 +474,23 @@ const ChatbotHandoff = () => {
                         <p className="text-xs text-gray-400 mb-1">
                           {msg.role === 'user' ? 'Visitor (Bot Chat)' : 'Bot'}
                         </p>
-                        {msg.content}
+                        <div className="prose prose-sm max-w-none">
+                          <ReactMarkdown
+                            remarkPlugins={[remarkGfm]}
+                            components={{
+                              p: ({ children }) => <p className="mb-1 last:mb-0"><TextWithCitations>{children}</TextWithCitations></p>,
+                              strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
+                              ul: ({ children }) => <ul className="list-disc list-inside my-1">{children}</ul>,
+                              ol: ({ children }) => <ol className="list-decimal list-inside my-1">{children}</ol>,
+                              li: ({ children }) => <li><TextWithCitations>{children}</TextWithCitations></li>,
+                              table: ({ children }) => <div className="overflow-x-auto my-2"><table className="min-w-full border-collapse border border-gray-300 text-xs">{children}</table></div>,
+                              th: ({ children }) => <th className="border border-gray-300 px-2 py-1 bg-gray-100">{children}</th>,
+                              td: ({ children }) => <td className="border border-gray-300 px-2 py-1"><TextWithCitations>{children}</TextWithCitations></td>,
+                            }}
+                          >
+                            {normalizeCitations(msg.content)}
+                          </ReactMarkdown>
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -442,7 +517,23 @@ const ChatbotHandoff = () => {
                         <p className="text-xs text-gray-400 mb-1">
                           {msg.sender_type === 'visitor' ? 'Visitor' : msg.sender_name || 'Agent'}
                         </p>
-                        {msg.content}
+                        <div className="prose prose-sm max-w-none">
+                          <ReactMarkdown
+                            remarkPlugins={[remarkGfm]}
+                            components={{
+                              p: ({ children }) => <p className="mb-1 last:mb-0"><TextWithCitations>{children}</TextWithCitations></p>,
+                              strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
+                              ul: ({ children }) => <ul className="list-disc list-inside my-1">{children}</ul>,
+                              ol: ({ children }) => <ol className="list-decimal list-inside my-1">{children}</ol>,
+                              li: ({ children }) => <li><TextWithCitations>{children}</TextWithCitations></li>,
+                              table: ({ children }) => <div className="overflow-x-auto my-2"><table className="min-w-full border-collapse border border-gray-300 text-xs">{children}</table></div>,
+                              th: ({ children }) => <th className="border border-gray-300 px-2 py-1 bg-gray-100">{children}</th>,
+                              td: ({ children }) => <td className="border border-gray-300 px-2 py-1"><TextWithCitations>{children}</TextWithCitations></td>,
+                            }}
+                          >
+                            {normalizeCitations(msg.content)}
+                          </ReactMarkdown>
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -569,6 +660,54 @@ const ChatbotHandoff = () => {
                     className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
                   >
                     Save Settings
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Accept Chat Modal - Enter Agent Name */}
+        {showAcceptModal && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-xl max-w-md w-full mx-4">
+              <div className="p-6 border-b flex items-center justify-between">
+                <h3 className="text-lg font-semibold">Accept Chat</h3>
+                <button onClick={() => setShowAcceptModal(false)} className="p-2 hover:bg-gray-100 rounded">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              <div className="p-6 space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Enter your name
+                  </label>
+                  <p className="text-sm text-gray-500 mb-3">
+                    This name will be shown to the customer during the chat.
+                  </p>
+                  <input
+                    type="text"
+                    value={agentNameInput}
+                    onChange={(e) => setAgentNameInput(e.target.value)}
+                    onKeyPress={(e) => e.key === 'Enter' && agentNameInput.trim() && confirmAcceptChat()}
+                    placeholder="e.g., John, Sarah, Support Team"
+                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    autoFocus
+                  />
+                </div>
+                <div className="flex gap-3 pt-2">
+                  <button
+                    onClick={() => setShowAcceptModal(false)}
+                    className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={confirmAcceptChat}
+                    disabled={!agentNameInput.trim()}
+                    className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Start Chat
                   </button>
                 </div>
               </div>

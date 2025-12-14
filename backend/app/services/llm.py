@@ -129,21 +129,26 @@ async def generate_response(
         query=query
     )
 
+    # Use aggressive timeout (30s instead of 60s) for better UX
     async with httpx.AsyncClient() as client:
-        response = await client.post(
-            f"{settings.DEEPSEEK_API_BASE}/chat/completions",
-            headers={
-                "Authorization": f"Bearer {settings.DEEPSEEK_API_KEY}",
-                "Content-Type": "application/json"
-            },
-            json={
-                "model": settings.DEEPSEEK_MODEL,
-                "messages": messages,
-                "temperature": 0.7,
-                "max_tokens": 1024
-            },
-            timeout=60.0
-        )
+        try:
+            response = await client.post(
+                f"{settings.DEEPSEEK_API_BASE}/chat/completions",
+                headers={
+                    "Authorization": f"Bearer {settings.DEEPSEEK_API_KEY}",
+                    "Content-Type": "application/json"
+                },
+                json={
+                    "model": settings.DEEPSEEK_MODEL,
+                    "messages": messages,
+                    "temperature": 0.7,
+                    "max_tokens": 1024
+                },
+                timeout=30.0  # Reduced from 60s for faster failure detection
+            )
+        except httpx.TimeoutException:
+            # Return graceful fallback on timeout
+            return "I apologize, but I'm taking longer than expected to respond. Please try asking your question again, or rephrase it to be more specific."
 
         if response.status_code != 200:
             raise Exception(f"DeepSeek API error: {response.text}")
@@ -193,36 +198,41 @@ async def generate_response_stream(
     estimated_input_tokens = len(input_text) // 4
     output_token_count = 0
 
-    async with httpx.AsyncClient() as client:
-        async with client.stream(
-            "POST",
-            f"{settings.DEEPSEEK_API_BASE}/chat/completions",
-            headers={
-                "Authorization": f"Bearer {settings.DEEPSEEK_API_KEY}",
-                "Content-Type": "application/json"
-            },
-            json={
-                "model": settings.DEEPSEEK_MODEL,
-                "messages": messages,
-                "temperature": 0.7,
-                "max_tokens": 1024,
-                "stream": True
-            },
-            timeout=60.0
-        ) as response:
-            async for line in response.aiter_lines():
-                if line.startswith("data: "):
-                    data = line[6:]
-                    if data == "[DONE]":
-                        break
-                    try:
-                        chunk = json.loads(data)
-                        content = chunk["choices"][0]["delta"].get("content")
-                        if content:
-                            output_token_count += len(content) // 4  # Rough estimate
-                            yield content
-                    except json.JSONDecodeError:
-                        continue
+    # Use aggressive timeout (30s instead of 60s) for better UX
+    try:
+        async with httpx.AsyncClient() as client:
+            async with client.stream(
+                "POST",
+                f"{settings.DEEPSEEK_API_BASE}/chat/completions",
+                headers={
+                    "Authorization": f"Bearer {settings.DEEPSEEK_API_KEY}",
+                    "Content-Type": "application/json"
+                },
+                json={
+                    "model": settings.DEEPSEEK_MODEL,
+                    "messages": messages,
+                    "temperature": 0.7,
+                    "max_tokens": 1024,
+                    "stream": True
+                },
+                timeout=30.0  # Reduced from 60s for faster failure detection
+            ) as response:
+                async for line in response.aiter_lines():
+                    if line.startswith("data: "):
+                        data = line[6:]
+                        if data == "[DONE]":
+                            break
+                        try:
+                            chunk = json.loads(data)
+                            content = chunk["choices"][0]["delta"].get("content")
+                            if content:
+                                output_token_count += len(content) // 4  # Rough estimate
+                                yield content
+                        except json.JSONDecodeError:
+                            continue
+    except httpx.TimeoutException:
+        # Yield timeout message on failure
+        yield "I apologize, but I'm taking longer than expected. Please try again."
 
     # Track token usage after streaming completes
     if tenant_id and bot_id:

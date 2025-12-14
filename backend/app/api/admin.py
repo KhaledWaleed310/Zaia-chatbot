@@ -858,19 +858,18 @@ async def get_settings(current_admin: dict = Depends(get_current_admin)):
     db = get_mongodb()
 
     settings = await db.system_settings.find_one({"_id": "system"})
-    if not settings:
-        # Return defaults
-        return SystemSettings()
 
-    return {
-        "maintenance_mode": settings.get("maintenance_mode", False),
-        "max_free_chatbots": settings.get("max_free_chatbots", 3),
-        "max_free_documents": settings.get("max_free_documents", 50),
-        "max_pro_chatbots": settings.get("max_pro_chatbots", 10),
-        "max_pro_documents": settings.get("max_pro_documents", 500),
-        "allow_registration": settings.get("allow_registration", True),
-        "default_llm_model": settings.get("default_llm_model", "deepseek-chat")
-    }
+    # Start with defaults
+    defaults = SystemSettings()
+    result = defaults.model_dump()
+
+    # Override with stored settings
+    if settings:
+        for key, value in settings.items():
+            if key != "_id" and key in result:
+                result[key] = value
+
+    return result
 
 
 @router.patch("/settings")

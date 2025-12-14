@@ -13,8 +13,17 @@
     return;
   }
 
-  const API_BASE = 'https://chatbot.zaiasystems.com/api/v1';
-  const WS_BASE = 'wss://chatbot.zaiasystems.com/api/v1';
+  // Dynamically determine API and WS base URLs from script source
+  const scriptSrc = currentScript.src;
+  let baseHost = 'chatbot.zaiasystems.com';
+  try {
+    const scriptUrl = new URL(scriptSrc);
+    baseHost = scriptUrl.host;
+  } catch (e) {
+    console.warn('ZAIA Chat: Could not parse script URL, using default host');
+  }
+  const API_BASE = `https://${baseHost}/api/v1`;
+  const WS_BASE = `wss://${baseHost}/api/v1`;
 
   // Default config
   let config = {
@@ -45,6 +54,10 @@
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       position: fixed;
       z-index: 999999;
+      touch-action: manipulation;
+    }
+    .zaia-widget * {
+      touch-action: manipulation;
     }
     .zaia-widget.bottom-right {
       bottom: 20px;
@@ -79,12 +92,37 @@
       bottom: 80px;
       width: 380px;
       height: 520px;
+      max-height: calc(100vh - 120px);
+      max-width: calc(100vw - 40px);
       background: white;
       border-radius: 16px;
       box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
       display: none;
       flex-direction: column;
       overflow: hidden;
+    }
+    @media (max-width: 420px) {
+      .zaia-chat-window {
+        width: calc(100vw - 24px);
+        height: calc(100vh - 100px);
+        bottom: 70px;
+        right: 12px !important;
+        left: 12px !important;
+        border-radius: 12px;
+      }
+      .zaia-widget.bottom-right, .zaia-widget.bottom-left {
+        bottom: 12px;
+        right: 12px;
+        left: auto;
+      }
+      .zaia-toggle {
+        width: 52px;
+        height: 52px;
+      }
+      .zaia-toggle svg {
+        width: 24px;
+        height: 24px;
+      }
     }
     .zaia-widget.bottom-right .zaia-chat-window {
       right: 0;
@@ -100,6 +138,7 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
+      flex-shrink: 0;
     }
     .zaia-header-title {
       font-weight: 600;
@@ -135,9 +174,25 @@
     }
     .zaia-messages {
       flex: 1;
+      min-height: 0;
       overflow-y: auto;
       padding: 16px;
       background: #f9fafb;
+      scroll-behavior: smooth;
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior-y: contain;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(156, 163, 175, 0.5) transparent;
+    }
+    .zaia-messages::-webkit-scrollbar {
+      width: 4px;
+    }
+    .zaia-messages::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    .zaia-messages::-webkit-scrollbar-thumb {
+      background-color: rgba(156, 163, 175, 0.5);
+      border-radius: 2px;
     }
     .zaia-message {
       margin-bottom: 12px;
@@ -197,6 +252,7 @@
       padding: 16px;
       border-top: 1px solid #e5e7eb;
       background: white;
+      flex-shrink: 0;
     }
     .zaia-input-form {
       display: flex;
@@ -207,7 +263,7 @@
       padding: 12px 16px;
       border: 1px solid #e5e7eb;
       border-radius: 12px;
-      font-size: 14px;
+      font-size: 16px;
       outline: none;
       transition: border-color 0.2s;
     }
@@ -237,6 +293,7 @@
       font-size: 11px;
       color: #9ca3af;
       background: white;
+      flex-shrink: 0;
     }
     .zaia-powered a {
       color: #6b7280;
@@ -399,20 +456,34 @@
     }
   }
 
-  function addMessage(content, type, senderName = null) {
-    messages.push({ content, type, senderName });
+  // Smooth scroll to bottom helper
+  function smoothScrollToBottom() {
+    requestAnimationFrame(() => {
+      messagesContainer.scrollTo({
+        top: messagesContainer.scrollHeight,
+        behavior: 'smooth'
+      });
+    });
+  }
+
+  function addMessage(content, type, isStreaming = false) {
+    messages.push({ content, type });
     const msgDiv = document.createElement('div');
     msgDiv.className = `zaia-message ${type}`;
 
-    let senderHtml = '';
-    if (senderName) {
-      senderHtml = `<div class="zaia-message-sender">${escapeHtml(senderName)}</div>`;
-    }
-
     const bgStyle = type === 'user' ? `style="background-color: ${config.primary_color}; color: ${config.text_color}"` : '';
-    msgDiv.innerHTML = `<div class="zaia-message-content" ${bgStyle}>${senderHtml}${escapeHtml(content)}</div>`;
+    msgDiv.innerHTML = `<div class="zaia-message-content" ${bgStyle}><span class="zaia-msg-text">${escapeHtml(content)}</span></div>`;
     messagesContainer.appendChild(msgDiv);
-    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    smoothScrollToBottom();
+    return msgDiv;  // Return element for streaming updates
+  }
+
+  function formatMessage(text) {
+    // Simple markdown-like formatting for streaming
+    return escapeHtml(text)
+      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+      .replace(/\*(.*?)\*/g, '<em>$1</em>')
+      .replace(/\n/g, '<br>');
   }
 
   function addDivider(text) {
@@ -420,7 +491,7 @@
     divider.className = 'zaia-divider';
     divider.textContent = text;
     messagesContainer.appendChild(divider);
-    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    smoothScrollToBottom();
   }
 
   function showTyping() {
@@ -428,7 +499,7 @@
     typing.className = 'zaia-message bot zaia-typing-msg';
     typing.innerHTML = '<div class="zaia-typing"><span></span><span></span><span></span></div>';
     messagesContainer.appendChild(typing);
-    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    smoothScrollToBottom();
   }
 
   function hideTyping() {
@@ -578,11 +649,11 @@
       return;
     }
 
-    // Otherwise send to bot
+    // Otherwise send to bot using streaming for faster response
     showTyping();
 
     try {
-      const response = await fetch(`${API_BASE}/chat/${botId}/message`, {
+      const response = await fetch(`${API_BASE}/chat/${botId}/message/stream`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -593,10 +664,49 @@
 
       if (!response.ok) throw new Error('Failed to send message');
 
-      const data = await response.json();
-      sessionId = data.session_id;
-      hideTyping();
-      addMessage(data.response, 'bot');
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let fullContent = '';
+      let streamingMsgEl = null;
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const chunk = decoder.decode(value, { stream: true });
+        const lines = chunk.split('\n');
+
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            const data = line.slice(6);
+            if (data === '[DONE]') continue;
+
+            try {
+              const parsed = JSON.parse(data);
+              if (parsed.session_id) {
+                sessionId = parsed.session_id;
+              }
+              if (parsed.content) {
+                fullContent += parsed.content;
+
+                // Create message element on first content (replaces typing indicator)
+                if (!streamingMsgEl) {
+                  hideTyping();
+                  streamingMsgEl = addMessage(fullContent, 'bot', true);
+                } else {
+                  // Update message content in real-time
+                  const contentEl = streamingMsgEl.querySelector('.zaia-msg-text');
+                  if (contentEl) {
+                    contentEl.innerHTML = formatMessage(fullContent);
+                  }
+                }
+              }
+            } catch (e) {
+              // Ignore parse errors for incomplete chunks
+            }
+          }
+        }
+      }
 
       // Check if we should show handoff button after a few messages
       if (handoffConfig.enabled && messages.filter(m => m.type === 'user').length >= 2) {
