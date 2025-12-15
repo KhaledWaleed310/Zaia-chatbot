@@ -16,25 +16,52 @@ import {
   AlertTriangle,
   CheckCircle,
   ArrowRight,
-  RefreshCw
+  RefreshCw,
+  Mail,
+  Send,
+  Trash2
 } from 'lucide-react';
 
 const AdminFinance = () => {
   const [data, setData] = useState(null);
+  const [emailData, setEmailData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [resetLoading, setResetLoading] = useState(false);
 
   const fetchData = async () => {
     try {
       setLoading(true);
-      const response = await admin.getFinanceAnalytics();
-      setData(response.data);
+      const [financeResponse, emailResponse] = await Promise.all([
+        admin.getFinanceAnalytics(),
+        admin.getEmailAnalytics()
+      ]);
+      setData(financeResponse.data);
+      setEmailData(emailResponse.data);
       setError(null);
     } catch (err) {
       setError('Failed to load finance analytics');
       console.error(err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleResetEmailStats = async () => {
+    if (!window.confirm('Are you sure you want to reset email analytics? This will delete all email logs.')) {
+      return;
+    }
+    try {
+      setResetLoading(true);
+      await admin.resetEmailAnalytics();
+      // Refresh email data
+      const emailResponse = await admin.getEmailAnalytics();
+      setEmailData(emailResponse.data);
+    } catch (err) {
+      console.error('Failed to reset email analytics:', err);
+      alert('Failed to reset email analytics');
+    } finally {
+      setResetLoading(false);
     }
   };
 
@@ -139,6 +166,110 @@ const AdminFinance = () => {
             <p className="text-xs text-gray-400 mt-2">~{summary.avg_tokens_per_call} tokens/call</p>
           </div>
         </div>
+
+        {/* Email Analytics Section */}
+        {emailData && (
+          <div className="bg-white rounded-xl shadow-sm border p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-semibold text-gray-900 flex items-center gap-2">
+                <Mail className="w-5 h-5 text-blue-600" />
+                Email Analytics
+              </h3>
+              <button
+                onClick={handleResetEmailStats}
+                disabled={resetLoading}
+                className="flex items-center gap-2 px-3 py-1.5 text-sm bg-red-100 text-red-700 rounded-lg hover:bg-red-200 disabled:opacity-50"
+              >
+                {resetLoading ? (
+                  <RefreshCw className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Trash2 className="w-4 h-4" />
+                )}
+                Reset Stats
+              </button>
+            </div>
+
+            {/* Email Summary Cards */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+              <div className="bg-blue-50 rounded-lg p-4 text-center">
+                <p className="text-2xl font-bold text-blue-600">{emailData.all_time?.total || 0}</p>
+                <p className="text-sm text-gray-600">Total Sent</p>
+              </div>
+              <div className="bg-green-50 rounded-lg p-4 text-center">
+                <p className="text-2xl font-bold text-green-600">{emailData.all_time?.successful || 0}</p>
+                <p className="text-sm text-gray-600">Successful</p>
+              </div>
+              <div className="bg-red-50 rounded-lg p-4 text-center">
+                <p className="text-2xl font-bold text-red-600">{emailData.all_time?.failed || 0}</p>
+                <p className="text-sm text-gray-600">Failed</p>
+              </div>
+              <div className="bg-purple-50 rounded-lg p-4 text-center">
+                <p className="text-2xl font-bold text-purple-600">
+                  {emailData.all_time?.total > 0
+                    ? ((emailData.all_time.successful / emailData.all_time.total) * 100).toFixed(1)
+                    : 0}%
+                </p>
+                <p className="text-sm text-gray-600">Success Rate</p>
+              </div>
+            </div>
+
+            {/* Email by Type */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <h4 className="font-medium text-gray-700 mb-3 flex items-center gap-2">
+                  <Send className="w-4 h-4" />
+                  Emails by Type (Last {emailData.period?.days || 30} Days)
+                </h4>
+                <div className="space-y-3">
+                  {emailData.by_type && Object.entries(emailData.by_type).map(([type, stats]) => (
+                    <div key={type} className="flex items-center justify-between bg-gray-50 rounded-lg p-3">
+                      <span className="text-gray-600 capitalize">{type.replace(/_/g, ' ')}</span>
+                      <div className="flex items-center gap-3">
+                        <span className="text-sm text-gray-500">{stats.total} sent</span>
+                        <span className={`font-medium ${stats.failed > 0 ? 'text-red-600' : 'text-green-600'}`}>
+                          {stats.successful} ok
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                  {(!emailData.by_type || Object.keys(emailData.by_type).length === 0) && (
+                    <p className="text-gray-400 text-sm">No emails sent in this period</p>
+                  )}
+                </div>
+              </div>
+
+              <div>
+                <h4 className="font-medium text-gray-700 mb-3">Recent Emails</h4>
+                <div className="space-y-2 max-h-48 overflow-y-auto">
+                  {emailData.recent_emails && emailData.recent_emails.map((email, idx) => (
+                    <div key={idx} className="flex items-center justify-between text-sm bg-gray-50 rounded-lg p-2">
+                      <div className="flex items-center gap-2 min-w-0">
+                        {email.success ? (
+                          <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
+                        ) : (
+                          <AlertTriangle className="w-4 h-4 text-red-500 flex-shrink-0" />
+                        )}
+                        <span className="text-gray-600 truncate">{email.to_email}</span>
+                      </div>
+                      <span className="text-gray-400 capitalize text-xs ml-2 flex-shrink-0">
+                        {email.type.replace(/_/g, ' ')}
+                      </span>
+                    </div>
+                  ))}
+                  {(!emailData.recent_emails || emailData.recent_emails.length === 0) && (
+                    <p className="text-gray-400 text-sm">No recent emails</p>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Period Stats */}
+            <div className="mt-4 pt-4 border-t border-gray-100 flex items-center justify-between text-sm text-gray-500">
+              <span>Period: Last {emailData.period?.days || 30} days ({emailData.summary?.total || 0} emails)</span>
+              <span>All-time: {emailData.all_time?.total || 0} emails</span>
+            </div>
+          </div>
+        )}
 
         {/* Cost Breakdown & API Pricing */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

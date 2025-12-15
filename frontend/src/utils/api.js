@@ -122,6 +122,8 @@ export const admin = {
   getBusinessAnalytics: () => api.get('/admin/analytics/business'),
   getRealtimeAnalytics: () => api.get('/admin/analytics/realtime'),
   getFinanceAnalytics: () => api.get('/admin/analytics/finance'),
+  getEmailAnalytics: (days = 30) => api.get(`/admin/analytics/email?days=${days}`),
+  resetEmailAnalytics: () => api.post('/admin/analytics/email/reset'),
   getServerStatus: () => api.get('/admin/server/status'),
 
   // User management

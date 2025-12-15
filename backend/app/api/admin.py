@@ -1293,10 +1293,18 @@ async def get_server_status(current_admin: dict = Depends(get_current_admin)):
     DISK_WARNING = 70
     DISK_CRITICAL = 85
 
-    # Estimate growth and capacity
-    # Assume: 1 user = 2 chatbots avg, 1 chatbot = 10 docs avg, 1 doc = 100 chunks avg
-    estimated_users_capacity = int((disk_total_gb - disk_used_gb) * 1000 / 0.5)  # ~0.5MB per user with all data
-    estimated_messages_capacity = int((disk_total_gb - disk_used_gb) * 1000000 / 0.001)  # ~1KB per message
+    # Estimate growth and capacity based on multiple factors
+    # RAM is usually the bottleneck for concurrent users
+    # Rule of thumb: ~50MB RAM per concurrent session, assume 10% users concurrent
+    # Disk: ~5MB per user with documents/messages, CPU: ~200 users per vCPU
+    disk_available_gb = disk_total_gb - disk_used_gb
+    disk_based_users = int(disk_available_gb * 1024 / 5)  # ~5MB per user with all data
+    memory_based_users = int((memory_total_gb * 1024 / 50) * 10)  # 50MB per concurrent, 10% concurrent
+    cpu_based_users = cpu_count * 200  # ~200 active users per vCPU
+
+    # Use minimum as realistic capacity (bottleneck limits overall capacity)
+    estimated_users_capacity = min(disk_based_users, memory_based_users, cpu_based_users)
+    estimated_messages_capacity = int(disk_available_gb * 1024 * 1024)  # ~1KB per message
 
     # Calculate health scores (0-100)
     cpu_health = max(0, 100 - cpu_percent)
@@ -1438,6 +1446,13 @@ async def get_server_status(current_admin: dict = Depends(get_current_admin)):
 
     # ===== SCALING TIERS =====
 
+    # Calculate max users for each tier using same formula (bottleneck approach)
+    def calc_tier_capacity(vcpu, ram_gb, disk_gb):
+        disk_users = int(disk_gb * 1024 / 5)  # ~5MB per user
+        ram_users = int((ram_gb * 1024 / 50) * 10)  # 50MB per concurrent, 10% concurrent
+        cpu_users = vcpu * 200  # ~200 active users per vCPU
+        return min(disk_users, ram_users, cpu_users)
+
     # Suggest next tier based on current usage
     scaling_tiers = [
         {
@@ -1451,21 +1466,21 @@ async def get_server_status(current_admin: dict = Depends(get_current_admin)):
             "name": "Small Upgrade",
             "specs": "2 vCPU, 4GB RAM, 80GB Disk",
             "monthly_cost": 48,
-            "max_users": 2000,
+            "max_users": calc_tier_capacity(2, 4, 80),
             "status": "recommended" if upgrade_urgency in ["low", "medium"] else "available"
         },
         {
             "name": "Medium Upgrade",
             "specs": "4 vCPU, 8GB RAM, 160GB Disk",
             "monthly_cost": 96,
-            "max_users": 5000,
+            "max_users": calc_tier_capacity(4, 8, 160),
             "status": "recommended" if upgrade_urgency in ["high"] else "available"
         },
         {
             "name": "Large Upgrade",
             "specs": "8 vCPU, 16GB RAM, 320GB Disk",
             "monthly_cost": 192,
-            "max_users": 15000,
+            "max_users": calc_tier_capacity(8, 16, 320),
             "status": "recommended" if upgrade_urgency in ["critical"] else "available"
         }
     ]
@@ -1525,6 +1540,128 @@ async def get_server_status(current_admin: dict = Depends(get_current_admin)):
             "recommendations": recommendations
         },
         "scaling_tiers": scaling_tiers
+    }
+
+
+# ==================== EMAIL METRICS ====================
+
+@router.get("/analytics/email")
+async def get_email_analytics(
+    days: int = Query(default=30, ge=1, le=90),
+    current_admin: dict = Depends(get_current_admin)
+):
+    """Get email sending analytics"""
+    db = get_mongodb()
+
+    # Get date range
+    start_date = datetime.utcnow() - timedelta(days=days)
+
+    # Total emails
+    total_emails = await db.email_logs.count_documents({"timestamp": {"$gte": start_date}})
+    successful_emails = await db.email_logs.count_documents({
+        "timestamp": {"$gte": start_date},
+        "success": True
+    })
+    failed_emails = await db.email_logs.count_documents({
+        "timestamp": {"$gte": start_date},
+        "success": False
+    })
+
+    # Emails by type
+    type_pipeline = [
+        {"$match": {"timestamp": {"$gte": start_date}}},
+        {"$group": {"_id": "$type", "count": {"$sum": 1}, "success": {"$sum": {"$cond": ["$success", 1, 0]}}}},
+        {"$sort": {"count": -1}}
+    ]
+    emails_by_type = await db.email_logs.aggregate(type_pipeline).to_list(100)
+
+    # Daily breakdown
+    daily_data = []
+    for i in range(days):
+        date = datetime.utcnow() - timedelta(days=i)
+        start_of_day = date.replace(hour=0, minute=0, second=0, microsecond=0)
+        end_of_day = start_of_day + timedelta(days=1)
+
+        day_total = await db.email_logs.count_documents({
+            "timestamp": {"$gte": start_of_day, "$lt": end_of_day}
+        })
+        day_success = await db.email_logs.count_documents({
+            "timestamp": {"$gte": start_of_day, "$lt": end_of_day},
+            "success": True
+        })
+
+        daily_data.append({
+            "date": start_of_day.strftime("%Y-%m-%d"),
+            "total": day_total,
+            "success": day_success,
+            "failed": day_total - day_success
+        })
+
+    daily_data.reverse()
+
+    # All-time stats
+    all_time_total = await db.email_logs.count_documents({})
+    all_time_success = await db.email_logs.count_documents({"success": True})
+
+    # Recent emails
+    recent_cursor = db.email_logs.find({}).sort("timestamp", -1).limit(20)
+    recent_emails = []
+    async for email in recent_cursor:
+        recent_emails.append({
+            "type": email.get("type"),
+            "to_email": email.get("to_email"),
+            "success": email.get("success"),
+            "timestamp": email.get("timestamp"),
+            "resend_id": email.get("resend_id")
+        })
+
+    return {
+        "period": {
+            "days": days,
+            "start_date": start_date.isoformat(),
+            "end_date": datetime.utcnow().isoformat()
+        },
+        "summary": {
+            "total_emails": total_emails,
+            "successful": successful_emails,
+            "failed": failed_emails,
+            "success_rate": round(successful_emails / max(total_emails, 1) * 100, 1)
+        },
+        "all_time": {
+            "total_emails": all_time_total,
+            "successful": all_time_success,
+            "failed": all_time_total - all_time_success
+        },
+        "by_type": [
+            {
+                "type": item["_id"],
+                "total": item["count"],
+                "successful": item["success"],
+                "failed": item["count"] - item["success"]
+            }
+            for item in emails_by_type
+        ],
+        "daily_trend": daily_data,
+        "recent_emails": recent_emails
+    }
+
+
+@router.post("/analytics/email/reset")
+async def reset_email_analytics(current_admin: dict = Depends(get_current_admin)):
+    """Reset email analytics (delete all email logs)"""
+    db = get_mongodb()
+
+    # Get count before deletion
+    count = await db.email_logs.count_documents({})
+
+    # Delete all email logs
+    result = await db.email_logs.delete_many({})
+
+    logger.warning(f"Admin {current_admin['email']} reset email analytics. Deleted {result.deleted_count} records.")
+
+    return {
+        "message": "Email analytics reset successfully",
+        "deleted_count": result.deleted_count
     }
 
 

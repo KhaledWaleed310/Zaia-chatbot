@@ -3,12 +3,29 @@ Email Service using Resend
 """
 import logging
 from typing import Optional
+from datetime import datetime
 
 import resend
 
 from ..core.config import settings
+from ..core.database import get_mongodb
 
 logger = logging.getLogger(__name__)
+
+
+async def track_email_sent(email_type: str, to_email: str, success: bool, resend_id: str = None):
+    """Track email sent in database for metrics"""
+    try:
+        db = get_mongodb()
+        await db.email_logs.insert_one({
+            "type": email_type,
+            "to_email": to_email,
+            "success": success,
+            "resend_id": resend_id,
+            "timestamp": datetime.utcnow()
+        })
+    except Exception as e:
+        logger.error(f"Failed to track email: {e}")
 
 
 def init_resend():
@@ -145,10 +162,12 @@ ZAIA Systems
         })
 
         logger.info(f"Password reset email sent to {to_email}, response: {response}")
+        await track_email_sent("password_reset", to_email, True, response.get("id"))
         return True
 
     except Exception as e:
         logger.error(f"Failed to send password reset email to {to_email}: {e}")
+        await track_email_sent("password_reset", to_email, False)
         return False
 
 
@@ -241,10 +260,12 @@ ZAIA Systems
         })
 
         logger.info(f"Password changed confirmation sent to {to_email}")
+        await track_email_sent("password_changed", to_email, True, response.get("id"))
         return True
 
     except Exception as e:
         logger.error(f"Failed to send password changed confirmation to {to_email}: {e}")
+        await track_email_sent("password_changed", to_email, False)
         return False
 
 
@@ -373,8 +394,10 @@ ZAIA Systems
         })
 
         logger.info(f"Verification email sent to {to_email}, response: {response}")
+        await track_email_sent("verification", to_email, True, response.get("id"))
         return True
 
     except Exception as e:
         logger.error(f"Failed to send verification email to {to_email}: {e}")
+        await track_email_sent("verification", to_email, False)
         return False
