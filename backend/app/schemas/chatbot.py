@@ -10,6 +10,7 @@ class ChatbotConfig(BaseModel):
     primary_color: Optional[str] = "#3B82F6"
     text_color: Optional[str] = "#FFFFFF"
     position: Optional[str] = "bottom-right"
+    is_personal: Optional[bool] = False
 
 
 class ChatbotCreate(ChatbotConfig):
@@ -25,6 +26,7 @@ class ChatbotUpdate(BaseModel):
     position: Optional[str] = None
     is_public: Optional[bool] = None
     share_password: Optional[str] = None  # Empty string to remove password
+    is_personal: Optional[bool] = None
 
 
 class ChatbotResponse(ChatbotConfig):
@@ -37,6 +39,7 @@ class ChatbotResponse(ChatbotConfig):
     is_public: bool = False
     has_password: bool = False
     share_link: Optional[str] = None
+    is_personal: bool = False
 
 
 class EmbedCode(BaseModel):
@@ -79,3 +82,4 @@ class PublicBotConfig(BaseModel):
     text_color: str
     position: str
     requires_password: bool
+    is_personal: bool = False

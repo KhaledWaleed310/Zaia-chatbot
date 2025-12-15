@@ -26,3 +26,30 @@ class AnalyticsResponse(BaseModel):
     avg_messages_per_conversation: float
     popular_topics: List[dict]
     daily_usage: List[dict]
+
+
+class ConversationListItem(BaseModel):
+    id: str
+    session_id: str
+    title: Optional[str] = "New Conversation"
+    created_at: datetime
+    updated_at: datetime
+    message_count: int
+
+
+class ConversationListResponse(BaseModel):
+    conversations: List[ConversationListItem]
+    total: int
+
+
+class ConversationUpdateRequest(BaseModel):
+    title: Optional[str] = None
+
+
+class ConversationDetailResponse(BaseModel):
+    id: str
+    session_id: str
+    title: Optional[str]
+    messages: List[dict]
+    created_at: datetime
+    updated_at: datetime

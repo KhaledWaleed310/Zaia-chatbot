@@ -4,7 +4,10 @@ from qdrant_client.http.models import VectorParams, Distance
 from neo4j import AsyncGraphDatabase
 import redis.asyncio as redis
 import asyncio
+import logging
 from .config import settings
+
+logger = logging.getLogger(__name__)
 
 
 class Database:
@@ -124,11 +127,41 @@ async def connect_redis():
     print("Connected to Redis")
 
 
+async def ensure_context_indexes():
+    """Create indexes for context management collections."""
+    db_instance = get_mongodb()
+
+    try:
+        # User profiles indexes
+        await db_instance.user_profiles.create_index(
+            [("email", 1), ("tenant_id", 1), ("bot_id", 1)],
+            unique=True,
+            sparse=True  # Allow null emails
+        )
+        await db_instance.user_profiles.create_index(
+            [("phone", 1), ("tenant_id", 1), ("bot_id", 1)],
+            unique=True,
+            sparse=True  # Allow null phones
+        )
+        await db_instance.user_profiles.create_index(
+            [("tenant_id", 1), ("bot_id", 1), ("updated_at", -1)]
+        )
+
+        # Add intent/stage indexes to messages
+        await db_instance.messages.create_index([("session_id", 1), ("intent", 1)])
+        await db_instance.messages.create_index([("bot_id", 1), ("stage", 1)])
+
+        logger.info("Context management indexes created")
+    except Exception as e:
+        logger.error(f"Failed to create context indexes: {e}")
+
+
 async def connect_all():
     await connect_mongodb()
     await connect_qdrant()
     await connect_neo4j()
     await connect_redis()
+    await ensure_context_indexes()
 
 
 async def close_all():

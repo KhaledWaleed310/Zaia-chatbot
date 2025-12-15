@@ -22,6 +22,14 @@ from ..services.enhanced_retrieval import enhanced_triple_retrieval, adaptive_re
 from ..services.enhanced_llm import generate_enhanced_response
 from ..services.query_enhancer import analyze_query
 
+# Context system (gracefully handles if not available)
+try:
+    from ..services.context.context_manager import build_context, ContextManager
+    CONTEXT_SYSTEM_AVAILABLE = True
+except ImportError:
+    CONTEXT_SYSTEM_AVAILABLE = False
+    logger.warning("Context system not available, using basic history")
+
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/chat", tags=["Chat"])
@@ -31,7 +39,8 @@ router = APIRouter(prefix="/chat", tags=["Chat"])
 async def send_message(
     bot_id: str,
     message: ChatMessage,
-    enhanced: bool = Query(default=True, description="Use enhanced RAG pipeline")
+    enhanced: bool = Query(default=True, description="Use enhanced RAG pipeline"),
+    visitor_id: Optional[str] = Query(None, description="Visitor ID for personal mode")
 ):
     """
     Send a message to the chatbot and get a response.
@@ -60,19 +69,57 @@ async def send_message(
         # Get or create session
         session_id = message.session_id or str(uuid.uuid4())
 
-        # Get conversation history
+        # Check if bot is in personal mode
+        is_personal = bot.get("is_personal", False)
+
+        # Get conversation for history
         conversation = await db.conversations.find_one({
             "session_id": session_id,
             "bot_id": bot_id
         })
 
-        history = []
-        if conversation:
-            history = conversation.get("messages", [])[-5:]  # Last 5 messages (reduced for speed)
+        # Store visitor_id for personal mode
+        if is_personal and visitor_id and conversation and not conversation.get("visitor_id"):
+            # Backfill visitor_id
+            await db.conversations.update_one(
+                {"session_id": session_id},
+                {"$set": {"visitor_id": visitor_id}}
+            )
 
         # Analyze query for adaptive processing
         query_analysis = analyze_query(message.message)
         logger.info(f"Query analysis: intent={query_analysis['intent']}, complexity={query_analysis['complexity']}")
+
+        # Get raw history
+        raw_history = conversation.get("messages", [])[-20:] if conversation else []
+
+        # Build rich context using Context Manager (with graceful fallback)
+        user_context = ""
+        working_memory = {}
+        user_profile = None
+        stage_guidance = ""
+
+        if CONTEXT_SYSTEM_AVAILABLE:
+            try:
+                context_data = await build_context(
+                    query=message.message,
+                    session_id=session_id,
+                    bot_id=bot_id,
+                    tenant_id=tenant_id,
+                    conversation_history=raw_history,
+                    query_analysis=query_analysis
+                )
+                history = context_data.get("recent_messages", raw_history)
+                user_context = context_data.get("prompt_context", "")
+                working_memory = context_data.get("working_memory", {})
+                user_profile = context_data.get("user_profile")
+                stage_guidance = context_data.get("stage_guidance", "")
+                logger.info(f"Context built successfully with {len(history)} messages")
+            except Exception as e:
+                logger.warning(f"Context building failed, using basic history: {e}")
+                history = raw_history
+        else:
+            history = raw_history
 
         # Use enhanced or basic retrieval based on flag
         if enhanced:
@@ -111,7 +158,11 @@ async def send_message(
                 query_analysis=query_analysis,
                 tenant_id=tenant_id,
                 bot_id=bot_id,
-                session_id=session_id
+                session_id=session_id,
+                # NEW: Rich context parameters
+                user_context=user_context,
+                user_profile=user_profile,
+                stage_guidance=stage_guidance
             )
             response_text = llm_result["response"]
             confidence = llm_result.get("confidence", 0.5)
@@ -164,7 +215,11 @@ async def send_message(
             "role": "user",
             "content": message.message,
             "timestamp": datetime.utcnow(),
-            "sentiment": user_sentiment
+            "sentiment": user_sentiment,
+            # NEW: Context data
+            "intent": working_memory.get("current_intent", {}).get("intent") if working_memory else None,
+            "stage": working_memory.get("current_stage") if working_memory else None,
+            "extracted_facts": working_memory.get("new_facts", {}) if working_memory else {}
         }
 
         assistant_msg = {
@@ -190,6 +245,8 @@ async def send_message(
                 "session_id": session_id,
                 "bot_id": bot_id,
                 "tenant_id": tenant_id,
+                "visitor_id": visitor_id if is_personal else None,
+                "title": None,
                 "messages": [user_msg, assistant_msg],
                 "created_at": datetime.utcnow(),
                 "updated_at": datetime.utcnow()
@@ -212,6 +269,21 @@ async def send_message(
                 **assistant_msg
             }
         ])
+
+        # Generate title for first message in personal mode
+        # Check if this is the first user message (message_count was 0 before this message)
+        is_first_message = conversation is None or len(conversation.get("messages", [])) == 0
+        if is_personal and is_first_message:
+            try:
+                from ..services.title_generator import generate_title
+                title = await generate_title(message.message)
+                await db.conversations.update_one(
+                    {"session_id": session_id},
+                    {"$set": {"title": title}}
+                )
+                logger.info(f"Generated title for session {session_id}: {title}")
+            except Exception as e:
+                logger.warning(f"Title generation failed: {e}")
 
         # Format sources with enhanced metadata
         sources = []
@@ -246,7 +318,8 @@ async def send_message(
 async def send_message_stream(
     bot_id: str,
     message: ChatMessage,
-    enhanced: bool = Query(default=True, description="Use enhanced RAG pipeline")
+    enhanced: bool = Query(default=True, description="Use enhanced RAG pipeline"),
+    visitor_id: Optional[str] = Query(None, description="Visitor ID for personal mode")
 ):
     """
     Send a message and stream the response.
@@ -267,19 +340,57 @@ async def send_message_stream(
 
     session_id = message.session_id or str(uuid.uuid4())
 
-    # Get conversation history
+    # Check if bot is in personal mode
+    is_personal = bot.get("is_personal", False)
+
+    # Get conversation for history
     conversation = await db.conversations.find_one({
         "session_id": session_id,
         "bot_id": bot_id
     })
 
-    history = []
-    if conversation:
-        history = conversation.get("messages", [])[-5:]  # Last 5 messages (reduced for speed)
+    # Store visitor_id for personal mode
+    if is_personal and visitor_id and conversation and not conversation.get("visitor_id"):
+        # Backfill visitor_id
+        await db.conversations.update_one(
+            {"session_id": session_id},
+            {"$set": {"visitor_id": visitor_id}}
+        )
 
     # Analyze query for adaptive processing
     query_analysis = analyze_query(message.message)
     logger.info(f"Stream query analysis: intent={query_analysis['intent']}, complexity={query_analysis['complexity']}")
+
+    # Get raw history
+    raw_history = conversation.get("messages", [])[-5:] if conversation else []  # Last 5 messages (reduced for speed)
+
+    # Build rich context using Context Manager (with graceful fallback)
+    user_context = ""
+    working_memory = {}
+    user_profile = None
+    stage_guidance = ""
+
+    if CONTEXT_SYSTEM_AVAILABLE:
+        try:
+            context_data = await build_context(
+                query=message.message,
+                session_id=session_id,
+                bot_id=bot_id,
+                tenant_id=tenant_id,
+                conversation_history=raw_history,
+                query_analysis=query_analysis
+            )
+            history = context_data.get("recent_messages", raw_history)
+            user_context = context_data.get("prompt_context", "")
+            working_memory = context_data.get("working_memory", {})
+            user_profile = context_data.get("user_profile")
+            stage_guidance = context_data.get("stage_guidance", "")
+            logger.info(f"Stream context built successfully with {len(history)} messages")
+        except Exception as e:
+            logger.warning(f"Stream context building failed, using basic history: {e}")
+            history = raw_history
+    else:
+        history = raw_history
 
     # Retrieve context using enhanced or basic pipeline
     if enhanced:
@@ -327,14 +438,75 @@ async def send_message_stream(
         user_msg = {
             "role": "user",
             "content": message.message,
-            "timestamp": datetime.utcnow().isoformat()
+            "timestamp": datetime.utcnow(),
+            # NEW: Context data
+            "intent": working_memory.get("current_intent", {}).get("intent") if working_memory else None,
+            "stage": working_memory.get("current_stage") if working_memory else None,
+            "extracted_facts": working_memory.get("new_facts", {}) if working_memory else {}
         }
 
         assistant_msg = {
             "role": "assistant",
             "content": full_response,
-            "timestamp": datetime.utcnow().isoformat()
+            "timestamp": datetime.utcnow()
         }
+
+        # Store conversation in database (same as non-streaming endpoint)
+        try:
+            if conversation:
+                await db.conversations.update_one(
+                    {"session_id": session_id},
+                    {
+                        "$push": {"messages": {"$each": [user_msg, assistant_msg]}},
+                        "$set": {"updated_at": datetime.utcnow()}
+                    }
+                )
+            else:
+                await db.conversations.insert_one({
+                    "_id": str(uuid.uuid4()),
+                    "session_id": session_id,
+                    "bot_id": bot_id,
+                    "tenant_id": tenant_id,
+                    "visitor_id": visitor_id if is_personal else None,
+                    "title": None,
+                    "messages": [user_msg, assistant_msg],
+                    "created_at": datetime.utcnow(),
+                    "updated_at": datetime.utcnow()
+                })
+
+            # Store individual messages for analytics
+            await db.messages.insert_many([
+                {
+                    "_id": str(uuid.uuid4()),
+                    "session_id": session_id,
+                    "bot_id": bot_id,
+                    "tenant_id": tenant_id,
+                    **user_msg
+                },
+                {
+                    "_id": str(uuid.uuid4()),
+                    "session_id": session_id,
+                    "bot_id": bot_id,
+                    "tenant_id": tenant_id,
+                    **assistant_msg
+                }
+            ])
+
+            # Generate title for first message in personal mode
+            is_first_message = conversation is None or len(conversation.get("messages", [])) == 0
+            if is_personal and is_first_message:
+                try:
+                    from ..services.title_generator import generate_title
+                    title = await generate_title(message.message)
+                    await db.conversations.update_one(
+                        {"session_id": session_id},
+                        {"$set": {"title": title}}
+                    )
+                    logger.info(f"Generated title for session {session_id}: {title}")
+                except Exception as e:
+                    logger.warning(f"Title generation failed: {e}")
+        except Exception as e:
+            logger.error(f"Failed to store streaming messages: {e}")
 
         # Format sources with enhanced metadata
         sources = []
@@ -432,3 +604,156 @@ async def get_analytics(bot_id: str, tenant_id: str):
         popular_topics=[],  # Would need NLP analysis
         daily_usage=daily_usage
     )
+
+
+# Personal Chatbot Mode - Conversation Management Endpoints
+
+@router.get("/{bot_id}/conversations")
+async def list_conversations(
+    bot_id: str,
+    visitor_id: str = Query(..., description="Anonymous visitor ID"),
+    limit: int = Query(50, le=100),
+    offset: int = Query(0)
+):
+    """List conversations for a visitor (Personal Mode sidebar)."""
+    db = get_mongodb()
+
+    # Validate bot exists and is personal mode
+    bot = await db.chatbots.find_one({"_id": bot_id})
+    if not bot:
+        raise HTTPException(status_code=404, detail="Chatbot not found")
+
+    if not bot.get("is_personal", False):
+        raise HTTPException(status_code=400, detail="Bot is not in personal mode")
+
+    # Query conversations
+    cursor = db.conversations.find({
+        "bot_id": bot_id,
+        "visitor_id": visitor_id
+    }).sort("updated_at", -1).skip(offset).limit(limit)
+
+    conversations = await cursor.to_list(length=limit)
+
+    items = []
+    for conv in conversations:
+        items.append({
+            "id": conv["_id"],
+            "session_id": conv["session_id"],
+            "title": conv.get("title") or "New Conversation",
+            "created_at": conv["created_at"],
+            "updated_at": conv["updated_at"],
+            "message_count": len(conv.get("messages", []))
+        })
+
+    total = await db.conversations.count_documents({
+        "bot_id": bot_id,
+        "visitor_id": visitor_id
+    })
+
+    return {"conversations": items, "total": total}
+
+
+@router.get("/{bot_id}/conversations/{session_id}")
+async def get_conversation(
+    bot_id: str,
+    session_id: str,
+    visitor_id: str = Query(..., description="Anonymous visitor ID")
+):
+    """Get full conversation with messages."""
+    db = get_mongodb()
+
+    conversation = await db.conversations.find_one({
+        "session_id": session_id,
+        "bot_id": bot_id,
+        "visitor_id": visitor_id
+    })
+
+    if not conversation:
+        raise HTTPException(status_code=404, detail="Conversation not found")
+
+    return {
+        "id": conversation["_id"],
+        "session_id": conversation["session_id"],
+        "title": conversation.get("title"),
+        "messages": conversation.get("messages", []),
+        "created_at": conversation["created_at"],
+        "updated_at": conversation["updated_at"]
+    }
+
+
+@router.post("/{bot_id}/conversations")
+async def create_conversation(
+    bot_id: str,
+    visitor_id: str = Query(..., description="Anonymous visitor ID")
+):
+    """Create new empty conversation (New Chat button)."""
+    db = get_mongodb()
+
+    bot = await db.chatbots.find_one({"_id": bot_id})
+    if not bot:
+        raise HTTPException(status_code=404, detail="Chatbot not found")
+
+    new_session_id = str(uuid.uuid4())
+
+    await db.conversations.insert_one({
+        "_id": str(uuid.uuid4()),
+        "session_id": new_session_id,
+        "bot_id": bot_id,
+        "tenant_id": bot["tenant_id"],
+        "visitor_id": visitor_id,
+        "title": None,
+        "messages": [],
+        "created_at": datetime.utcnow(),
+        "updated_at": datetime.utcnow()
+    })
+
+    return {"session_id": new_session_id}
+
+
+@router.patch("/{bot_id}/conversations/{session_id}")
+async def update_conversation(
+    bot_id: str,
+    session_id: str,
+    visitor_id: str = Query(...),
+    title: str = None
+):
+    """Update conversation (rename title)."""
+    db = get_mongodb()
+
+    result = await db.conversations.update_one(
+        {
+            "session_id": session_id,
+            "bot_id": bot_id,
+            "visitor_id": visitor_id
+        },
+        {"$set": {"title": title, "updated_at": datetime.utcnow()}}
+    )
+
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Conversation not found")
+
+    return {"success": True}
+
+
+@router.delete("/{bot_id}/conversations/{session_id}")
+async def delete_conversation(
+    bot_id: str,
+    session_id: str,
+    visitor_id: str = Query(...)
+):
+    """Delete conversation and associated data."""
+    db = get_mongodb()
+
+    result = await db.conversations.delete_one({
+        "session_id": session_id,
+        "bot_id": bot_id,
+        "visitor_id": visitor_id
+    })
+
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Conversation not found")
+
+    # Delete associated messages
+    await db.messages.delete_many({"session_id": session_id})
+
+    return {"success": True}

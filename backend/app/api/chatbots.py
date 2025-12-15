@@ -63,6 +63,7 @@ async def create_chatbot(
         "primary_color": chatbot_data.primary_color,
         "text_color": chatbot_data.text_color,
         "position": chatbot_data.position,
+        "is_personal": chatbot_data.is_personal or False,
         "created_at": datetime.utcnow(),
         "updated_at": datetime.utcnow()
     }
@@ -78,6 +79,7 @@ async def create_chatbot(
         primary_color=chatbot_data.primary_color,
         text_color=chatbot_data.text_color,
         position=chatbot_data.position,
+        is_personal=bot_doc["is_personal"],
         created_at=bot_doc["created_at"],
         updated_at=bot_doc["updated_at"]
     )
@@ -104,7 +106,8 @@ def build_chatbot_response(bot: dict, doc_count: int = 0, msg_count: int = 0) ->
         total_messages=msg_count,
         is_public=is_public,
         has_password=has_password,
-        share_link=share_link
+        share_link=share_link,
+        is_personal=bot.get("is_personal", False)
     )
 
 
@@ -429,7 +432,8 @@ async def get_shared_bot_config(bot_id: str):
         primary_color=bot.get("primary_color", "#3B82F6"),
         text_color=bot.get("text_color", "#FFFFFF"),
         position=bot.get("position", "bottom-right"),
-        requires_password=bool(bot.get("share_password_hash"))
+        requires_password=bool(bot.get("share_password_hash")),
+        is_personal=bot.get("is_personal", False)
     )
 
 

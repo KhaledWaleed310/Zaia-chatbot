@@ -30,7 +30,11 @@ OUTPUT_PRICE = 1.68 / 1_000_000
 def build_enhanced_system_prompt(
     base_prompt: str,
     context: str,
-    query_analysis: Dict[str, Any] = None
+    query_analysis: Dict[str, Any] = None,
+    # NEW parameters for context system
+    user_context: str = None,
+    user_profile: Dict[str, Any] = None,
+    stage_guidance: str = None
 ) -> str:
     """
     Build an enhanced system prompt with chain-of-thought instructions.
@@ -57,9 +61,26 @@ def build_enhanced_system_prompt(
 
     specific_instruction = intent_instructions.get(intent, intent_instructions["general"])
 
+    # Build user context section
+    user_section = ""
+    if user_context:
+        user_section = f"""
+## USER CONTEXT
+{user_context}
+"""
+
+    # Build stage guidance section
+    stage_section = ""
+    if stage_guidance:
+        stage_section = f"""
+## CONVERSATION STAGE GUIDANCE
+{stage_guidance}
+"""
+
     # Chain-of-thought prompt
     enhanced_prompt = f"""{base_prompt}
-
+{user_section}
+{stage_section}
 ## YOUR APPROACH
 
 You are Aiden, a world-class AI assistant. For every query:
@@ -105,7 +126,11 @@ def build_enhanced_messages(
     system_prompt: str,
     conversation_history: List[Dict] = None,
     query_analysis: Dict[str, Any] = None,
-    max_history: int = 10
+    max_history: int = 10,
+    # NEW parameters
+    user_context: str = None,
+    user_profile: Dict[str, Any] = None,
+    stage_guidance: str = None
 ) -> List[Dict[str, str]]:
     """
     Build optimized message list for LLM with chain-of-thought.
@@ -118,7 +143,10 @@ def build_enhanced_messages(
 
     # System message with context (cacheable)
     enhanced_system = build_enhanced_system_prompt(
-        system_prompt, context, query_analysis
+        system_prompt, context, query_analysis,
+        user_context=user_context,
+        user_profile=user_profile,
+        stage_guidance=stage_guidance
     )
     messages.append({"role": "system", "content": enhanced_system})
 
@@ -148,7 +176,11 @@ async def generate_enhanced_response(
     bot_id: str = None,
     session_id: str = None,
     temperature: float = 0.7,
-    max_tokens: int = 1024
+    max_tokens: int = 1024,
+    # NEW parameters for context system
+    user_context: str = None,
+    user_profile: Dict[str, Any] = None,
+    stage_guidance: str = None
 ) -> Dict[str, Any]:
     """
     Generate enhanced response with chain-of-thought and verification.
@@ -179,7 +211,10 @@ async def generate_enhanced_response(
         context=formatted_context,
         system_prompt=system_prompt,
         conversation_history=conversation_history,
-        query_analysis=query_analysis
+        query_analysis=query_analysis,
+        user_context=user_context,
+        user_profile=user_profile,
+        stage_guidance=stage_guidance
     )
 
     try:

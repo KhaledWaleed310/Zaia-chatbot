@@ -69,6 +69,7 @@ const ChatbotDetail = () => {
   const [leadFormEnabled, setLeadFormEnabled] = useState(false);
   const [handoffEnabled, setHandoffEnabled] = useState(false);
   const [multiLanguageEnabled, setMultiLanguageEnabled] = useState(false);
+  const [isPersonal, setIsPersonal] = useState(false);
   const [savingFeatures, setSavingFeatures] = useState(false);
 
   const [formData, setFormData] = useState({
@@ -130,6 +131,7 @@ const ChatbotDetail = () => {
       setLeadFormEnabled(leadConfigRes.data?.enabled || false);
       setHandoffEnabled(handoffConfigRes.data?.enabled || false);
       setMultiLanguageEnabled(langConfigRes.data?.enabled || false);
+      setIsPersonal(botRes.data.is_personal || false);
     } catch (error) {
       console.error('Failed to load chatbot:', error);
       navigate('/chatbots');
@@ -243,6 +245,18 @@ const ChatbotDetail = () => {
     }
   };
 
+  const handleTogglePersonalMode = async (enabled) => {
+    setSavingFeatures(true);
+    try {
+      await chatbots.update(id, { is_personal: enabled });
+      setIsPersonal(enabled);
+    } catch (error) {
+      console.error('Failed to update personal mode:', error);
+    } finally {
+      setSavingFeatures(false);
+    }
+  };
+
   const handleFileUpload = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -351,6 +365,20 @@ const ChatbotDetail = () => {
             <h1 className="text-xl sm:text-2xl font-bold text-gray-900 truncate">{bot?.name}</h1>
             <p className="text-sm sm:text-base text-gray-500 mt-1">Configure and manage your chatbot</p>
           </div>
+          <button
+            onClick={() => {
+              if (isPersonal) {
+                window.open(`/chat/${id}`, '_blank');
+              } else {
+                // For non-personal mode, navigate to test page
+                navigate(`/test-chatbot?botId=${id}`);
+              }
+            }}
+            className="flex items-center px-4 py-3 sm:py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors min-h-[44px] text-sm sm:text-base whitespace-nowrap"
+          >
+            <MessageSquare className="w-5 h-5 mr-2 flex-shrink-0" />
+            {isPersonal ? 'Open Chat' : 'Test Chatbot'}
+          </button>
         </div>
 
         {/* Tabs */}
@@ -369,25 +397,29 @@ const ChatbotDetail = () => {
                 {tab}
               </button>
             ))}
-            <button
-              onClick={() => navigate(`/chatbots/${id}/analytics`)}
-              className="py-3 sm:py-4 px-1 border-b-2 border-transparent font-medium text-sm sm:text-base whitespace-nowrap min-h-[44px] text-gray-500 hover:text-gray-700 flex items-center gap-1"
-            >
-              <BarChart3 className="w-4 h-4" />
-              Analytics
-            </button>
-            <button
-              onClick={() => navigate(`/chatbots/${id}/leads`)}
-              className="py-3 sm:py-4 px-1 border-b-2 border-transparent font-medium text-sm sm:text-base whitespace-nowrap min-h-[44px] text-gray-500 hover:text-gray-700 flex items-center gap-1"
-            >
-              Leads
-            </button>
-            <button
-              onClick={() => navigate(`/chatbots/${id}/handoff`)}
-              className="py-3 sm:py-4 px-1 border-b-2 border-transparent font-medium text-sm sm:text-base whitespace-nowrap min-h-[44px] text-gray-500 hover:text-gray-700 flex items-center gap-1"
-            >
-              Live Chat
-            </button>
+            {!isPersonal && (
+              <>
+                <button
+                  onClick={() => navigate(`/chatbots/${id}/analytics`)}
+                  className="py-3 sm:py-4 px-1 border-b-2 border-transparent font-medium text-sm sm:text-base whitespace-nowrap min-h-[44px] text-gray-500 hover:text-gray-700 flex items-center gap-1"
+                >
+                  <BarChart3 className="w-4 h-4" />
+                  Analytics
+                </button>
+                <button
+                  onClick={() => navigate(`/chatbots/${id}/leads`)}
+                  className="py-3 sm:py-4 px-1 border-b-2 border-transparent font-medium text-sm sm:text-base whitespace-nowrap min-h-[44px] text-gray-500 hover:text-gray-700 flex items-center gap-1"
+                >
+                  Leads
+                </button>
+                <button
+                  onClick={() => navigate(`/chatbots/${id}/handoff`)}
+                  className="py-3 sm:py-4 px-1 border-b-2 border-transparent font-medium text-sm sm:text-base whitespace-nowrap min-h-[44px] text-gray-500 hover:text-gray-700 flex items-center gap-1"
+                >
+                  Live Chat
+                </button>
+              </>
+            )}
           </nav>
         </div>
 
@@ -473,57 +505,61 @@ const ChatbotDetail = () => {
             <p className="text-sm text-gray-500 mb-6">Enable or disable features in your chat widget</p>
 
             <div className="space-y-4">
-              {/* Lead Capture Toggle */}
-              <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-blue-100 rounded-lg">
-                    <Users className="w-5 h-5 text-blue-600" />
+              {/* Lead Capture Toggle - Hidden in Personal Mode */}
+              {!isPersonal && (
+                <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-blue-100 rounded-lg">
+                      <Users className="w-5 h-5 text-blue-600" />
+                    </div>
+                    <div>
+                      <p className="font-medium text-gray-900">Lead Capture Form</p>
+                      <p className="text-sm text-gray-500">Collect visitor information</p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="font-medium text-gray-900">Lead Capture Form</p>
-                    <p className="text-sm text-gray-500">Collect visitor information</p>
-                  </div>
-                </div>
-                <button
-                  onClick={() => handleToggleLeadForm(!leadFormEnabled)}
-                  disabled={savingFeatures}
-                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors disabled:opacity-50 ${
-                    leadFormEnabled ? 'bg-blue-600' : 'bg-gray-300'
-                  }`}
-                >
-                  <span
-                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                      leadFormEnabled ? 'translate-x-6' : 'translate-x-1'
+                  <button
+                    onClick={() => handleToggleLeadForm(!leadFormEnabled)}
+                    disabled={savingFeatures}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors disabled:opacity-50 ${
+                      leadFormEnabled ? 'bg-blue-600' : 'bg-gray-300'
                     }`}
-                  />
-                </button>
-              </div>
+                  >
+                    <span
+                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                        leadFormEnabled ? 'translate-x-6' : 'translate-x-1'
+                      }`}
+                    />
+                  </button>
+                </div>
+              )}
 
-              {/* Human Handoff Toggle */}
-              <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-green-100 rounded-lg">
-                    <Phone className="w-5 h-5 text-green-600" />
+              {/* Human Handoff Toggle - Hidden in Personal Mode */}
+              {!isPersonal && (
+                <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-green-100 rounded-lg">
+                      <Phone className="w-5 h-5 text-green-600" />
+                    </div>
+                    <div>
+                      <p className="font-medium text-gray-900">Human Handoff</p>
+                      <p className="text-sm text-gray-500">Allow visitors to request live chat</p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="font-medium text-gray-900">Human Handoff</p>
-                    <p className="text-sm text-gray-500">Allow visitors to request live chat</p>
-                  </div>
-                </div>
-                <button
-                  onClick={() => handleToggleHandoff(!handoffEnabled)}
-                  disabled={savingFeatures}
-                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors disabled:opacity-50 ${
-                    handoffEnabled ? 'bg-blue-600' : 'bg-gray-300'
-                  }`}
-                >
-                  <span
-                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                      handoffEnabled ? 'translate-x-6' : 'translate-x-1'
+                  <button
+                    onClick={() => handleToggleHandoff(!handoffEnabled)}
+                    disabled={savingFeatures}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors disabled:opacity-50 ${
+                      handoffEnabled ? 'bg-blue-600' : 'bg-gray-300'
                     }`}
-                  />
-                </button>
-              </div>
+                  >
+                    <span
+                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                        handoffEnabled ? 'translate-x-6' : 'translate-x-1'
+                      }`}
+                    />
+                  </button>
+                </div>
+              )}
 
               {/* Multi-Language Toggle */}
               <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
@@ -550,11 +586,39 @@ const ChatbotDetail = () => {
                   />
                 </button>
               </div>
+
+              {/* Personal Mode Toggle */}
+              <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-purple-100 rounded-lg">
+                    <MessageSquare className="w-5 h-5 text-purple-600" />
+                  </div>
+                  <div>
+                    <p className="font-medium text-gray-900">Personal Mode</p>
+                    <p className="text-sm text-gray-500">ChatGPT-like experience with conversation history</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => handleTogglePersonalMode(!isPersonal)}
+                  disabled={savingFeatures}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors disabled:opacity-50 ${
+                    isPersonal ? 'bg-purple-600' : 'bg-gray-300'
+                  }`}
+                >
+                  <span
+                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform shadow-sm ${
+                      isPersonal ? 'translate-x-6' : 'translate-x-1'
+                    }`}
+                  />
+                </button>
+              </div>
             </div>
 
-            <p className="text-xs text-gray-400 mt-4">
-              Click the Leads or Live Chat tabs above for detailed configuration
-            </p>
+            {!isPersonal && (
+              <p className="text-xs text-gray-400 mt-4">
+                Click the Leads or Live Chat tabs above for detailed configuration
+              </p>
+            )}
           </div>
           </>
         )}

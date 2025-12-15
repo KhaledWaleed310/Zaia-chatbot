@@ -19,9 +19,14 @@ import {
   Bot,
   Sparkles,
   Minimize2,
-  Maximize2
+  Maximize2,
+  Menu,
+  PanelLeftClose,
+  PanelLeft
 } from 'lucide-react';
 import axios from 'axios';
+import { getOrCreateVisitorId } from '../utils/visitorId';
+import ConversationSidebar from '../components/ConversationSidebar';
 
 const API_BASE = '/api/v1';
 
@@ -97,6 +102,37 @@ const publicApi = {
   // Language (public endpoints)
   getLanguageConfig: (botId) => axios.get(`${API_BASE}/translation/chatbots/${botId}/public-config`).catch(() => ({ data: { enabled: false } })),
   getWidgetTranslations: (lang) => axios.get(`${API_BASE}/translation/widget/${lang}`).catch(() => ({ data: { translations: {} } })),
+
+  // Conversation Management (Personal Mode)
+  listConversations: (botId, visitorId) =>
+    axios.get(`${API_BASE}/chat/${botId}/conversations`, {
+      params: { visitor_id: visitorId }
+    }),
+
+  getConversation: (botId, sessionId, visitorId) =>
+    axios.get(`${API_BASE}/chat/${botId}/conversations/${sessionId}`, {
+      params: { visitor_id: visitorId }
+    }),
+
+  createConversation: (botId, visitorId) =>
+    axios.post(`${API_BASE}/chat/${botId}/conversations`, null, {
+      params: { visitor_id: visitorId }
+    }),
+
+  updateConversation: (botId, sessionId, visitorId, data) =>
+    axios.patch(`${API_BASE}/chat/${botId}/conversations/${sessionId}`, data, {
+      params: { visitor_id: visitorId }
+    }),
+
+  deleteConversation: (botId, sessionId, visitorId) =>
+    axios.delete(`${API_BASE}/chat/${botId}/conversations/${sessionId}`, {
+      params: { visitor_id: visitorId }
+    }),
+
+  getGreeting: (botId, visitorId) =>
+    axios.get(`${API_BASE}/greeting/${botId}`, {
+      params: { visitor_id: visitorId }
+    }),
 };
 
 const SharedChat = () => {
@@ -145,8 +181,20 @@ const SharedChat = () => {
   // Collapse state
   const [isCollapsed, setIsCollapsed] = useState(false);
 
+  // Visitor ID and conversation state (Personal Mode)
+  const [visitorId, setVisitorId] = useState(null);
+  const [conversations, setConversations] = useState([]);
+  const [showSidebar, setShowSidebar] = useState(true);
+  const [loadingConversations, setLoadingConversations] = useState(false);
+
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
+
+  // Initialize visitor ID on mount
+  useEffect(() => {
+    const vid = getOrCreateVisitorId();
+    setVisitorId(vid);
+  }, []);
 
   useEffect(() => {
     loadBotConfig();
@@ -193,6 +241,50 @@ const SharedChat = () => {
       }
     }
   }, [messageCount, leadConfig, leadSubmitted]);
+
+  // Load conversations for personal mode
+  useEffect(() => {
+    if (config?.is_personal && visitorId && botId) {
+      setShowSidebar(true);
+      loadConversations();
+    }
+  }, [config, visitorId, botId]);
+
+  // Fetch personalized greeting for personal mode
+  useEffect(() => {
+    const fetchGreeting = async () => {
+      if (config?.is_personal && visitorId && messages.length <= 1) {
+        try {
+          const response = await publicApi.getGreeting(botId, visitorId);
+
+          if (response.data.personalized) {
+            setMessages([{
+              role: 'assistant',
+              content: response.data.greeting
+            }]);
+          }
+        } catch (error) {
+          console.error('Failed to fetch greeting:', error);
+        }
+      }
+    };
+
+    fetchGreeting();
+  }, [config, visitorId, botId]);
+
+  const loadConversations = async () => {
+    if (!visitorId || !botId) return;
+
+    try {
+      setLoadingConversations(true);
+      const response = await publicApi.listConversations(botId, visitorId);
+      setConversations(response.data.conversations || []);
+    } catch (error) {
+      console.error('Failed to load conversations:', error);
+    } finally {
+      setLoadingConversations(false);
+    }
+  };
 
   const scrollToBottom = () => {
     // Use requestAnimationFrame for smoother scrolling
@@ -318,14 +410,17 @@ const SharedChat = () => {
       setSending(true);
 
       // Use streaming endpoint for faster perceived response
-      const response = await fetch(`${API_BASE}/chat/${botId}/message/stream`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          message: userMessage,
-          session_id: sessionId,
-        }),
-      });
+      const response = await fetch(
+        `${API_BASE}/chat/${botId}/message/stream?visitor_id=${visitorId || ''}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            message: userMessage,
+            session_id: sessionId,
+          }),
+        }
+      );
 
       if (!response.ok) throw new Error('Failed to send message');
 
@@ -400,6 +495,11 @@ const SharedChat = () => {
           };
           return updated;
         });
+
+        // After message sent successfully, reload conversations to update titles
+        if (config?.is_personal) {
+          loadConversations();
+        }
       }
 
     } catch (err) {
@@ -474,6 +574,88 @@ const SharedChat = () => {
       console.error('Lead submit error:', err);
     } finally {
       setLeadSubmitting(false);
+    }
+  };
+
+  // Create new conversation
+  const handleNewConversation = async () => {
+    try {
+      const response = await publicApi.createConversation(botId, visitorId);
+      const newSessionId = response.data.session_id;
+
+      // Reset chat state
+      setSessionId(newSessionId);
+      setMessages([{
+        role: 'assistant',
+        content: config?.welcome_message || 'Hello! How can I help you today?'
+      }]);
+      setMessageCount(0);
+
+      // Reload conversation list
+      await loadConversations();
+
+      return newSessionId;
+    } catch (error) {
+      console.error('Failed to create conversation:', error);
+      return null;
+    }
+  };
+
+  // Select/load existing conversation
+  const handleSelectConversation = async (selectedSessionId) => {
+    if (selectedSessionId === sessionId) return;
+
+    try {
+      const response = await publicApi.getConversation(botId, selectedSessionId, visitorId);
+
+      const conv = response.data;
+      setSessionId(selectedSessionId);
+
+      // Format messages for display
+      const formattedMessages = conv.messages.map(msg => ({
+        role: msg.role,
+        content: msg.content
+      }));
+
+      // Add welcome message at start if no messages
+      if (formattedMessages.length === 0) {
+        formattedMessages.push({
+          role: 'assistant',
+          content: config?.welcome_message || 'Hello! How can I help you today?'
+        });
+      }
+
+      setMessages(formattedMessages);
+      setMessageCount(formattedMessages.filter(m => m.role === 'user').length);
+    } catch (error) {
+      console.error('Failed to load conversation:', error);
+    }
+  };
+
+  // Delete conversation
+  const handleDeleteConversation = async (deleteSessionId) => {
+    try {
+      await publicApi.deleteConversation(botId, deleteSessionId, visitorId);
+
+      // If deleted current conversation, create new one
+      if (deleteSessionId === sessionId) {
+        await handleNewConversation();
+      } else {
+        await loadConversations();
+      }
+    } catch (error) {
+      console.error('Failed to delete conversation:', error);
+      throw error;
+    }
+  };
+
+  // Rename conversation
+  const handleRenameConversation = async (renameSessionId, newTitle) => {
+    try {
+      await publicApi.updateConversation(botId, renameSessionId, visitorId, { title: newTitle });
+      await loadConversations();
+    } catch (error) {
+      console.error('Failed to rename conversation:', error);
     }
   };
 
@@ -559,9 +741,27 @@ const SharedChat = () => {
 
   // Main chat interface
   return (
-    <div className="shared-chat-layout bg-gradient-to-br from-gray-50 via-gray-100 to-gray-50">
-      {/* Header - Fixed at top */}
-      <header
+    <div className="flex h-screen w-screen overflow-hidden bg-gradient-to-br from-gray-50 via-gray-100 to-gray-50">
+      {/* Sidebar for Personal Mode - Now properly layered */}
+      {config?.is_personal && visitorId && (
+        <ConversationSidebar
+          conversations={conversations}
+          currentSessionId={sessionId}
+          onSelectConversation={handleSelectConversation}
+          onNewConversation={handleNewConversation}
+          onDeleteConversation={handleDeleteConversation}
+          onRenameConversation={handleRenameConversation}
+          onClose={() => setShowSidebar(false)}
+          loading={loadingConversations}
+          primaryColor={config?.primary_color}
+          isOpen={showSidebar}
+        />
+      )}
+
+      {/* Main Chat Area */}
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden shared-chat-layout">
+        {/* Header - Fixed at top */}
+        <header
         className="py-4 sm:py-5 px-4 sm:px-6 shadow-lg relative overflow-hidden flex-shrink-0"
         style={{ backgroundColor: config?.primary_color || '#3B82F6' }}
       >
@@ -575,6 +775,21 @@ const SharedChat = () => {
 
         <div className="max-w-3xl mx-auto flex items-center justify-between relative z-10">
           <div className="flex items-center gap-3 sm:gap-4 min-w-0">
+            {/* Sidebar Toggle Button for Personal Mode */}
+            {config?.is_personal && (
+              <button
+                onClick={() => setShowSidebar(!showSidebar)}
+                className="p-2 sm:p-2.5 bg-white/15 hover:bg-white/25 backdrop-blur-sm rounded-xl transition-all border border-white/10"
+                title={showSidebar ? 'Hide chats' : 'Show chats'}
+              >
+                {showSidebar ? (
+                  <PanelLeftClose className="w-5 h-5" style={{ color: config?.text_color || '#FFFFFF' }} />
+                ) : (
+                  <PanelLeft className="w-5 h-5" style={{ color: config?.text_color || '#FFFFFF' }} />
+                )}
+              </button>
+            )}
+
             {/* Bot Avatar with glow effect */}
             <div className="relative">
               <div
@@ -655,6 +870,17 @@ const SharedChat = () => {
               >
                 <User className="w-4 h-4" />
                 <span className="hidden sm:inline">Contact Us</span>
+              </button>
+            )}
+
+            {/* Sidebar Toggle (Personal Mode on mobile) */}
+            {config?.is_personal && (
+              <button
+                onClick={() => setShowSidebar(!showSidebar)}
+                className="md:hidden flex items-center justify-center w-9 h-9 bg-white/15 hover:bg-white/25 backdrop-blur-sm rounded-xl text-white transition-all border border-white/10"
+                title="Toggle conversations"
+              >
+                <MessageSquare className="w-4 h-4" />
               </button>
             )}
 
@@ -939,6 +1165,7 @@ const SharedChat = () => {
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 };

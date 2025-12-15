@@ -372,6 +372,37 @@ export const share = {
       session_id: sessionId,
     });
   },
+
+  // Conversation Management (Personal Mode)
+  listConversations: (botId, visitorId) =>
+    axios.get(`${API_BASE}/chat/${botId}/conversations`, {
+      params: { visitor_id: visitorId }
+    }),
+
+  getConversation: (botId, sessionId, visitorId) =>
+    axios.get(`${API_BASE}/chat/${botId}/conversations/${sessionId}`, {
+      params: { visitor_id: visitorId }
+    }),
+
+  createConversation: (botId, visitorId) =>
+    axios.post(`${API_BASE}/chat/${botId}/conversations`, null, {
+      params: { visitor_id: visitorId }
+    }),
+
+  updateConversation: (botId, sessionId, visitorId, data) =>
+    axios.patch(`${API_BASE}/chat/${botId}/conversations/${sessionId}`, data, {
+      params: { visitor_id: visitorId }
+    }),
+
+  deleteConversation: (botId, sessionId, visitorId) =>
+    axios.delete(`${API_BASE}/chat/${botId}/conversations/${sessionId}`, {
+      params: { visitor_id: visitorId }
+    }),
+
+  getGreeting: (botId, visitorId) =>
+    axios.get(`${API_BASE}/greeting/${botId}`, {
+      params: { visitor_id: visitorId }
+    }),
 };
 
 export default api;
