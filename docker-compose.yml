@@ -65,6 +65,8 @@ services:
     volumes:
       - ./backend:/app
       - uploads_data:/app/uploads
+    env_file:
+      - .env
     environment:
       - MONGODB_URL=mongodb://zaia_admin:zaia_secure_pass_2024@mongodb:27017
       - QDRANT_HOST=qdrant
@@ -103,6 +105,8 @@ services:
     volumes:
       - ./backend:/app
       - uploads_data:/app/uploads
+    env_file:
+      - .env
     environment:
       - MONGODB_URL=mongodb://zaia_admin:zaia_secure_pass_2024@mongodb:27017
       - QDRANT_HOST=qdrant
