@@ -1,12 +1,19 @@
 from fastapi import APIRouter, HTTPException, status, Depends, Request
-from datetime import datetime
+from datetime import datetime, timedelta
 import uuid
+import secrets
+import hashlib
+import logging
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 from ..schemas.user import UserCreate, UserLogin, UserResponse, TokenResponse
+from ..schemas.password_reset import ForgotPasswordRequest, ResetPasswordRequest, MessageResponse
 from ..core.security import get_password_hash, verify_password, create_access_token, is_admin, get_current_user, ADMIN_EMAILS
 from ..core.database import get_mongodb
 from ..services.limits import get_user_usage
+from ..services.email import send_password_reset_email, send_password_changed_confirmation
+
+logger = logging.getLogger(__name__)
 
 limiter = Limiter(key_func=get_remote_address)
 
@@ -129,3 +136,120 @@ async def get_me(current_user: dict = Depends(get_current_user)):
         status=current_user.get("status", "active"),
         created_at=current_user["created_at"]
     )
+
+
+def generate_reset_token() -> tuple:
+    """Generate a secure reset token and its hash"""
+    token = secrets.token_urlsafe(32)  # 256-bit entropy
+    token_hash = hashlib.sha256(token.encode()).hexdigest()
+    return token, token_hash
+
+
+@router.post("/forgot-password", response_model=MessageResponse)
+@limiter.limit("3/minute")
+async def forgot_password(request: Request, data: ForgotPasswordRequest):
+    """
+    Request a password reset email.
+    Always returns success to prevent email enumeration.
+    """
+    db = get_mongodb()
+
+    # Look up user by email
+    user = await db.users.find_one({"email": data.email})
+
+    if user:
+        # Generate secure token
+        token, token_hash = generate_reset_token()
+
+        # Delete any existing unused tokens for this user
+        await db.password_reset_tokens.delete_many({
+            "user_id": user["_id"],
+            "used": False
+        })
+
+        # Store the hashed token
+        token_doc = {
+            "_id": str(uuid.uuid4()),
+            "user_id": user["_id"],
+            "token_hash": token_hash,
+            "created_at": datetime.utcnow(),
+            "expires_at": datetime.utcnow() + timedelta(hours=1),
+            "used": False
+        }
+        await db.password_reset_tokens.insert_one(token_doc)
+
+        # Send email with raw token
+        email_sent = await send_password_reset_email(user["email"], token)
+
+        if email_sent:
+            logger.info(f"Password reset email sent to {data.email}")
+        else:
+            logger.error(f"Failed to send password reset email to {data.email}")
+
+    # Always return success to prevent email enumeration
+    return MessageResponse(
+        message="If an account exists with this email, a password reset link has been sent."
+    )
+
+
+@router.post("/reset-password", response_model=MessageResponse)
+async def reset_password(data: ResetPasswordRequest):
+    """
+    Reset password using a valid reset token.
+    """
+    db = get_mongodb()
+
+    # Hash the received token
+    token_hash = hashlib.sha256(data.token.encode()).hexdigest()
+
+    # Look up the token
+    token_doc = await db.password_reset_tokens.find_one({
+        "token_hash": token_hash,
+        "used": False
+    })
+
+    if not token_doc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid or expired reset token"
+        )
+
+    # Check if token is expired
+    if datetime.utcnow() > token_doc["expires_at"]:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Reset token has expired"
+        )
+
+    # Get the user
+    user = await db.users.find_one({"_id": token_doc["user_id"]})
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid reset token"
+        )
+
+    # Update password
+    new_password_hash = get_password_hash(data.new_password)
+    await db.users.update_one(
+        {"_id": user["_id"]},
+        {
+            "$set": {
+                "password_hash": new_password_hash,
+                "password_changed_at": datetime.utcnow()
+            }
+        }
+    )
+
+    # Mark token as used
+    await db.password_reset_tokens.update_one(
+        {"_id": token_doc["_id"]},
+        {"$set": {"used": True}}
+    )
+
+    # Send confirmation email
+    await send_password_changed_confirmation(user["email"])
+
+    logger.info(f"Password reset successful for user {user['_id']}")
+
+    return MessageResponse(message="Password has been reset successfully.")

@@ -38,6 +38,9 @@ python-dotenv==1.0.0
 aiofiles==23.2.1
 psutil==5.9.8
 
+# Email
+resend==0.7.0
+
 # OAuth & Integrations
 google-auth==2.27.0
 google-auth-oauthlib==1.2.0

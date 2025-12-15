@@ -67,6 +67,11 @@ class Settings(BaseSettings):
     OAUTH_REDIRECT_BASE: str = "http://localhost:8000"
     ENCRYPTION_KEY: Optional[str] = None  # 32-byte base64 encoded key for Fernet
 
+    # Email (Resend)
+    RESEND_API_KEY: Optional[str] = None
+    EMAIL_FROM: str = "Aiden <noreply@aidenlink.cloud>"
+    FRONTEND_URL: str = "https://chatbot.zaiasystems.com"
+
     class Config:
         env_file = ".env"
 
