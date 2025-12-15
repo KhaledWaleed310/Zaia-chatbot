@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { MessageSquare, Building2, Mail, Lock, Users, Briefcase, Target, Globe, Megaphone } from 'lucide-react';
+import { MessageSquare, Building2, Mail, Lock, Users, Briefcase, Target, Globe, Megaphone, CheckCircle } from 'lucide-react';
 
 const COMPANY_SIZES = [
   { value: '1', label: 'Just me' },
@@ -79,6 +79,7 @@ const COUNTRIES = [
 
 const Register = () => {
   const [step, setStep] = useState(1);
+  const [registered, setRegistered] = useState(false);
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -130,13 +131,48 @@ const Register = () => {
         formData.country,
         formData.referral_source
       );
-      navigate('/dashboard');
+      setRegistered(true);
     } catch (err) {
       setError(err.response?.data?.detail || 'Registration failed');
     } finally {
       setLoading(false);
     }
   };
+
+  // Show success screen after registration
+  if (registered) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-600 to-blue-800 flex items-center justify-center py-8 sm:py-12 px-4 sm:px-6">
+        <div className="max-w-md w-full">
+          <div className="bg-white rounded-2xl shadow-xl p-6 sm:p-8">
+            <div className="text-center">
+              <div className="inline-flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 bg-green-100 rounded-2xl mb-4">
+                <CheckCircle className="w-7 h-7 sm:w-8 sm:h-8 text-green-600" />
+              </div>
+              <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Check your email</h2>
+              <p className="text-sm sm:text-base text-gray-500 mt-3">
+                We've sent a verification link to <strong>{formData.email}</strong>. Please click the link to verify your email address.
+              </p>
+              <div className="mt-6 p-4 bg-blue-50 rounded-lg">
+                <p className="text-sm text-blue-700">
+                  Didn't receive the email? Check your spam folder or{' '}
+                  <Link to="/login" className="font-medium underline">
+                    request a new verification link
+                  </Link>
+                </p>
+              </div>
+              <Link
+                to="/login"
+                className="inline-block mt-6 px-6 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors"
+              >
+                Go to Login
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-600 to-blue-800 flex items-center justify-center py-8 sm:py-12 px-4 sm:px-6">
@@ -332,7 +368,7 @@ const Register = () => {
                     setLoading(true);
                     try {
                       await register(formData.email, formData.password, formData.company_name);
-                      navigate('/dashboard');
+                      setRegistered(true);
                     } catch (err) {
                       setError(err.response?.data?.detail || 'Registration failed');
                       setLoading(false);

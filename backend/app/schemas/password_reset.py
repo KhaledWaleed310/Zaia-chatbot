@@ -1,5 +1,5 @@
 """
-Password Reset Schemas
+Password Reset and Email Verification Schemas
 """
 from pydantic import BaseModel, EmailStr, field_validator
 
@@ -7,6 +7,16 @@ from pydantic import BaseModel, EmailStr, field_validator
 class ForgotPasswordRequest(BaseModel):
     """Request schema for forgot password endpoint"""
     email: EmailStr
+
+
+class ResendVerificationRequest(BaseModel):
+    """Request schema for resending verification email"""
+    email: EmailStr
+
+
+class VerifyEmailRequest(BaseModel):
+    """Request schema for verifying email"""
+    token: str
 
 
 class ResetPasswordRequest(BaseModel):

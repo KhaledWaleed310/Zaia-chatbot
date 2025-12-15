@@ -1,13 +1,17 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { MessageSquare } from 'lucide-react';
+import { auth } from '../utils/api';
+import { MessageSquare, Mail, CheckCircle } from 'lucide-react';
 
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [needsVerification, setNeedsVerification] = useState(false);
+  const [resendLoading, setResendLoading] = useState(false);
+  const [resendSuccess, setResendSuccess] = useState(false);
 
   const { login } = useAuth();
   const navigate = useNavigate();
@@ -15,15 +19,37 @@ const Login = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    setNeedsVerification(false);
+    setResendSuccess(false);
     setLoading(true);
 
     try {
       await login(email, password);
       navigate('/dashboard');
     } catch (err) {
-      setError(err.response?.data?.detail || 'Login failed');
+      const status = err.response?.status;
+      const detail = err.response?.data?.detail || 'Login failed';
+
+      // Check if email is not verified (403)
+      if (status === 403 && detail.toLowerCase().includes('verify')) {
+        setNeedsVerification(true);
+      }
+      setError(detail);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleResendVerification = async () => {
+    setResendLoading(true);
+    setResendSuccess(false);
+    try {
+      await auth.resendVerification(email);
+      setResendSuccess(true);
+    } catch (err) {
+      setError(err.response?.data?.detail || 'Failed to resend verification email');
+    } finally {
+      setResendLoading(false);
     }
   };
 
@@ -42,6 +68,42 @@ const Login = () => {
           {error && (
             <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-xs sm:text-sm">
               {error}
+            </div>
+          )}
+
+          {needsVerification && !resendSuccess && (
+            <div className="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+              <div className="flex items-start gap-3">
+                <Mail className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" />
+                <div className="flex-1">
+                  <p className="text-sm text-yellow-800 font-medium">Email not verified</p>
+                  <p className="text-xs text-yellow-700 mt-1">
+                    Please check your inbox for the verification link.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={handleResendVerification}
+                    disabled={resendLoading || !email}
+                    className="mt-2 text-sm font-medium text-yellow-800 hover:text-yellow-900 underline disabled:opacity-50"
+                  >
+                    {resendLoading ? 'Sending...' : 'Resend verification email'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {resendSuccess && (
+            <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg">
+              <div className="flex items-start gap-3">
+                <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
+                <div className="flex-1">
+                  <p className="text-sm text-green-800 font-medium">Verification email sent!</p>
+                  <p className="text-xs text-green-700 mt-1">
+                    Please check your inbox and click the verification link.
+                  </p>
+                </div>
+              </div>
             </div>
           )}
 

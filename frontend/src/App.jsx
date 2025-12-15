@@ -6,6 +6,7 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
+import VerifyEmail from './pages/VerifyEmail';
 import Dashboard from './pages/Dashboard';
 import ChatbotList from './pages/ChatbotList';
 import ChatbotNew from './pages/ChatbotNew';
@@ -100,6 +101,14 @@ function AppRoutes() {
         element={
           <PublicRoute>
             <ResetPassword />
+          </PublicRoute>
+        }
+      />
+      <Route
+        path="/verify-email"
+        element={
+          <PublicRoute>
+            <VerifyEmail />
           </PublicRoute>
         }
       />

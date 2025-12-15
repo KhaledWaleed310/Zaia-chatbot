@@ -75,6 +75,17 @@ services:
       - REDIS_URL=redis://redis:6379/0
       - JWT_SECRET=zaia_jwt_secret_key_change_in_production_2024
       - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY}
+      - RESEND_API_KEY=${RESEND_API_KEY}
+      - EMAIL_FROM=${EMAIL_FROM:-Aiden <noreply@aidenlink.cloud>}
+      - FRONTEND_URL=${FRONTEND_URL:-https://chatbot.zaiasystems.com}
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
+      - NOTION_CLIENT_ID=${NOTION_CLIENT_ID}
+      - NOTION_CLIENT_SECRET=${NOTION_CLIENT_SECRET}
+      - SLACK_CLIENT_ID=${SLACK_CLIENT_ID}
+      - SLACK_CLIENT_SECRET=${SLACK_CLIENT_SECRET}
+      - HUBSPOT_CLIENT_ID=${HUBSPOT_CLIENT_ID}
+      - HUBSPOT_CLIENT_SECRET=${HUBSPOT_CLIENT_SECRET}
     depends_on:
       - mongodb
       - qdrant
@@ -101,6 +112,9 @@ services:
       - NEO4J_PASSWORD=zaia_neo4j_pass_2024
       - REDIS_URL=redis://redis:6379/0
       - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY}
+      - RESEND_API_KEY=${RESEND_API_KEY}
+      - EMAIL_FROM=${EMAIL_FROM:-Aiden <noreply@aidenlink.cloud>}
+      - FRONTEND_URL=${FRONTEND_URL:-https://chatbot.zaiasystems.com}
     depends_on:
       - mongodb
       - qdrant

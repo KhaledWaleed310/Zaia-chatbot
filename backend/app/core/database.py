@@ -65,6 +65,11 @@ async def connect_mongodb():
     await db.client[settings.MONGODB_DB_NAME].password_reset_tokens.create_index([("user_id", 1)])
     await db.client[settings.MONGODB_DB_NAME].password_reset_tokens.create_index([("expires_at", 1)], expireAfterSeconds=0)
 
+    # Email verification tokens
+    await db.client[settings.MONGODB_DB_NAME].email_verification_tokens.create_index([("token_hash", 1)], unique=True)
+    await db.client[settings.MONGODB_DB_NAME].email_verification_tokens.create_index([("user_id", 1)])
+    await db.client[settings.MONGODB_DB_NAME].email_verification_tokens.create_index([("expires_at", 1)], expireAfterSeconds=0)
+
     print("Connected to MongoDB")
 
 

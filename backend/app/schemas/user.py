@@ -70,6 +70,7 @@ class UserResponse(BaseModel):
     subscription_tier: str = "free"
     status: str = "active"
     created_at: datetime
+    email_verified: bool = True  # Default True for backward compatibility
 
 
 class TokenResponse(BaseModel):
