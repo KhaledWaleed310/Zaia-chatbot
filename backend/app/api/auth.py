@@ -35,13 +35,22 @@ async def register(request: Request, user_data: UserCreate):
             detail="Password must be at least 8 characters long"
         )
 
-    # Check if user exists
-    existing = await db.users.find_one({"email": user_data.email})
+    # Check if user exists (exclude soft-deleted users)
+    existing = await db.users.find_one({
+        "email": user_data.email,
+        "status": {"$ne": "deleted"}
+    })
     if existing:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Email already registered"
         )
+
+    # Remove any soft-deleted user with this email to allow re-registration
+    await db.users.delete_many({
+        "email": user_data.email,
+        "status": "deleted"
+    })
 
     # Create user
     user_id = str(uuid.uuid4())
