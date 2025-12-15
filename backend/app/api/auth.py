@@ -6,7 +6,7 @@ import hashlib
 import logging
 from slowapi import Limiter
 from slowapi.util import get_remote_address
-from ..schemas.user import UserCreate, UserLogin, UserResponse, TokenResponse
+from ..schemas.user import UserCreate, UserLogin, UserResponse, TokenResponse, RegisterResponse
 from ..schemas.password_reset import (
     ForgotPasswordRequest, ResetPasswordRequest, MessageResponse,
     ResendVerificationRequest, VerifyEmailRequest
@@ -23,7 +23,7 @@ limiter = Limiter(key_func=get_remote_address)
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
 
-@router.post("/register", response_model=TokenResponse)
+@router.post("/register", response_model=RegisterResponse)
 @limiter.limit("5/minute")
 async def register(request: Request, user_data: UserCreate):
     db = get_mongodb()
@@ -83,24 +83,13 @@ async def register(request: Request, user_data: UserCreate):
     # Send verification email
     await send_verification_email(user_data.email, verification_token)
 
-    # Generate auth token
-    token = create_access_token({"sub": user_id})
+    logger.info(f"User registered: {user_data.email}, verification email sent")
 
-    user_is_admin = user_data.email in ADMIN_EMAILS
-
-    return TokenResponse(
-        access_token=token,
-        user=UserResponse(
-            id=user_id,
-            email=user_data.email,
-            company_name=user_data.company_name,
-            role="admin" if user_is_admin else "user",
-            is_admin=user_is_admin,
-            subscription_tier="free",
-            status="active",
-            created_at=user_doc["created_at"],
-            email_verified=False
-        )
+    # Return response without access token - user must verify email first
+    return RegisterResponse(
+        message="Registration successful! Please check your email to verify your account.",
+        email=user_data.email,
+        requires_verification=True
     )
 
 

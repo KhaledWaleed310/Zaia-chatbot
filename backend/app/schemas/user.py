@@ -77,3 +77,9 @@ class TokenResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
     user: UserResponse
+
+
+class RegisterResponse(BaseModel):
+    message: str
+    email: str
+    requires_verification: bool = True

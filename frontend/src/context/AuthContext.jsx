@@ -69,13 +69,9 @@ export const AuthProvider = ({ children }) => {
         country,
         referral_source
       });
-      const { access_token, user } = response.data;
-
-      localStorage.setItem('token', access_token);
-      localStorage.setItem('user', JSON.stringify(user));
-      setUser(user);
-
-      return user;
+      // Don't auto-login - user must verify email first
+      // Just return the response data without storing token
+      return response.data;
     } catch (err) {
       const errorMessage = err.response?.data?.detail || err.message || 'Registration failed';
       setError(errorMessage);

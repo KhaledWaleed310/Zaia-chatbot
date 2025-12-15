@@ -115,14 +115,33 @@ async def send_password_reset_email(to_email: str, reset_token: str) -> bool:
     </html>
     """
 
+    # Plain text version for better deliverability
+    text_content = f"""Password Reset Request
+
+We received a request to reset the password for your Aiden account.
+
+Click the link below to create a new password:
+{reset_url}
+
+This link will expire in 1 hour.
+
+If you didn't request a password reset, you can safely ignore this email. Your password will remain unchanged.
+
+---
+Aiden - AI Customer Support Platform
+ZAIA Systems
+"""
+
     try:
         init_resend()
 
         response = resend.Emails.send({
             "from": settings.EMAIL_FROM,
             "to": to_email,
-            "subject": "Reset Your Aiden Password",
-            "html": html_content
+            "reply_to": "support@aidenlink.cloud",
+            "subject": "Password Reset - Aiden",
+            "html": html_content,
+            "text": text_content
         })
 
         logger.info(f"Password reset email sent to {to_email}, response: {response}")
@@ -197,14 +216,28 @@ async def send_password_changed_confirmation(to_email: str) -> bool:
     </html>
     """
 
+    # Plain text version
+    text_content = """Password Changed Successfully
+
+Your Aiden account password has been successfully changed.
+
+If you did not make this change, please contact our support team immediately or reset your password again.
+
+---
+Aiden - AI Customer Support Platform
+ZAIA Systems
+"""
+
     try:
         init_resend()
 
         response = resend.Emails.send({
             "from": settings.EMAIL_FROM,
             "to": to_email,
-            "subject": "Your Aiden Password Has Been Changed",
-            "html": html_content
+            "reply_to": "support@aidenlink.cloud",
+            "subject": "Password Changed - Aiden",
+            "html": html_content,
+            "text": text_content
         })
 
         logger.info(f"Password changed confirmation sent to {to_email}")
@@ -311,14 +344,32 @@ async def send_verification_email(to_email: str, verification_token: str) -> boo
     </html>
     """
 
+    # Plain text version for better deliverability
+    text_content = f"""Welcome to Aiden!
+
+Thanks for signing up! Please verify your email address by clicking the link below:
+
+{verify_url}
+
+This link will expire in 24 hours.
+
+If you didn't create an account with Aiden, you can safely ignore this email.
+
+---
+Aiden - AI Customer Support Platform
+ZAIA Systems
+"""
+
     try:
         init_resend()
 
         response = resend.Emails.send({
             "from": settings.EMAIL_FROM,
             "to": to_email,
-            "subject": "Verify Your Aiden Account",
-            "html": html_content
+            "reply_to": "support@aidenlink.cloud",
+            "subject": "Verify Your Email - Aiden",
+            "html": html_content,
+            "text": text_content
         })
 
         logger.info(f"Verification email sent to {to_email}, response: {response}")
