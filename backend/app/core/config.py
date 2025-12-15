@@ -1,16 +1,48 @@
 from pydantic_settings import BaseSettings
 from typing import Optional
+from pydantic import field_validator, ValidationError
 
 
 class Settings(BaseSettings):
     # App
     APP_NAME: str = "ZAIA Chatbot"
     DEBUG: bool = False
+    ENVIRONMENT: str = "development"  # development, staging, production
 
     # JWT
     JWT_SECRET: str = "zaia_jwt_secret_key_change_in_production_2024"
     JWT_ALGORITHM: str = "HS256"
     JWT_EXPIRATION_HOURS: int = 24
+
+    @field_validator("JWT_SECRET")
+    @classmethod
+    def validate_jwt_secret(cls, v: str, info) -> str:
+        """Validate JWT_SECRET security requirements"""
+        # Get ENVIRONMENT from the values being validated
+        environment = info.data.get("ENVIRONMENT", "development")
+
+        # In production, reject default/insecure secrets
+        if environment == "production":
+            default_secrets = [
+                "zaia_jwt_secret_key_change_in_production_2024",
+                "your-secret-key",
+                "secret",
+                "changeme"
+            ]
+            if v in default_secrets:
+                raise ValueError(
+                    "JWT_SECRET cannot use default value in production environment. "
+                    "Set a secure random secret in environment variables."
+                )
+
+            # Require minimum length in production
+            if len(v) < 32:
+                raise ValueError(
+                    "JWT_SECRET must be at least 32 characters in production environment. "
+                    f"Current length: {len(v)}"
+                )
+
+        return v
 
     # MongoDB
     MONGODB_URL: str = "mongodb://zaia_admin:zaia_secure_pass_2024@localhost:27017"

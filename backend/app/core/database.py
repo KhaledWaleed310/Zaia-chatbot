@@ -156,12 +156,54 @@ async def ensure_context_indexes():
         logger.error(f"Failed to create context indexes: {e}")
 
 
+async def ensure_audit_indexes():
+    """Create indexes for audit_logs collection."""
+    db_instance = get_mongodb()
+
+    try:
+        # Primary timestamp index for chronological queries
+        await db_instance.audit_logs.create_index([("timestamp", -1)])
+
+        # Event type + timestamp for filtering by event type
+        await db_instance.audit_logs.create_index([("event_type", 1), ("timestamp", -1)])
+
+        # User activity tracking
+        await db_instance.audit_logs.create_index([("user_id", 1), ("timestamp", -1)])
+
+        # Severity-based queries for alerts and monitoring
+        await db_instance.audit_logs.create_index([("severity", 1), ("timestamp", -1)])
+
+        # Tenant isolation for multi-tenant queries
+        await db_instance.audit_logs.create_index([("tenant_id", 1), ("timestamp", -1)])
+
+        # Bot-specific audit trails
+        await db_instance.audit_logs.create_index([("bot_id", 1), ("timestamp", -1)])
+
+        # Resource tracking
+        await db_instance.audit_logs.create_index([("resource_type", 1), ("resource_id", 1), ("timestamp", -1)])
+
+        # Action result filtering (success/failure)
+        await db_instance.audit_logs.create_index([("action_result", 1), ("timestamp", -1)])
+
+        # TTL index for automatic cleanup after 365 days (31536000 seconds)
+        # This will automatically delete audit logs older than 1 year
+        await db_instance.audit_logs.create_index(
+            [("timestamp", 1)],
+            expireAfterSeconds=31536000
+        )
+
+        logger.info("Audit log indexes created")
+    except Exception as e:
+        logger.error(f"Failed to create audit indexes: {e}")
+
+
 async def connect_all():
     await connect_mongodb()
     await connect_qdrant()
     await connect_neo4j()
     await connect_redis()
     await ensure_context_indexes()
+    await ensure_audit_indexes()
 
 
 async def close_all():

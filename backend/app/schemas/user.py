@@ -54,6 +54,9 @@ class UserCreate(BaseModel):
     job_title: Optional[str] = None
     country: Optional[str] = None
     referral_source: Optional[str] = None  # How did you hear about us?
+    # GDPR consent fields
+    privacy_consent: Optional[bool] = False
+    marketing_consent: Optional[bool] = False
 
 
 class UserLogin(BaseModel):

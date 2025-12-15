@@ -67,7 +67,7 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const register = async (email, password, company_name, company_size, industry, use_case, country, referral_source) => {
+  const register = async (email, password, company_name, company_size, industry, use_case, country, referral_source, privacy_consent, marketing_consent) => {
     try {
       setError(null);
       const response = await auth.register({
@@ -78,7 +78,9 @@ export const AuthProvider = ({ children }) => {
         industry,
         use_case,
         country,
-        referral_source
+        referral_source,
+        privacy_consent,
+        marketing_consent
       });
       // Don't auto-login - user must verify email first
       // Just return the response data without storing token

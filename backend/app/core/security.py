@@ -79,6 +79,13 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
             detail="Account is suspended"
         )
 
+    # Check if user's email is verified (default to True for backwards compatibility)
+    if not user.get("email_verified", True):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Please verify your email address to access this resource"
+        )
+
     # Add tenant_id (same as user id for single-tenant users)
     user["tenant_id"] = user.get("tenant_id", user["_id"])
     user["id"] = user["_id"]

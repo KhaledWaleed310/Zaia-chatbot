@@ -27,7 +27,22 @@ api.interceptors.response.use(
     if (error.response?.status === 401) {
       localStorage.removeItem('token');
       localStorage.removeItem('user');
-      window.location.href = '/login';
+
+      // Skip redirect if already on login page
+      const isOnLoginPage = window.location.pathname === '/login';
+
+      // Skip redirect for public auth endpoints (they handle their own errors)
+      const publicAuthEndpoints = ['/auth/login', '/auth/register', '/auth/forgot-password',
+                                   '/auth/reset-password', '/auth/verify-email', '/auth/resend-verification'];
+      const isPublicAuthEndpoint = publicAuthEndpoints.some(endpoint =>
+        error.config?.url?.includes(endpoint)
+      );
+
+      // Only redirect if not already on login page and not a public auth endpoint
+      if (!isOnLoginPage && !isPublicAuthEndpoint) {
+        window.location.href = '/login';
+      }
+
       return Promise.reject(error);
     }
 
@@ -403,6 +418,21 @@ export const share = {
     axios.get(`${API_BASE}/greeting/${botId}`, {
       params: { visitor_id: visitorId }
     }),
+};
+
+// GDPR API
+export const gdpr = {
+  // Export user data
+  exportData: () => api.get('/gdpr/export'),
+
+  // Request account deletion (soft delete with 30-day grace period)
+  requestDeletion: () => api.post('/gdpr/delete-request'),
+
+  // Delete account immediately (hard delete)
+  deleteImmediately: () => api.delete('/gdpr/delete-immediate'),
+
+  // Update marketing consent
+  updateConsent: (marketingConsent) => api.patch('/gdpr/consent', { marketing_consent: marketingConsent }),
 };
 
 export default api;

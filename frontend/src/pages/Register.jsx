@@ -89,6 +89,8 @@ const Register = () => {
     use_case: '',
     country: '',
     referral_source: '',
+    privacy_consent: false,
+    marketing_consent: false,
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -112,6 +114,10 @@ const Register = () => {
         setError('Password must be at least 6 characters');
         return;
       }
+      if (!formData.privacy_consent) {
+        setError('You must agree to the Privacy Policy to continue');
+        return;
+      }
       setError('');
       setStep(2);
       return;
@@ -129,7 +135,9 @@ const Register = () => {
         formData.industry,
         formData.use_case,
         formData.country,
-        formData.referral_source
+        formData.referral_source,
+        formData.privacy_consent,
+        formData.marketing_consent
       );
       setRegistered(true);
     } catch (err) {
@@ -251,6 +259,38 @@ const Register = () => {
                   />
                 </div>
 
+                {/* Privacy Consent */}
+                <div className="space-y-3">
+                  <label className="flex items-start gap-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={formData.privacy_consent}
+                      onChange={(e) => handleChange('privacy_consent', e.target.checked)}
+                      className="mt-1 w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-2 focus:ring-blue-500"
+                      required
+                    />
+                    <span className="text-sm text-gray-700">
+                      I agree to the{' '}
+                      <Link to="/privacy" target="_blank" className="text-blue-600 hover:underline font-medium">
+                        Privacy Policy
+                      </Link>{' '}
+                      and consent to the processing of my personal data *
+                    </span>
+                  </label>
+
+                  <label className="flex items-start gap-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={formData.marketing_consent}
+                      onChange={(e) => handleChange('marketing_consent', e.target.checked)}
+                      className="mt-1 w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-2 focus:ring-blue-500"
+                    />
+                    <span className="text-sm text-gray-700">
+                      I agree to receive marketing emails and product updates (optional)
+                    </span>
+                  </label>
+                </div>
+
                 <button
                   type="submit"
                   className="w-full py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors min-h-[44px] text-sm sm:text-base"
@@ -367,7 +407,18 @@ const Register = () => {
                   onClick={async () => {
                     setLoading(true);
                     try {
-                      await register(formData.email, formData.password, formData.company_name);
+                      await register(
+                        formData.email,
+                        formData.password,
+                        formData.company_name,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        formData.privacy_consent,
+                        formData.marketing_consent
+                      );
                       setRegistered(true);
                     } catch (err) {
                       setError(err.response?.data?.detail || 'Registration failed');

@@ -69,7 +69,13 @@ async def register(request: Request, user_data: UserCreate):
         "subscription_tier": "free",
         "status": "active",
         "email_verified": False,
-        "created_at": datetime.utcnow()
+        "created_at": datetime.utcnow(),
+        # GDPR consent fields
+        "privacy_consent": getattr(user_data, "privacy_consent", False),
+        "privacy_consent_timestamp": datetime.utcnow() if getattr(user_data, "privacy_consent", False) else None,
+        "marketing_consent": getattr(user_data, "marketing_consent", False),
+        "marketing_consent_timestamp": datetime.utcnow() if getattr(user_data, "marketing_consent", False) else None,
+        "consent_version": "1.0"
     }
 
     await db.users.insert_one(user_doc)
@@ -120,18 +126,34 @@ async def login(request: Request, credentials: UserLogin):
             detail="Invalid email or password"
         )
 
-    # Update last login
-    await db.users.update_one(
-        {"_id": user["_id"]},
-        {"$set": {"last_login": datetime.utcnow()}}
-    )
-
     # Check if email is verified
     if not user.get("email_verified", True):  # Default True for existing users
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Please verify your email address before logging in. Check your inbox for the verification link."
         )
+
+    # Update last login
+    await db.users.update_one(
+        {"_id": user["_id"]},
+        {"$set": {"last_login": datetime.utcnow()}}
+    )
+
+    # Audit log for successful login
+    try:
+        audit_log = {
+            "_id": str(uuid.uuid4()),
+            "user_id": user["_id"],
+            "email": user["email"],
+            "event_type": "login",
+            "timestamp": datetime.utcnow(),
+            "ip_address": request.client.host if request.client else "unknown",
+            "user_agent": request.headers.get("user-agent", "unknown"),
+            "status": "success"
+        }
+        await db.audit_logs.insert_one(audit_log)
+    except Exception as e:
+        logger.error(f"Failed to create audit log for login: {str(e)}")
 
     token = create_access_token({"sub": user["_id"]})
     user_is_admin = is_admin(user)

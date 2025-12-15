@@ -19,6 +19,10 @@ import Settings from './pages/Settings';
 import Landing from './pages/Landing';
 import TestChatbot from './pages/TestChatbot';
 import SharedChat from './pages/SharedChat';
+import PrivacyPolicy from './pages/PrivacyPolicy';
+
+// Components
+import CookieConsent from './components/CookieConsent';
 
 // Admin Pages
 import AdminDashboard from './pages/AdminDashboard';
@@ -71,6 +75,7 @@ function AppRoutes() {
     <Routes>
       {/* Public Routes */}
       <Route path="/" element={<Landing />} />
+      <Route path="/privacy" element={<PrivacyPolicy />} />
       <Route path="/chat/:botId" element={<SharedChat />} />
       <Route
         path="/login"
@@ -271,6 +276,7 @@ function App() {
   return (
     <AuthProvider>
       <AppRoutes />
+      <CookieConsent />
     </AuthProvider>
   );
 }

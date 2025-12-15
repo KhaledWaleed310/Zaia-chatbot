@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Response, Query
+from fastapi import APIRouter, HTTPException, Response, Query, Depends
 from fastapi.responses import StreamingResponse
 from typing import Optional
 from datetime import datetime
@@ -7,6 +7,7 @@ import json
 import logging
 from ..schemas.chat import ChatMessage, ChatResponse, AnalyticsResponse
 from ..core.database import get_mongodb
+from ..core.security import get_current_user
 from ..services.retrieval import triple_retrieval
 from ..services.llm import generate_response, generate_response_stream
 from ..services.limits import check_message_limit
@@ -35,6 +36,24 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/chat", tags=["Chat"])
 
 
+def validate_visitor_id(visitor_id: Optional[str]) -> None:
+    """
+    Validate visitor_id is a valid UUID format.
+    Raises HTTPException if invalid.
+    """
+    if visitor_id is None:
+        return  # None is acceptable for non-personal mode
+
+    try:
+        # Attempt to parse as UUID
+        uuid.UUID(visitor_id)
+    except (ValueError, AttributeError):
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid visitor_id format. Must be a valid UUID."
+        )
+
+
 @router.post("/{bot_id}/message", response_model=ChatResponse)
 async def send_message(
     bot_id: str,
@@ -54,6 +73,9 @@ async def send_message(
     - Chain-of-thought prompting
     """
     try:
+        # Validate visitor_id format
+        validate_visitor_id(visitor_id)
+
         db = get_mongodb()
 
         # Validate bot exists
@@ -326,6 +348,9 @@ async def send_message_stream(
 
     Uses enhanced RAG pipeline by default for better retrieval quality.
     """
+    # Validate visitor_id format
+    validate_visitor_id(visitor_id)
+
     db = get_mongodb()
 
     # Get chatbot
@@ -553,9 +578,19 @@ async def get_bot_config(bot_id: str):
 
 
 @router.get("/{bot_id}/analytics", response_model=AnalyticsResponse)
-async def get_analytics(bot_id: str, tenant_id: str):
-    """Get chatbot analytics. Requires tenant_id for auth."""
+async def get_analytics(
+    bot_id: str,
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Get chatbot analytics. Requires authentication.
+
+    SECURITY: Uses tenant_id from authenticated user to ensure tenant isolation.
+    """
     db = get_mongodb()
+
+    # Get tenant_id from authenticated user (not from query parameter)
+    tenant_id = current_user["tenant_id"]
 
     # Verify ownership
     bot = await db.chatbots.find_one({
@@ -616,6 +651,9 @@ async def list_conversations(
     offset: int = Query(0)
 ):
     """List conversations for a visitor (Personal Mode sidebar)."""
+    # Validate visitor_id format
+    validate_visitor_id(visitor_id)
+
     db = get_mongodb()
 
     # Validate bot exists and is personal mode
@@ -660,6 +698,9 @@ async def get_conversation(
     visitor_id: str = Query(..., description="Anonymous visitor ID")
 ):
     """Get full conversation with messages."""
+    # Validate visitor_id format
+    validate_visitor_id(visitor_id)
+
     db = get_mongodb()
 
     conversation = await db.conversations.find_one({
@@ -687,6 +728,9 @@ async def create_conversation(
     visitor_id: str = Query(..., description="Anonymous visitor ID")
 ):
     """Create new empty conversation (New Chat button)."""
+    # Validate visitor_id format
+    validate_visitor_id(visitor_id)
+
     db = get_mongodb()
 
     bot = await db.chatbots.find_one({"_id": bot_id})
@@ -718,6 +762,9 @@ async def update_conversation(
     title: str = None
 ):
     """Update conversation (rename title)."""
+    # Validate visitor_id format
+    validate_visitor_id(visitor_id)
+
     db = get_mongodb()
 
     result = await db.conversations.update_one(
@@ -742,6 +789,9 @@ async def delete_conversation(
     visitor_id: str = Query(...)
 ):
     """Delete conversation and associated data."""
+    # Validate visitor_id format
+    validate_visitor_id(visitor_id)
+
     db = get_mongodb()
 
     result = await db.conversations.delete_one({

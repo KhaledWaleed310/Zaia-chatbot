@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import Layout from '../components/Layout';
 import { useAuth } from '../context/AuthContext';
-import { User, Mail, Building, Crown, Zap, Check, Lock, MessageSquare, FileText, Bot, Key, Copy, Eye, EyeOff, Trash2, Plus, Loader2 } from 'lucide-react';
-import { apiKeys } from '../utils/api';
+import { User, Mail, Building, Crown, Zap, Check, Lock, MessageSquare, FileText, Bot, Key, Copy, Eye, EyeOff, Trash2, Plus, Loader2, Download, AlertTriangle } from 'lucide-react';
+import { apiKeys, gdpr } from '../utils/api';
 
 const Settings = () => {
   const { user, refreshUser } = useAuth();
@@ -28,6 +28,12 @@ const Settings = () => {
   const [createdKey, setCreatedKey] = useState(null);
   const [visibleKeys, setVisibleKeys] = useState({});
   const [creating, setCreating] = useState(false);
+
+  // GDPR state
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState('');
+  const [exportingData, setExportingData] = useState(false);
+  const [deletingAccount, setDeletingAccount] = useState(false);
 
   // Get the user's subscription tier
   const subscriptionTier = user?.subscription_tier || 'free';
@@ -143,6 +149,51 @@ const Settings = () => {
     if (percentage >= 100) return 'bg-red-500';
     if (percentage >= 80) return 'bg-yellow-500';
     return 'bg-green-500';
+  };
+
+  // GDPR Functions
+  const handleExportData = async () => {
+    try {
+      setExportingData(true);
+      const response = await gdpr.exportData();
+
+      // Create a blob and download it
+      const blob = new Blob([JSON.stringify(response.data, null, 2)], { type: 'application/json' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `zaia-data-export-${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (err) {
+      console.error('Failed to export data:', err);
+      alert('Failed to export data. Please try again.');
+    } finally {
+      setExportingData(false);
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    if (deleteConfirmText !== 'DELETE') {
+      alert('Please type DELETE to confirm account deletion');
+      return;
+    }
+
+    try {
+      setDeletingAccount(true);
+      await gdpr.deleteImmediately();
+
+      // Log out and redirect
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      window.location.href = '/';
+    } catch (err) {
+      console.error('Failed to delete account:', err);
+      alert('Failed to delete account. Please try again or contact support.');
+      setDeletingAccount(false);
+    }
   };
 
   return (
@@ -570,6 +621,59 @@ const Settings = () => {
           </div>
         )}
 
+        {/* Data & Privacy */}
+        <div className="bg-white rounded-xl shadow-sm p-6">
+          <h2 className="text-lg font-semibold text-gray-900 mb-6">Data & Privacy</h2>
+
+          <div className="space-y-4">
+            {/* Export Data */}
+            <div className="flex items-center justify-between py-4 border-b">
+              <div className="flex-1">
+                <h3 className="font-medium text-gray-900 mb-1">Export Your Data</h3>
+                <p className="text-sm text-gray-500">
+                  Download a copy of all your data in JSON format
+                </p>
+              </div>
+              <button
+                onClick={handleExportData}
+                disabled={exportingData}
+                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 text-sm font-medium"
+              >
+                {exportingData ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Exporting...
+                  </>
+                ) : (
+                  <>
+                    <Download className="w-4 h-4" />
+                    Export Data
+                  </>
+                )}
+              </button>
+            </div>
+
+            {/* Delete Account */}
+            <div className="pt-4">
+              <div className="mb-4">
+                <h3 className="font-medium text-gray-900 mb-1 flex items-center gap-2">
+                  <AlertTriangle className="w-5 h-5 text-red-500" />
+                  Delete Account
+                </h3>
+                <p className="text-sm text-gray-500">
+                  Permanently delete your account and all associated data. This action cannot be undone.
+                </p>
+              </div>
+              <button
+                onClick={() => setShowDeleteModal(true)}
+                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm font-medium"
+              >
+                Delete Account
+              </button>
+            </div>
+          </div>
+        </div>
+
         {/* Account Info */}
         <div className="bg-white rounded-xl shadow-sm p-6">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Account</h2>
@@ -590,6 +694,75 @@ const Settings = () => {
             </span>
           </div>
         </div>
+
+        {/* Delete Account Modal */}
+        {showDeleteModal && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-2xl max-w-md w-full p-6">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center">
+                  <AlertTriangle className="w-6 h-6 text-red-600" />
+                </div>
+                <h3 className="text-lg font-semibold text-gray-900">Delete Account</h3>
+              </div>
+
+              <div className="mb-6">
+                <p className="text-sm text-gray-700 mb-4">
+                  This will permanently delete your account and all associated data including:
+                </p>
+                <ul className="text-sm text-gray-600 space-y-1 list-disc list-inside mb-4">
+                  <li>All chatbots and their configurations</li>
+                  <li>All uploaded documents and training data</li>
+                  <li>All conversation history</li>
+                  <li>All analytics and leads</li>
+                </ul>
+                <p className="text-sm font-semibold text-red-600 mb-4">
+                  This action cannot be undone!
+                </p>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Type <span className="font-mono font-bold">DELETE</span> to confirm:
+                  </label>
+                  <input
+                    type="text"
+                    value={deleteConfirmText}
+                    onChange={(e) => setDeleteConfirmText(e.target.value)}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 font-mono"
+                    placeholder="DELETE"
+                  />
+                </div>
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={() => {
+                    setShowDeleteModal(false);
+                    setDeleteConfirmText('');
+                  }}
+                  className="flex-1 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+                  disabled={deletingAccount}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleDeleteAccount}
+                  disabled={deletingAccount || deleteConfirmText !== 'DELETE'}
+                  className="flex-1 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 flex items-center justify-center gap-2"
+                >
+                  {deletingAccount ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Deleting...
+                    </>
+                  ) : (
+                    'Delete Account'
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </Layout>
   );
