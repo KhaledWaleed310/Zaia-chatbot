@@ -9,21 +9,26 @@ export const AuthProvider = ({ children }) => {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    const savedUser = localStorage.getItem('user');
+    const initAuth = async () => {
+      const token = localStorage.getItem('token');
+      const savedUser = localStorage.getItem('user');
 
-    if (token && savedUser) {
-      setUser(JSON.parse(savedUser));
-      // Refresh user data in background to get latest subscription info
-      refreshUser();
-    }
-    setLoading(false);
+      if (token && savedUser) {
+        // Temporarily set user while validating
+        setUser(JSON.parse(savedUser));
+        // Validate token with backend - will clear user if invalid
+        await refreshUser();
+      }
+      setLoading(false);
+    };
+
+    initAuth();
   }, []);
 
   const refreshUser = async () => {
     try {
       const token = localStorage.getItem('token');
-      if (!token) return;
+      if (!token) return null;
 
       const response = await auth.me();
       const updatedUser = response.data;
@@ -32,8 +37,14 @@ export const AuthProvider = ({ children }) => {
       setUser(updatedUser);
       return updatedUser;
     } catch (err) {
-      // Token might be expired, don't logout automatically
-      console.log('Failed to refresh user data');
+      // If user not found or token invalid, log them out
+      const status = err.response?.status;
+      if (status === 401 || status === 403) {
+        console.log('User session invalid, logging out');
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        setUser(null);
+      }
       return null;
     }
   };
