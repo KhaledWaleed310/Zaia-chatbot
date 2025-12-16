@@ -1,5 +1,6 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { Toaster } from 'sonner';
 
 // Pages
 import Login from './pages/Login';
@@ -11,6 +12,7 @@ import Dashboard from './pages/Dashboard';
 import ChatbotList from './pages/ChatbotList';
 import ChatbotNew from './pages/ChatbotNew';
 import ChatbotDetail from './pages/ChatbotDetail';
+import ChatbotSetup from './pages/ChatbotSetup';
 import ChatbotAnalytics from './pages/ChatbotAnalytics';
 import ChatbotLeads from './pages/ChatbotLeads';
 import ChatbotHandoff from './pages/ChatbotHandoff';
@@ -153,6 +155,14 @@ function AppRoutes() {
         }
       />
       <Route
+        path="/chatbots/:id/setup"
+        element={
+          <ProtectedRoute>
+            <ChatbotSetup />
+          </ProtectedRoute>
+        }
+      />
+      <Route
         path="/chatbots/:id/analytics"
         element={
           <ProtectedRoute>
@@ -286,6 +296,7 @@ function App() {
     <AuthProvider>
       <AppRoutes />
       <CookieConsent />
+      <Toaster position="bottom-right" richColors closeButton />
     </AuthProvider>
   );
 }

@@ -1,29 +1,43 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import Layout from '../components/Layout';
 import { useAuth } from '../context/AuthContext';
 import { admin } from '../utils/api';
+import { toast } from 'sonner';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Switch } from '@/components/ui/switch';
+import { LoadingState } from '@/components/shared/LoadingState';
 import {
   Settings,
   Save,
   RefreshCw,
-  Loader2,
-  AlertCircle,
-  CheckCircle,
-  Mail,
-  Shield,
-  Database,
-  MessageSquare,
-  FileText,
   Globe,
-  Key,
-  Bell,
+  Shield,
   Zap,
+  MessageSquare,
+  Bell,
+  AlertCircle,
 } from 'lucide-react';
+
+const SETTINGS_TABS = [
+  { id: 'general', label: 'General', icon: Globe },
+  { id: 'registration', label: 'Registration', icon: Shield },
+  { id: 'subscriptions', label: 'Subscriptions', icon: Zap },
+  { id: 'ai', label: 'AI Config', icon: MessageSquare },
+  { id: 'maintenance', label: 'Maintenance', icon: Bell },
+];
 
 const AdminSettings = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const activeTab = searchParams.get('tab') || 'general';
+
   const [settings, setSettings] = useState({
     // General
     app_name: 'Aiden',
@@ -64,8 +78,6 @@ const AdminSettings = () => {
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
 
   useEffect(() => {
     if (user && !user.is_admin) {
@@ -83,7 +95,6 @@ const AdminSettings = () => {
         setSettings((prev) => ({ ...prev, ...res.data }));
       }
     } catch (err) {
-      // Settings may not exist yet, use defaults
       console.log('Using default settings');
     } finally {
       setLoading(false);
@@ -93,13 +104,10 @@ const AdminSettings = () => {
   const handleSave = async () => {
     try {
       setSaving(true);
-      setError('');
-      setSuccess('');
       await admin.updateSettings(settings);
-      setSuccess('Settings saved successfully!');
-      setTimeout(() => setSuccess(''), 3000);
+      toast.success('Settings saved successfully!');
     } catch (err) {
-      setError(err.response?.data?.detail || 'Failed to save settings');
+      toast.error(err.response?.data?.detail || 'Failed to save settings');
     } finally {
       setSaving(false);
     }
@@ -109,377 +117,384 @@ const AdminSettings = () => {
     setSettings((prev) => ({ ...prev, [key]: value }));
   };
 
+  const handleTabChange = (value) => {
+    setSearchParams({ tab: value });
+  };
+
   if (loading) {
     return (
       <Layout>
-        <div className="flex items-center justify-center h-64">
-          <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
-        </div>
+        <LoadingState variant="section" text="Loading settings..." />
       </Layout>
     );
   }
 
   return (
-    <Layout>
-      <div className="space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-              <Settings className="w-7 h-7 text-orange-600" />
-              System Settings
-            </h1>
-            <p className="text-gray-500 mt-1">Configure application settings and limits</p>
-          </div>
-          <div className="flex gap-3">
-            <button
-              onClick={loadSettings}
-              disabled={loading}
-              className="flex items-center gap-2 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 disabled:opacity-50"
-            >
-              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-              Reset
-            </button>
-            <button
-              onClick={handleSave}
-              disabled={saving}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
-            >
-              <Save className="w-4 h-4" />
-              {saving ? 'Saving...' : 'Save Changes'}
-            </button>
-          </div>
+    <Layout
+      breadcrumbs={[
+        { label: 'Admin', href: '/admin' },
+        { label: 'System Settings' },
+      ]}
+      pageTitle="System Settings"
+      pageDescription="Configure application settings and limits"
+      pageIcon={<Settings className="w-6 h-6 text-orange-600" />}
+      pageActions={
+        <div className="flex gap-3">
+          <Button variant="outline" onClick={loadSettings} disabled={loading}>
+            <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+            Reset
+          </Button>
+          <Button onClick={handleSave} disabled={saving}>
+            <Save className="w-4 h-4 mr-2" />
+            {saving ? 'Saving...' : 'Save Changes'}
+          </Button>
         </div>
+      }
+    >
+      <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
+        <TabsList className="w-full justify-start overflow-x-auto flex-wrap h-auto gap-1 bg-muted/50 p-1">
+          {SETTINGS_TABS.map((tab) => {
+            const Icon = tab.icon;
+            return (
+              <TabsTrigger
+                key={tab.id}
+                value={tab.id}
+                className="flex items-center gap-2 data-[state=active]:bg-background"
+              >
+                <Icon className="w-4 h-4" />
+                <span className="hidden sm:inline">{tab.label}</span>
+              </TabsTrigger>
+            );
+          })}
+        </TabsList>
 
-        {/* Alerts */}
-        {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg flex items-center gap-2">
-            <AlertCircle className="w-5 h-5" />
-            {error}
-          </div>
-        )}
-        {success && (
-          <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg flex items-center gap-2">
-            <CheckCircle className="w-5 h-5" />
-            {success}
-          </div>
-        )}
-
-        {/* General Settings */}
-        <div className="bg-white rounded-xl shadow-sm p-6">
-          <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2 mb-4">
-            <Globe className="w-5 h-5 text-gray-400" />
-            General Settings
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Application Name</label>
-              <input
-                type="text"
-                value={settings.app_name}
-                onChange={(e) => handleChange('app_name', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Support Email</label>
-              <input
-                type="email"
-                value={settings.support_email}
-                onChange={(e) => handleChange('support_email', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            </div>
-            <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-              <textarea
-                value={settings.app_description}
-                onChange={(e) => handleChange('app_description', e.target.value)}
-                rows={2}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* Registration Settings */}
-        <div className="bg-white rounded-xl shadow-sm p-6">
-          <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2 mb-4">
-            <Shield className="w-5 h-5 text-gray-400" />
-            Registration & Access
-          </h2>
-          <div className="space-y-4">
-            <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-              <div>
-                <p className="font-medium text-gray-900">Allow New Registrations</p>
-                <p className="text-sm text-gray-500">Enable or disable user sign-ups</p>
+        {/* General Settings Tab */}
+        <TabsContent value="general">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Globe className="w-5 h-5 text-muted-foreground" />
+                General Settings
+              </CardTitle>
+              <CardDescription>Basic application configuration</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <Label htmlFor="app_name">Application Name</Label>
+                  <Input
+                    id="app_name"
+                    value={settings.app_name}
+                    onChange={(e) => handleChange('app_name', e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="support_email">Support Email</Label>
+                  <Input
+                    id="support_email"
+                    type="email"
+                    value={settings.support_email}
+                    onChange={(e) => handleChange('support_email', e.target.value)}
+                  />
+                </div>
               </div>
-              <label className="relative inline-flex items-center cursor-pointer">
-                <input
-                  type="checkbox"
+              <div className="space-y-2">
+                <Label htmlFor="app_description">Description</Label>
+                <Textarea
+                  id="app_description"
+                  value={settings.app_description}
+                  onChange={(e) => handleChange('app_description', e.target.value)}
+                  rows={2}
+                />
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Registration Settings Tab */}
+        <TabsContent value="registration">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Shield className="w-5 h-5 text-muted-foreground" />
+                Registration & Access
+              </CardTitle>
+              <CardDescription>Control user sign-up and access settings</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
+                <div>
+                  <p className="font-medium">Allow New Registrations</p>
+                  <p className="text-sm text-muted-foreground">Enable or disable user sign-ups</p>
+                </div>
+                <Switch
                   checked={settings.allow_registration}
-                  onChange={(e) => handleChange('allow_registration', e.target.checked)}
-                  className="sr-only peer"
+                  onCheckedChange={(checked) => handleChange('allow_registration', checked)}
                 />
-                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-              </label>
-            </div>
-            <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-              <div>
-                <p className="font-medium text-gray-900">Require Email Verification</p>
-                <p className="text-sm text-gray-500">Users must verify email before access</p>
               </div>
-              <label className="relative inline-flex items-center cursor-pointer">
-                <input
-                  type="checkbox"
+
+              <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
+                <div>
+                  <p className="font-medium">Require Email Verification</p>
+                  <p className="text-sm text-muted-foreground">Users must verify email before access</p>
+                </div>
+                <Switch
                   checked={settings.require_email_verification}
-                  onChange={(e) => handleChange('require_email_verification', e.target.checked)}
-                  className="sr-only peer"
+                  onCheckedChange={(checked) => handleChange('require_email_verification', checked)}
                 />
-                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-              </label>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Default Subscription Tier</label>
-              <select
-                value={settings.default_subscription_tier}
-                onChange={(e) => handleChange('default_subscription_tier', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              >
-                <option value="free">Free</option>
-                <option value="pro">Pro</option>
-                <option value="enterprise">Enterprise</option>
-              </select>
-            </div>
-          </div>
-        </div>
+              </div>
 
-        {/* Subscription Limits */}
-        <div className="bg-white rounded-xl shadow-sm p-6">
-          <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2 mb-4">
-            <Zap className="w-5 h-5 text-gray-400" />
-            Subscription Limits
-          </h2>
-          <p className="text-sm text-gray-500 mb-4">Set -1 for unlimited</p>
+              <div className="space-y-2">
+                <Label htmlFor="default_tier">Default Subscription Tier</Label>
+                <select
+                  id="default_tier"
+                  value={settings.default_subscription_tier}
+                  onChange={(e) => handleChange('default_subscription_tier', e.target.value)}
+                  className="w-full h-10 px-3 border rounded-md bg-background"
+                >
+                  <option value="free">Free</option>
+                  <option value="pro">Pro</option>
+                  <option value="enterprise">Enterprise</option>
+                </select>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
 
+        {/* Subscription Limits Tab */}
+        <TabsContent value="subscriptions">
           <div className="space-y-6">
-            {/* Free Tier */}
-            <div>
-              <h3 className="font-medium text-gray-900 mb-3 flex items-center gap-2">
-                <span className="w-3 h-3 bg-gray-400 rounded-full"></span>
-                Free Tier
-              </h3>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Zap className="w-5 h-5 text-muted-foreground" />
+                  Subscription Limits
+                </CardTitle>
+                <CardDescription>Set -1 for unlimited</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-8">
+                {/* Free Tier */}
                 <div>
-                  <label className="block text-xs text-gray-500 mb-1">Max Chatbots</label>
-                  <input
-                    type="number"
-                    value={settings.free_max_chatbots}
-                    onChange={(e) => handleChange('free_max_chatbots', parseInt(e.target.value))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
-                  />
+                  <h3 className="font-medium mb-4 flex items-center gap-2">
+                    <span className="w-3 h-3 bg-gray-400 rounded-full"></span>
+                    Free Tier
+                  </h3>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div className="space-y-2">
+                      <Label className="text-xs">Max Chatbots</Label>
+                      <Input
+                        type="number"
+                        value={settings.free_max_chatbots}
+                        onChange={(e) => handleChange('free_max_chatbots', parseInt(e.target.value))}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-xs">Max Documents</Label>
+                      <Input
+                        type="number"
+                        value={settings.free_max_documents}
+                        onChange={(e) => handleChange('free_max_documents', parseInt(e.target.value))}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-xs">Messages/Day</Label>
+                      <Input
+                        type="number"
+                        value={settings.free_max_messages_per_day}
+                        onChange={(e) => handleChange('free_max_messages_per_day', parseInt(e.target.value))}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-xs">Max File Size (MB)</Label>
+                      <Input
+                        type="number"
+                        value={settings.free_max_file_size_mb}
+                        onChange={(e) => handleChange('free_max_file_size_mb', parseInt(e.target.value))}
+                      />
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <label className="block text-xs text-gray-500 mb-1">Max Documents</label>
-                  <input
-                    type="number"
-                    value={settings.free_max_documents}
-                    onChange={(e) => handleChange('free_max_documents', parseInt(e.target.value))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs text-gray-500 mb-1">Messages/Day</label>
-                  <input
-                    type="number"
-                    value={settings.free_max_messages_per_day}
-                    onChange={(e) => handleChange('free_max_messages_per_day', parseInt(e.target.value))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs text-gray-500 mb-1">Max File Size (MB)</label>
-                  <input
-                    type="number"
-                    value={settings.free_max_file_size_mb}
-                    onChange={(e) => handleChange('free_max_file_size_mb', parseInt(e.target.value))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
-                  />
-                </div>
-              </div>
-            </div>
 
-            {/* Pro Tier */}
-            <div>
-              <h3 className="font-medium text-gray-900 mb-3 flex items-center gap-2">
-                <span className="w-3 h-3 bg-blue-500 rounded-full"></span>
-                Pro Tier
-              </h3>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                {/* Pro Tier */}
                 <div>
-                  <label className="block text-xs text-gray-500 mb-1">Max Chatbots</label>
-                  <input
-                    type="number"
-                    value={settings.pro_max_chatbots}
-                    onChange={(e) => handleChange('pro_max_chatbots', parseInt(e.target.value))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
-                  />
+                  <h3 className="font-medium mb-4 flex items-center gap-2">
+                    <span className="w-3 h-3 bg-blue-500 rounded-full"></span>
+                    Pro Tier
+                  </h3>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div className="space-y-2">
+                      <Label className="text-xs">Max Chatbots</Label>
+                      <Input
+                        type="number"
+                        value={settings.pro_max_chatbots}
+                        onChange={(e) => handleChange('pro_max_chatbots', parseInt(e.target.value))}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-xs">Max Documents</Label>
+                      <Input
+                        type="number"
+                        value={settings.pro_max_documents}
+                        onChange={(e) => handleChange('pro_max_documents', parseInt(e.target.value))}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-xs">Messages/Day</Label>
+                      <Input
+                        type="number"
+                        value={settings.pro_max_messages_per_day}
+                        onChange={(e) => handleChange('pro_max_messages_per_day', parseInt(e.target.value))}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-xs">Max File Size (MB)</Label>
+                      <Input
+                        type="number"
+                        value={settings.pro_max_file_size_mb}
+                        onChange={(e) => handleChange('pro_max_file_size_mb', parseInt(e.target.value))}
+                      />
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <label className="block text-xs text-gray-500 mb-1">Max Documents</label>
-                  <input
-                    type="number"
-                    value={settings.pro_max_documents}
-                    onChange={(e) => handleChange('pro_max_documents', parseInt(e.target.value))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs text-gray-500 mb-1">Messages/Day</label>
-                  <input
-                    type="number"
-                    value={settings.pro_max_messages_per_day}
-                    onChange={(e) => handleChange('pro_max_messages_per_day', parseInt(e.target.value))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs text-gray-500 mb-1">Max File Size (MB)</label>
-                  <input
-                    type="number"
-                    value={settings.pro_max_file_size_mb}
-                    onChange={(e) => handleChange('pro_max_file_size_mb', parseInt(e.target.value))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
-                  />
-                </div>
-              </div>
-            </div>
 
-            {/* Enterprise Tier */}
-            <div>
-              <h3 className="font-medium text-gray-900 mb-3 flex items-center gap-2">
-                <span className="w-3 h-3 bg-purple-500 rounded-full"></span>
-                Enterprise Tier
-              </h3>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                {/* Enterprise Tier */}
                 <div>
-                  <label className="block text-xs text-gray-500 mb-1">Max Chatbots</label>
-                  <input
-                    type="number"
-                    value={settings.enterprise_max_chatbots}
-                    onChange={(e) => handleChange('enterprise_max_chatbots', parseInt(e.target.value))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
-                  />
+                  <h3 className="font-medium mb-4 flex items-center gap-2">
+                    <span className="w-3 h-3 bg-purple-500 rounded-full"></span>
+                    Enterprise Tier
+                  </h3>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div className="space-y-2">
+                      <Label className="text-xs">Max Chatbots</Label>
+                      <Input
+                        type="number"
+                        value={settings.enterprise_max_chatbots}
+                        onChange={(e) => handleChange('enterprise_max_chatbots', parseInt(e.target.value))}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-xs">Max Documents</Label>
+                      <Input
+                        type="number"
+                        value={settings.enterprise_max_documents}
+                        onChange={(e) => handleChange('enterprise_max_documents', parseInt(e.target.value))}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-xs">Messages/Day</Label>
+                      <Input
+                        type="number"
+                        value={settings.enterprise_max_messages_per_day}
+                        onChange={(e) => handleChange('enterprise_max_messages_per_day', parseInt(e.target.value))}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-xs">Max File Size (MB)</Label>
+                      <Input
+                        type="number"
+                        value={settings.enterprise_max_file_size_mb}
+                        onChange={(e) => handleChange('enterprise_max_file_size_mb', parseInt(e.target.value))}
+                      />
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <label className="block text-xs text-gray-500 mb-1">Max Documents</label>
-                  <input
-                    type="number"
-                    value={settings.enterprise_max_documents}
-                    onChange={(e) => handleChange('enterprise_max_documents', parseInt(e.target.value))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs text-gray-500 mb-1">Messages/Day</label>
-                  <input
-                    type="number"
-                    value={settings.enterprise_max_messages_per_day}
-                    onChange={(e) => handleChange('enterprise_max_messages_per_day', parseInt(e.target.value))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs text-gray-500 mb-1">Max File Size (MB)</label>
-                  <input
-                    type="number"
-                    value={settings.enterprise_max_file_size_mb}
-                    onChange={(e) => handleChange('enterprise_max_file_size_mb', parseInt(e.target.value))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
-                  />
-                </div>
-              </div>
-            </div>
+              </CardContent>
+            </Card>
           </div>
-        </div>
+        </TabsContent>
 
-        {/* AI Settings */}
-        <div className="bg-white rounded-xl shadow-sm p-6">
-          <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2 mb-4">
-            <MessageSquare className="w-5 h-5 text-gray-400" />
-            AI Configuration
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Default Model</label>
-              <select
-                value={settings.default_model}
-                onChange={(e) => handleChange('default_model', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              >
-                <option value="deepseek-chat">DeepSeek Chat</option>
-                <option value="deepseek-coder">DeepSeek Coder</option>
-                <option value="deepseek-reasoner">DeepSeek Reasoner</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Max Context Chunks</label>
-              <input
-                type="number"
-                value={settings.max_context_chunks}
-                onChange={(e) => handleChange('max_context_chunks', parseInt(e.target.value))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Temperature</label>
-              <input
-                type="number"
-                step="0.1"
-                min="0"
-                max="2"
-                value={settings.temperature}
-                onChange={(e) => handleChange('temperature', parseFloat(e.target.value))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* Maintenance Mode */}
-        <div className="bg-white rounded-xl shadow-sm p-6">
-          <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2 mb-4">
-            <Bell className="w-5 h-5 text-gray-400" />
-            Maintenance Mode
-          </h2>
-          <div className="space-y-4">
-            <div className="flex items-center justify-between p-4 bg-yellow-50 rounded-lg border border-yellow-200">
-              <div>
-                <p className="font-medium text-gray-900">Enable Maintenance Mode</p>
-                <p className="text-sm text-gray-500">Block all non-admin users from accessing the app</p>
+        {/* AI Configuration Tab */}
+        <TabsContent value="ai">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <MessageSquare className="w-5 h-5 text-muted-foreground" />
+                AI Configuration
+              </CardTitle>
+              <CardDescription>Configure AI model settings</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="space-y-2">
+                  <Label htmlFor="default_model">Default Model</Label>
+                  <select
+                    id="default_model"
+                    value={settings.default_model}
+                    onChange={(e) => handleChange('default_model', e.target.value)}
+                    className="w-full h-10 px-3 border rounded-md bg-background"
+                  >
+                    <option value="deepseek-chat">DeepSeek Chat</option>
+                    <option value="deepseek-coder">DeepSeek Coder</option>
+                    <option value="deepseek-reasoner">DeepSeek Reasoner</option>
+                  </select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="max_context">Max Context Chunks</Label>
+                  <Input
+                    id="max_context"
+                    type="number"
+                    value={settings.max_context_chunks}
+                    onChange={(e) => handleChange('max_context_chunks', parseInt(e.target.value))}
+                  />
+                  <p className="text-xs text-muted-foreground">Number of document chunks to include in context</p>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="temperature">Temperature</Label>
+                  <Input
+                    id="temperature"
+                    type="number"
+                    step="0.1"
+                    min="0"
+                    max="2"
+                    value={settings.temperature}
+                    onChange={(e) => handleChange('temperature', parseFloat(e.target.value))}
+                  />
+                  <p className="text-xs text-muted-foreground">0 = deterministic, 2 = creative</p>
+                </div>
               </div>
-              <label className="relative inline-flex items-center cursor-pointer">
-                <input
-                  type="checkbox"
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Maintenance Tab */}
+        <TabsContent value="maintenance">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Bell className="w-5 h-5 text-muted-foreground" />
+                Maintenance Mode
+              </CardTitle>
+              <CardDescription>Control system availability</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="flex items-center justify-between p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                <div className="flex items-start gap-3">
+                  <AlertCircle className="w-5 h-5 text-yellow-600 mt-0.5" />
+                  <div>
+                    <p className="font-medium text-yellow-900">Enable Maintenance Mode</p>
+                    <p className="text-sm text-yellow-700">Block all non-admin users from accessing the app</p>
+                  </div>
+                </div>
+                <Switch
                   checked={settings.maintenance_mode}
-                  onChange={(e) => handleChange('maintenance_mode', e.target.checked)}
-                  className="sr-only peer"
+                  onCheckedChange={(checked) => handleChange('maintenance_mode', checked)}
                 />
-                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-yellow-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-yellow-500"></div>
-              </label>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Maintenance Message</label>
-              <textarea
-                value={settings.maintenance_message}
-                onChange={(e) => handleChange('maintenance_message', e.target.value)}
-                rows={2}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            </div>
-          </div>
-        </div>
-      </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="maintenance_message">Maintenance Message</Label>
+                <Textarea
+                  id="maintenance_message"
+                  value={settings.maintenance_message}
+                  onChange={(e) => handleChange('maintenance_message', e.target.value)}
+                  rows={3}
+                  placeholder="Message displayed to users during maintenance"
+                />
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </Layout>
   );
 };
