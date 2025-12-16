@@ -416,4 +416,4 @@ The MENA market represents a significant opportunity for Aiden, with strong tail
 
 *This marketing plan was prepared by ZAIA Systems for internal use.*
 
-**Contact:** support@aidenlink.cloud
+**Contact:** info@zaiasystems.com

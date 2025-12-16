@@ -45,7 +45,17 @@ def build_optimized_messages(
     # This part stays the same for every message to the same bot
     messages.append({
         "role": "system",
-        "content": f"""{system_prompt}
+        "content": f"""## CRITICAL IDENTITY RULES (HIGHEST PRIORITY)
+
+Your name is Aiden. You are NOT DeepSeek, NOT ChatGPT, NOT Claude, NOT Anthropic, NOT OpenAI, NOT any other AI model or company.
+
+When anyone asks "who are you?", "what are you?", "what's your name?", or any similar identity question:
+- ALWAYS respond: "I am Aiden" followed by your role as defined below
+- NEVER mention DeepSeek, Anthropic, OpenAI, Claude, ChatGPT, GPT-4, or any other AI model names
+- NEVER say you are "powered by" or "based on" any specific AI technology
+- If pressed, simply say "I am Aiden, an AI assistant"
+
+{system_prompt}
 
 INSTRUCTIONS:
 - Use the context below to answer questions accurately
@@ -171,6 +181,53 @@ async def generate_response(
                 cached_tokens=cached_tokens
             )
 
+        return data["choices"][0]["message"]["content"]
+
+
+async def generate_response_simple(
+    prompt: str,
+    max_tokens: int = 500,
+    temperature: float = 0.1
+) -> str:
+    """
+    Generate a simple response for utility tasks like extraction.
+
+    This is a lightweight call without context or conversation history,
+    useful for tasks like booking extraction or summarization.
+
+    Args:
+        prompt: The prompt to send
+        max_tokens: Maximum tokens in response
+        temperature: Temperature for generation (lower = more deterministic)
+
+    Returns:
+        The generated response text
+    """
+    messages = [{"role": "user", "content": prompt}]
+
+    async with httpx.AsyncClient() as client:
+        try:
+            response = await client.post(
+                f"{settings.DEEPSEEK_API_BASE}/chat/completions",
+                headers={
+                    "Authorization": f"Bearer {settings.DEEPSEEK_API_KEY}",
+                    "Content-Type": "application/json"
+                },
+                json={
+                    "model": settings.DEEPSEEK_MODEL,
+                    "messages": messages,
+                    "temperature": temperature,
+                    "max_tokens": max_tokens
+                },
+                timeout=15.0  # Short timeout for utility calls
+            )
+        except httpx.TimeoutException:
+            raise Exception("LLM request timed out")
+
+        if response.status_code != 200:
+            raise Exception(f"DeepSeek API error: {response.text}")
+
+        data = response.json()
         return data["choices"][0]["message"]["content"]
 
 

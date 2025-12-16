@@ -25,6 +25,7 @@ class HandoffTrigger(str, Enum):
     SENTIMENT = "sentiment"
     UNANSWERED = "unanswered"
     MANUAL = "manual"
+    BOOKING = "booking"  # Triggered by booking request
 
 
 class HandoffConfig(BaseModel):
@@ -80,6 +81,7 @@ class HandoffResponse(BaseModel):
     visitor_info: Dict[str, Any] = {}
     messages: List[Dict[str, Any]] = []
     conversation_context: List[Dict[str, Any]] = []  # Bot conversation before handoff
+    booking_details: Optional[Dict[str, Any]] = None  # Booking info for BOOKING triggers
     notes: Optional[str] = None
     resolution: Optional[str] = None
     created_at: datetime

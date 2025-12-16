@@ -14,6 +14,7 @@ import ChatbotDetail from './pages/ChatbotDetail';
 import ChatbotAnalytics from './pages/ChatbotAnalytics';
 import ChatbotLeads from './pages/ChatbotLeads';
 import ChatbotHandoff from './pages/ChatbotHandoff';
+import ChatbotBookings from './pages/ChatbotBookings';
 import Analytics from './pages/Analytics';
 import Settings from './pages/Settings';
 import Landing from './pages/Landing';
@@ -172,6 +173,14 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <ChatbotHandoff />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/chatbots/:id/bookings"
+        element={
+          <ProtectedRoute>
+            <ChatbotBookings />
           </ProtectedRoute>
         }
       />

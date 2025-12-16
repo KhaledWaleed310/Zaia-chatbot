@@ -41,11 +41,32 @@ class LeadFormConfig(BaseModel):
     enabled: Optional[bool] = None
     title: Optional[str] = None
     description: Optional[str] = None
-    trigger: Optional[str] = None  # manual, after_messages, on_exit
+    trigger: Optional[str] = None  # manual, after_messages, smart
     trigger_after_messages: Optional[int] = None
+    smart_capture: Optional[bool] = None  # AI detects interest and triggers form
+    smart_capture_prompt: Optional[str] = None  # Custom instructions for when to ask
     fields: Optional[List[LeadFormField]] = None
     submit_button_text: Optional[str] = None
     success_message: Optional[str] = None
+
+
+# Default smart capture prompt
+DEFAULT_SMART_CAPTURE_PROMPT = """When you detect that the visitor is genuinely interested (asking about pricing, features, demos, wanting to learn more, or showing buying intent), naturally transition to collecting their contact information.
+
+Signs of interest:
+- Asking specific questions about pricing or plans
+- Requesting a demo or trial
+- Asking about implementation or onboarding
+- Comparing with competitors
+- Asking about specific features for their use case
+- Expressing urgency or timeline
+
+When you detect interest, say something like:
+"I'd love to help you further! To connect you with our team and send you more details, could you share your contact info?"
+
+Then IMMEDIATELY add this exact marker on a new line: [SHOW_LEAD_FORM]
+
+This will show them a quick form to fill out. Only trigger this ONCE per conversation when you're confident they're interested."""
 
 
 class LeadCreate(BaseModel):

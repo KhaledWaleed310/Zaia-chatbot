@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException, Depends, WebSocket, WebSocketDisconnect, Query
-from typing import Optional, Any
+from typing import Optional, Any, Dict
 import json
 from datetime import datetime
 from ..schemas.handoff import (
@@ -7,6 +7,7 @@ from ..schemas.handoff import (
     HandoffMessage, HandoffResponse, HandoffListResponse, HandoffStats,
     AgentPresence, AgentStatus
 )
+from ..schemas.booking import BookingConfig, DEFAULT_BOOKING_PROMPT
 from ..services.handoff import (
     create_handoff, get_handoff, get_handoff_by_session, list_handoffs,
     update_handoff, add_handoff_message, update_agent_presence,
@@ -46,6 +47,7 @@ def handoff_to_response(h: dict) -> dict:
         "visitor_info": h.get("visitor_info", {}),
         "messages": h.get("messages", []),
         "conversation_context": h.get("conversation_context", []),  # Bot conversation before handoff
+        "booking_details": h.get("booking_details"),  # Booking info for BOOKING triggers
         "notes": h.get("notes"),
         "resolution": h.get("resolution"),
         "created_at": h["created_at"],
@@ -182,6 +184,94 @@ async def get_public_handoff_config(bot_id: str):
         "enabled": config.get("enabled", False),
         "offline_message": config.get("offline_message", "Our team is currently offline.")
     }
+
+
+# =============================================================================
+# Booking Configuration Endpoints (must be before /{bot_id}/{handoff_id})
+# =============================================================================
+
+@router.get("/{bot_id}/booking-config")
+async def get_booking_config(
+    bot_id: str,
+    user: dict = Depends(get_current_user)
+) -> Dict[str, Any]:
+    """Get booking configuration for a chatbot."""
+    db = get_mongodb()
+
+    bot = await db.chatbots.find_one({"_id": bot_id, "tenant_id": user["tenant_id"]})
+    if not bot:
+        raise HTTPException(status_code=404, detail="Chatbot not found")
+
+    # Return existing config or defaults
+    config = bot.get("booking_config") or {}
+    return {
+        "enabled": config.get("enabled", False),
+        "notification_email": config.get("notification_email"),
+        "trigger_keywords": config.get("trigger_keywords", [
+            "i'll send this request",
+            "notify the team",
+            "booking confirmed",
+            "team will contact you"
+        ]),
+        "default_booking_type": config.get("default_booking_type", "other"),
+        "required_fields": config.get("required_fields", ["guest_name", "phone", "date", "time"]),
+        "booking_prompt": config.get("booking_prompt", DEFAULT_BOOKING_PROMPT)
+    }
+
+
+@router.put("/{bot_id}/booking-config")
+async def update_booking_config(
+    bot_id: str,
+    config: BookingConfig,
+    user: dict = Depends(get_current_user)
+) -> Dict[str, Any]:
+    """Update booking configuration for a chatbot."""
+    db = get_mongodb()
+
+    bot = await db.chatbots.find_one({"_id": bot_id, "tenant_id": user["tenant_id"]})
+    if not bot:
+        raise HTTPException(status_code=404, detail="Chatbot not found")
+
+    # Merge with existing config
+    existing_config = bot.get("booking_config") or {}
+    update_data = config.model_dump(exclude_unset=True, exclude_none=True)
+
+    # Handle enum conversion for default_booking_type
+    if "default_booking_type" in update_data and hasattr(update_data["default_booking_type"], "value"):
+        update_data["default_booking_type"] = update_data["default_booking_type"].value
+
+    merged_config = {**existing_config, **update_data}
+
+    await db.chatbots.update_one(
+        {"_id": bot_id},
+        {"$set": {"booking_config": merged_config}}
+    )
+
+    return merged_config
+
+
+@router.patch("/{bot_id}/booking-config/toggle")
+async def toggle_booking_config(
+    bot_id: str,
+    enabled: bool,
+    user: dict = Depends(get_current_user)
+) -> Dict[str, Any]:
+    """Quick toggle to enable/disable booking notifications for a chatbot."""
+    db = get_mongodb()
+
+    bot = await db.chatbots.find_one({"_id": bot_id, "tenant_id": user["tenant_id"]})
+    if not bot:
+        raise HTTPException(status_code=404, detail="Chatbot not found")
+
+    existing_config = bot.get("booking_config") or {}
+    existing_config["enabled"] = enabled
+
+    await db.chatbots.update_one(
+        {"_id": bot_id},
+        {"$set": {"booking_config": existing_config}}
+    )
+
+    return {"enabled": enabled, "message": f"Booking notifications {'enabled' if enabled else 'disabled'}"}
 
 
 @router.get("/{bot_id}/{handoff_id}", response_model=HandoffResponse)

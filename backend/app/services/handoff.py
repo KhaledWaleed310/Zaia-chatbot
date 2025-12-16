@@ -442,3 +442,115 @@ async def check_handoff_triggers(
         )
 
     return None
+
+
+async def create_booking_handoff(
+    session_id: str,
+    bot_id: str,
+    tenant_id: str,
+    booking_details: Dict[str, Any],
+    conversation_context: List[Dict[str, Any]] = None
+) -> Dict[str, Any]:
+    """
+    Create a booking-type handoff to notify agents of a new booking request.
+
+    Unlike regular handoffs, this includes structured booking details
+    and uses the BOOKING trigger type for easy identification in the dashboard.
+
+    Args:
+        session_id: Chat session ID
+        bot_id: Chatbot ID
+        tenant_id: Tenant ID
+        booking_details: Extracted booking information:
+            - booking_type: str (room, meeting, table, appointment, service, event, other)
+            - guest_name: str
+            - phone: str
+            - date: str
+            - time: str
+            - people_count: int (optional)
+            - purpose: str (optional)
+            - duration: str (optional)
+            - extras: list (optional)
+            - notes: str (optional)
+        conversation_context: Last N messages from conversation before booking
+
+    Returns:
+        Created handoff document
+    """
+    db = get_mongodb()
+    redis = get_redis()
+
+    # Check if there's already an active handoff for this session
+    existing = await db.handoffs.find_one({
+        "session_id": session_id,
+        "status": {"$in": [HandoffStatus.PENDING.value, HandoffStatus.ASSIGNED.value, HandoffStatus.ACTIVE.value]}
+    })
+
+    if existing:
+        # Update existing handoff with booking details
+        await db.handoffs.update_one(
+            {"_id": existing["_id"]},
+            {
+                "$set": {
+                    "booking_details": booking_details,
+                    "trigger": HandoffTrigger.BOOKING.value,
+                    "trigger_reason": f"Booking request from {booking_details.get('guest_name')}",
+                    "updated_at": datetime.utcnow()
+                }
+            }
+        )
+        existing["booking_details"] = booking_details
+        return existing
+
+    handoff_id = str(uuid.uuid4())
+    booking_type = booking_details.get("booking_type", "booking").title()
+    guest_name = booking_details.get("guest_name", "Guest")
+
+    handoff = {
+        "_id": handoff_id,
+        "session_id": session_id,
+        "bot_id": bot_id,
+        "tenant_id": tenant_id,
+        "status": HandoffStatus.PENDING.value,
+        "priority": HandoffPriority.HIGH.value,  # Bookings are high priority
+        "trigger": HandoffTrigger.BOOKING.value,
+        "trigger_reason": f"{booking_type} booking request from {guest_name}",
+        "assigned_to": None,
+        "assigned_to_name": None,
+        "visitor_info": {
+            "name": guest_name,
+            "phone": booking_details.get("phone")
+        },
+        "booking_details": booking_details,  # Store full booking details
+        "messages": [],
+        "conversation_context": conversation_context or [],
+        "notes": None,
+        "resolution": None,
+        "created_at": datetime.utcnow(),
+        "updated_at": datetime.utcnow(),
+        "assigned_at": None,
+        "resolved_at": None
+    }
+
+    await db.handoffs.insert_one(handoff)
+
+    # Try auto-assign if configured
+    bot = await db.chatbots.find_one({"_id": bot_id})
+    handoff_config = bot.get("handoff_config", {}) if bot else {}
+
+    if handoff_config.get("auto_assign", True):
+        await try_auto_assign(handoff_id, tenant_id)
+
+    # Publish to Redis for real-time notifications
+    await redis.publish(
+        f"handoff:{tenant_id}",
+        json.dumps({
+            "type": "new_booking",
+            "handoff_id": handoff_id,
+            "bot_id": bot_id,
+            "booking_details": booking_details,
+            "priority": HandoffPriority.HIGH.value
+        })
+    )
+
+    return handoff

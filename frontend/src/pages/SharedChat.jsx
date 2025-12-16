@@ -409,9 +409,12 @@ const SharedChat = () => {
     try {
       setSending(true);
 
+      // Get customer's timezone for accurate date parsing
+      const customerTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
       // Use streaming endpoint for faster perceived response
       const response = await fetch(
-        `${API_BASE}/chat/${botId}/message/stream?visitor_id=${visitorId || ''}`,
+        `${API_BASE}/chat/${botId}/message/stream?visitor_id=${visitorId || ''}&timezone=${encodeURIComponent(customerTimezone)}`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -485,16 +488,32 @@ const SharedChat = () => {
       // Finalize the message
       if (messageAdded) {
         const msgId = `msg_${Date.now()}`;
+
+        // Check for lead form trigger and strip it from content
+        let finalContent = fullContent;
+        const hasLeadFormTrigger = fullContent.includes('[SHOW_LEAD_FORM]');
+        if (hasLeadFormTrigger) {
+          finalContent = fullContent.replace(/\[SHOW_LEAD_FORM\]/g, '').trim();
+        }
+
         setMessages(prev => {
           const updated = [...prev];
           updated[updated.length - 1] = {
             id: msgId,
             role: 'assistant',
-            content: fullContent,
+            content: finalContent,
             isStreaming: false,
           };
           return updated;
         });
+
+        // Show lead form if triggered by AI (smart capture)
+        if (hasLeadFormTrigger && leadConfig?.enabled && leadConfig?.smart_capture && !leadSubmitted) {
+          // Small delay so the message renders first
+          setTimeout(() => {
+            setShowLeadForm(true);
+          }, 500);
+        }
 
         // After message sent successfully, reload conversations to update titles
         if (config?.is_personal) {

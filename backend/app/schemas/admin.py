@@ -97,7 +97,7 @@ class SystemSettings(BaseModel):
     # General
     app_name: str = "Aiden"
     app_description: str = "AI-powered chatbot platform"
-    support_email: str = "support@aidenlink.cloud"
+    support_email: str = "info@zaiasystems.com"
 
     # Registration
     maintenance_mode: bool = False

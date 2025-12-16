@@ -927,6 +927,4 @@ Completed By: ________________ Date: _______
 
 **Contact Information:**
 
-For access requests: access-requests@zaiasystems.com
-For policy questions: security@zaiasystems.com
-For access issues: helpdesk@zaiasystems.com
+For all inquiries: info@zaiasystems.com

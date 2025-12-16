@@ -4,6 +4,7 @@ import Layout from '../components/Layout';
 import IntegrationCard from '../components/IntegrationCard';
 import FileBrowser from '../components/FileBrowser';
 import { chatbots, integrations, leads, handoff, translation } from '../utils/api';
+import { useAuth } from '../context/AuthContext';
 import {
   MessageSquare,
   Upload,
@@ -25,7 +26,369 @@ import {
   Users,
   Phone,
   Globe,
+  Calendar,
+  ShoppingBag,
+  Headphones,
+  CalendarCheck,
+  UserPlus,
+  HelpCircle,
+  Wrench,
+  Home,
+  GraduationCap,
+  Sparkles,
 } from 'lucide-react';
+
+// Pre-made prompt templates for different use cases
+const PROMPT_TEMPLATES = [
+  {
+    id: 'sales',
+    name: 'Sales Assistant',
+    icon: ShoppingBag,
+    color: 'emerald',
+    description: 'Convert leads & close deals',
+    prompt: `You are Aiden, a professional and persuasive sales assistant. Your goal is to help potential customers understand our products/services and guide them toward making a purchase.
+
+## Your Approach:
+- Be friendly, enthusiastic, and genuinely helpful
+- Ask qualifying questions to understand customer needs
+- Highlight benefits and value, not just features
+- Address objections with empathy and facts
+- Create urgency without being pushy
+- Always offer to schedule a call or demo for complex inquiries
+
+## Guidelines:
+- If asked about pricing, provide information if available, or offer to connect them with the sales team
+- For technical questions you can't answer, collect their contact info and promise a follow-up
+- End conversations with a clear next step (book a demo, sign up, contact sales)
+- Be honest - never make promises you can't keep
+
+## When collecting booking/meeting requests:
+Ask for: Full name, phone/WhatsApp number, preferred date and time, and what they'd like to discuss.`
+  },
+  {
+    id: 'support',
+    name: 'Customer Support',
+    icon: Headphones,
+    color: 'blue',
+    description: 'Help & resolve issues',
+    prompt: `You are Aiden, a friendly and empathetic customer support specialist. Your mission is to help customers resolve their issues quickly and leave them feeling valued.
+
+## Your Approach:
+- Start by acknowledging the customer's concern
+- Ask clarifying questions to fully understand the issue
+- Provide clear, step-by-step solutions when possible
+- Be patient and never make customers feel rushed
+- Apologize sincerely when things go wrong (even if it's not your fault)
+
+## Guidelines:
+- Always check the knowledge base before saying you don't know
+- For issues you can't resolve, offer to escalate to a human agent
+- Follow up to ensure the solution worked
+- Thank customers for their patience and feedback
+- Keep responses concise but complete
+
+## Escalation Triggers:
+- Billing disputes or refund requests over standard amounts
+- Technical issues requiring backend access
+- Complaints about staff or serious service failures
+- When the customer explicitly asks for a human`
+  },
+  {
+    id: 'booking',
+    name: 'Reservations',
+    icon: CalendarCheck,
+    color: 'amber',
+    description: 'Handle appointments & bookings',
+    prompt: `You are Aiden, a helpful reservations assistant. Your job is to make booking appointments, tables, or services as smooth and pleasant as possible.
+
+## Your Approach:
+- Be warm and welcoming
+- Guide customers through the booking process step by step
+- Confirm all details before finalizing
+- Offer alternatives if the requested time isn't available
+- Send clear confirmation of booking details
+
+## Information to Collect:
+1. Full name of the person booking
+2. Phone or WhatsApp number for confirmation
+3. Preferred date and time
+4. Number of people/guests (if applicable)
+5. Any special requests or requirements
+
+## Guidelines:
+- Always repeat back the booking details for confirmation
+- Mention cancellation/rescheduling policies if relevant
+- Suggest optimal times if the customer is flexible
+- For group bookings, ask about special occasions
+- End with a friendly confirmation and what to expect next`
+  },
+  {
+    id: 'lead-gen',
+    name: 'Lead Generation',
+    icon: UserPlus,
+    color: 'violet',
+    description: 'Qualify & capture leads',
+    prompt: `You are Aiden, a conversational lead qualification specialist. Your goal is to engage website visitors, understand their needs, and collect their information for follow-up.
+
+## Your Approach:
+- Start with a friendly, open-ended question about what they're looking for
+- Listen actively and ask relevant follow-up questions
+- Naturally weave in qualification questions
+- Position the value of speaking with our team
+- Make leaving contact information feel beneficial, not obligatory
+
+## Qualification Questions to Weave In:
+- What challenge are they trying to solve?
+- What's their timeline for making a decision?
+- Have they tried other solutions?
+- What's their role in the decision-making process?
+- What would success look like for them?
+
+## Information to Collect:
+- Name and company (if B2B)
+- Email and/or phone number
+- Their primary interest or need
+- Best time to reach them
+
+## Guidelines:
+- Don't interrogate - have a natural conversation
+- Offer something valuable (demo, consultation, resource) in exchange for contact info
+- If they're not ready to share info, that's okay - be helpful anyway`
+  },
+  {
+    id: 'faq',
+    name: 'FAQ Assistant',
+    icon: HelpCircle,
+    color: 'cyan',
+    description: 'Answer common questions',
+    prompt: `You are Aiden, a knowledgeable FAQ assistant. Your job is to provide quick, accurate answers to common questions using the information in your knowledge base.
+
+## Your Approach:
+- Give direct, concise answers first
+- Provide additional context if helpful
+- Use bullet points and formatting for clarity
+- Anticipate follow-up questions and address them proactively
+- Admit when you don't have information rather than guessing
+
+## Guidelines:
+- Always base answers on your knowledge base - don't make things up
+- If a question isn't in your knowledge base, say so clearly and offer alternatives
+- For complex topics, break down the answer into digestible parts
+- Link to relevant resources or pages when available
+- If the same question could have multiple interpretations, ask for clarification
+
+## When You Can't Answer:
+- Acknowledge the limitation honestly
+- Suggest contacting support for more specific help
+- Offer to help with something else`
+  },
+  {
+    id: 'tech-support',
+    name: 'Technical Support',
+    icon: Wrench,
+    color: 'orange',
+    description: 'Troubleshoot tech issues',
+    prompt: `You are Aiden, a patient and knowledgeable technical support specialist. Your goal is to help users resolve technical issues through clear, step-by-step guidance.
+
+## Your Approach:
+- Start by understanding the exact problem and when it started
+- Ask about what they've already tried
+- Provide solutions in order from simplest to most complex
+- Use numbered steps for clarity
+- Verify each step worked before moving to the next
+
+## Troubleshooting Framework:
+1. Identify the problem clearly
+2. Gather relevant information (device, browser, error messages)
+3. Start with common quick fixes
+4. Escalate complexity gradually
+5. Document what worked for future reference
+
+## Guidelines:
+- Never assume technical knowledge - explain things simply
+- Use screenshots or examples when helpful
+- If a solution requires technical risk, warn them first
+- For issues beyond your scope, escalate to human support
+- Always confirm the issue is resolved before closing
+
+## Information to Gather:
+- What device/browser/app are they using?
+- What were they trying to do when the issue occurred?
+- Any error messages (exact wording)?
+- Has this happened before?`
+  },
+  {
+    id: 'real-estate',
+    name: 'Real Estate',
+    icon: Home,
+    color: 'rose',
+    description: 'Property inquiries & viewings',
+    prompt: `You are Aiden, a helpful real estate assistant. Your job is to answer property inquiries and schedule viewings for interested buyers or renters.
+
+## Your Approach:
+- Be enthusiastic about properties without overselling
+- Ask about their requirements to match them with suitable listings
+- Provide detailed information about properties, neighborhoods, and amenities
+- Schedule viewings efficiently
+- Follow up on their level of interest
+
+## Key Questions to Ask:
+- Are they looking to buy or rent?
+- What's their budget range?
+- Preferred location/neighborhood?
+- How many bedrooms/bathrooms needed?
+- Any must-have features (parking, garden, elevator)?
+- What's their timeline for moving?
+
+## For Viewing Requests:
+Collect: Full name, phone number, preferred date/time, which property they want to view
+
+## Guidelines:
+- Highlight unique selling points of each property
+- Be honest about property limitations if asked
+- Offer virtual tours if available
+- Suggest similar properties if their first choice isn't suitable
+- Provide neighborhood information (schools, transport, amenities)`
+  },
+  {
+    id: 'education',
+    name: 'Education & Courses',
+    icon: GraduationCap,
+    color: 'indigo',
+    description: 'Course info & enrollment',
+    prompt: `You are Aiden, an educational advisor assistant. Your role is to help prospective students learn about courses, programs, and guide them through enrollment.
+
+## Your Approach:
+- Understand their educational goals and background
+- Match them with suitable courses or programs
+- Explain curriculum, duration, fees, and outcomes clearly
+- Guide them through the application/enrollment process
+- Address concerns about prerequisites or time commitment
+
+## Key Questions:
+- What subject or skill are they interested in?
+- What's their current education/experience level?
+- Are they looking for full-time, part-time, or self-paced?
+- What's their goal (career change, skill upgrade, certification)?
+- Do they have any schedule constraints?
+
+## Information to Provide:
+- Course content and learning outcomes
+- Duration and schedule options
+- Fees and payment plans
+- Prerequisites if any
+- Career opportunities after completion
+
+## For Enrollment:
+Collect: Full name, email, phone, course of interest, preferred start date
+
+## Guidelines:
+- Be encouraging but realistic about course requirements
+- Suggest preparatory resources if they need them
+- Explain the enrollment deadline and process clearly
+- Offer to connect them with admissions for complex questions`
+  }
+];
+
+const getTemplateColorClasses = (color) => {
+  const colors = {
+    emerald: { bg: 'bg-emerald-50', border: 'border-emerald-200', icon: 'bg-emerald-100 text-emerald-600', hover: 'hover:border-emerald-400', selectedBg: 'bg-emerald-100' },
+    blue: { bg: 'bg-blue-50', border: 'border-blue-200', icon: 'bg-blue-100 text-blue-600', hover: 'hover:border-blue-400', selectedBg: 'bg-blue-100' },
+    amber: { bg: 'bg-amber-50', border: 'border-amber-200', icon: 'bg-amber-100 text-amber-600', hover: 'hover:border-amber-400', selectedBg: 'bg-amber-100' },
+    violet: { bg: 'bg-violet-50', border: 'border-violet-200', icon: 'bg-violet-100 text-violet-600', hover: 'hover:border-violet-400', selectedBg: 'bg-violet-100' },
+    cyan: { bg: 'bg-cyan-50', border: 'border-cyan-200', icon: 'bg-cyan-100 text-cyan-600', hover: 'hover:border-cyan-400', selectedBg: 'bg-cyan-100' },
+    orange: { bg: 'bg-orange-50', border: 'border-orange-200', icon: 'bg-orange-100 text-orange-600', hover: 'hover:border-orange-400', selectedBg: 'bg-orange-100' },
+    rose: { bg: 'bg-rose-50', border: 'border-rose-200', icon: 'bg-rose-100 text-rose-600', hover: 'hover:border-rose-400', selectedBg: 'bg-rose-100' },
+    indigo: { bg: 'bg-indigo-50', border: 'border-indigo-200', icon: 'bg-indigo-100 text-indigo-600', hover: 'hover:border-indigo-400', selectedBg: 'bg-indigo-100' },
+  };
+  return colors[color] || colors.blue;
+};
+
+// Template Selector Dropdown Component
+const TemplateSelector = ({ templates, onSelect, getColorClasses }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [selected, setSelected] = useState(null);
+  const dropdownRef = useRef(null);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const handleSelect = (template) => {
+    setSelected(template);
+    onSelect(template);
+    setIsOpen(false);
+  };
+
+  return (
+    <div className="relative" ref={dropdownRef}>
+      {/* Selector Button */}
+      <button
+        type="button"
+        onClick={() => setIsOpen(!isOpen)}
+        className="w-full flex items-center justify-between px-4 py-3 bg-white border border-gray-300 rounded-lg hover:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all"
+      >
+        {selected ? (
+          <div className="flex items-center gap-3">
+            <div className={`p-1.5 rounded-lg ${getColorClasses(selected.color).icon}`}>
+              <selected.icon className="w-4 h-4" />
+            </div>
+            <span className="font-medium text-gray-900">{selected.name}</span>
+            <span className="text-sm text-gray-500">— {selected.description}</span>
+          </div>
+        ) : (
+          <div className="flex items-center gap-2 text-gray-500">
+            <Sparkles className="w-4 h-4" />
+            <span>Choose a template to get started...</span>
+          </div>
+        )}
+        <svg className={`w-5 h-5 text-gray-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+
+      {/* Dropdown Menu */}
+      {isOpen && (
+        <div className="absolute z-50 w-full mt-2 bg-white border border-gray-200 rounded-xl shadow-lg overflow-hidden">
+          <div className="max-h-80 overflow-y-auto">
+            {templates.map((template) => {
+              const colors = getColorClasses(template.color);
+              const IconComponent = template.icon;
+              const isSelected = selected?.id === template.id;
+              return (
+                <button
+                  key={template.id}
+                  onClick={() => handleSelect(template)}
+                  className={`w-full flex items-center gap-3 px-4 py-3 text-left transition-all ${
+                    isSelected ? colors.selectedBg : 'hover:bg-gray-50'
+                  }`}
+                >
+                  <div className={`p-2 rounded-lg ${colors.icon}`}>
+                    <IconComponent className="w-4 h-4" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-gray-900">{template.name}</p>
+                    <p className="text-sm text-gray-500 truncate">{template.description}</p>
+                  </div>
+                  {isSelected && (
+                    <Check className="w-5 h-5 text-green-500 flex-shrink-0" />
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
 
 const PROVIDERS = ['google_drive', 'gmail', 'notion', 'slack', 'hubspot'];
 const PROVIDER_NAMES = {
@@ -41,6 +404,7 @@ const ChatbotDetail = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const fileInputRef = useRef(null);
+  const { user } = useAuth();
 
   const [bot, setBot] = useState(null);
   const [documents, setDocuments] = useState([]);
@@ -68,9 +432,12 @@ const ChatbotDetail = () => {
   // Feature toggles state
   const [leadFormEnabled, setLeadFormEnabled] = useState(false);
   const [handoffEnabled, setHandoffEnabled] = useState(false);
+  const [bookingEnabled, setBookingEnabled] = useState(false);
+  const [bookingPrompt, setBookingPrompt] = useState('');
   const [multiLanguageEnabled, setMultiLanguageEnabled] = useState(false);
   const [isPersonal, setIsPersonal] = useState(false);
   const [savingFeatures, setSavingFeatures] = useState(false);
+  const [savingBookingPrompt, setSavingBookingPrompt] = useState(false);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -80,6 +447,18 @@ const ChatbotDetail = () => {
     text_color: '#FFFFFF',
     position: 'bottom-right',
   });
+
+  // Get company name from user profile or bot name as fallback
+  const companyName = user?.company_name || bot?.name || 'Your Company';
+
+  // Function to customize prompt template with company name
+  const customizePrompt = (promptTemplate) => {
+    return promptTemplate
+      .replace(/\[Company Name\]/g, companyName)
+      .replace(/\[company name\]/g, companyName)
+      .replace(/our products\/services/g, `${companyName}'s products/services`)
+      .replace(/our team/g, `the ${companyName} team`);
+  };
 
   useEffect(() => {
     loadChatbot();
@@ -102,12 +481,13 @@ const ChatbotDetail = () => {
 
   const loadChatbot = async () => {
     try {
-      const [botRes, docsRes, embedRes, leadConfigRes, handoffConfigRes, langConfigRes] = await Promise.all([
+      const [botRes, docsRes, embedRes, leadConfigRes, handoffConfigRes, bookingConfigRes, langConfigRes] = await Promise.all([
         chatbots.get(id),
         chatbots.listDocuments(id),
         chatbots.getEmbed(id),
         leads.getFormConfig(id).catch(() => ({ data: { enabled: false } })),
         handoff.getConfig(id).catch(() => ({ data: { enabled: false } })),
+        handoff.getBookingConfig(id).catch(() => ({ data: { enabled: false } })),
         translation.getConfig(id).catch(() => ({ data: { enabled: false } })),
       ]);
 
@@ -130,6 +510,8 @@ const ChatbotDetail = () => {
       // Set feature toggles
       setLeadFormEnabled(leadConfigRes.data?.enabled || false);
       setHandoffEnabled(handoffConfigRes.data?.enabled || false);
+      setBookingEnabled(bookingConfigRes.data?.enabled || false);
+      setBookingPrompt(bookingConfigRes.data?.booking_prompt || '');
       setMultiLanguageEnabled(langConfigRes.data?.enabled || false);
       setIsPersonal(botRes.data.is_personal || false);
     } catch (error) {
@@ -212,7 +594,12 @@ const ChatbotDetail = () => {
   const handleToggleLeadForm = async (enabled) => {
     setSavingFeatures(true);
     try {
-      await leads.updateFormConfig(id, { enabled });
+      // When enabling, also enable smart capture (AI-triggered lead form)
+      await leads.updateFormConfig(id, {
+        enabled,
+        smart_capture: enabled,  // Enable smart capture when lead form is enabled
+        trigger: enabled ? 'smart' : 'manual'  // Use smart trigger
+      });
       setLeadFormEnabled(enabled);
     } catch (error) {
       console.error('Failed to update lead form:', error);
@@ -230,6 +617,29 @@ const ChatbotDetail = () => {
       console.error('Failed to update handoff:', error);
     } finally {
       setSavingFeatures(false);
+    }
+  };
+
+  const handleToggleBooking = async (enabled) => {
+    setSavingFeatures(true);
+    try {
+      await handoff.toggleBooking(id, enabled);
+      setBookingEnabled(enabled);
+    } catch (error) {
+      console.error('Failed to update booking notifications:', error);
+    } finally {
+      setSavingFeatures(false);
+    }
+  };
+
+  const handleSaveBookingPrompt = async () => {
+    setSavingBookingPrompt(true);
+    try {
+      await handoff.updateBookingConfig(id, { booking_prompt: bookingPrompt });
+    } catch (error) {
+      console.error('Failed to save booking prompt:', error);
+    } finally {
+      setSavingBookingPrompt(false);
     }
   };
 
@@ -418,6 +828,15 @@ const ChatbotDetail = () => {
                 >
                   Live Chat
                 </button>
+                {bookingEnabled && (
+                  <button
+                    onClick={() => navigate(`/chatbots/${id}/bookings`)}
+                    className="py-3 sm:py-4 px-1 border-b-2 border-transparent font-medium text-sm sm:text-base whitespace-nowrap min-h-[44px] text-gray-500 hover:text-gray-700 flex items-center gap-1"
+                  >
+                    <Calendar className="w-4 h-4" />
+                    Bookings
+                  </button>
+                )}
               </>
             )}
           </nav>
@@ -425,202 +844,388 @@ const ChatbotDetail = () => {
 
         {/* Settings Tab */}
         {activeTab === 'settings' && (
-          <>
-          <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6 space-y-4 sm:space-y-6 max-w-2xl">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Name</label>
-              <input
-                type="text"
-                value={formData.name}
-                onChange={(e) => setFormData((prev) => ({ ...prev, name: e.target.value }))}
-                className="w-full px-3 sm:px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm sm:text-base min-h-[44px]"
-              />
-            </div>
+          <div className="space-y-6 max-w-3xl">
+            {/* Basic Information Section */}
+            <div className="bg-white rounded-xl shadow-sm p-6">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="p-2 bg-blue-100 rounded-lg">
+                  <MessageSquare className="w-5 h-5 text-blue-600" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900">Basic Information</h3>
+                  <p className="text-sm text-gray-500">Configure your chatbot's identity and greeting</p>
+                </div>
+              </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">System Prompt</label>
-              <textarea
-                value={formData.system_prompt}
-                onChange={(e) => setFormData((prev) => ({ ...prev, system_prompt: e.target.value }))}
-                rows={4}
-                className="w-full px-3 sm:px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm sm:text-base"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Welcome Message</label>
-              <input
-                type="text"
-                value={formData.welcome_message}
-                onChange={(e) => setFormData((prev) => ({ ...prev, welcome_message: e.target.value }))}
-                className="w-full px-3 sm:px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm sm:text-base min-h-[44px]"
-              />
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Primary Color</label>
-                <div className="flex items-center space-x-3">
-                  <input
-                    type="color"
-                    value={formData.primary_color}
-                    onChange={(e) => setFormData((prev) => ({ ...prev, primary_color: e.target.value }))}
-                    className="w-12 h-12 rounded-lg cursor-pointer flex-shrink-0"
-                  />
+              <div className="space-y-5">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Chatbot Name</label>
+                  <p className="text-xs text-gray-500 mb-2">This name will be displayed to your visitors</p>
                   <input
                     type="text"
-                    value={formData.primary_color}
-                    onChange={(e) => setFormData((prev) => ({ ...prev, primary_color: e.target.value }))}
-                    className="flex-1 px-3 sm:px-4 py-3 border border-gray-300 rounded-lg text-sm sm:text-base min-h-[44px]"
+                    value={formData.name}
+                    onChange={(e) => setFormData((prev) => ({ ...prev, name: e.target.value }))}
+                    placeholder="e.g., Support Assistant, Sales Bot"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Welcome Message</label>
+                  <p className="text-xs text-gray-500 mb-2">The first message visitors see when they open the chat</p>
+                  <input
+                    type="text"
+                    value={formData.welcome_message}
+                    onChange={(e) => setFormData((prev) => ({ ...prev, welcome_message: e.target.value }))}
+                    placeholder="e.g., Hi! How can I help you today?"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
                   />
                 </div>
               </div>
+            </div>
+
+            {/* AI Personality Section */}
+            <div className="bg-white rounded-xl shadow-sm p-6">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="p-2 bg-purple-100 rounded-lg">
+                  <FileText className="w-5 h-5 text-purple-600" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900">AI Personality & Behavior</h3>
+                  <p className="text-sm text-gray-500">Define how your chatbot should respond and behave</p>
+                </div>
+              </div>
+
+              {/* Quick Start Templates - Dropdown Selector */}
+              <div className="mb-6">
+                <div className="flex items-center gap-2 mb-2">
+                  <Sparkles className="w-4 h-4 text-purple-500" />
+                  <label className="text-sm font-medium text-gray-700">Quick Start with a Template</label>
+                </div>
+
+                <TemplateSelector
+                  templates={PROMPT_TEMPLATES}
+                  onSelect={(template) => setFormData((prev) => ({ ...prev, system_prompt: customizePrompt(template.prompt) }))}
+                  getColorClasses={getTemplateColorClasses}
+                />
+              </div>
+
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Position</label>
-                <select
-                  value={formData.position}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, position: e.target.value }))}
-                  className="w-full px-3 sm:px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm sm:text-base min-h-[44px]"
-                >
-                  <option value="bottom-right">Bottom Right</option>
-                  <option value="bottom-left">Bottom Left</option>
-                </select>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">System Instructions</label>
+                <p className="text-xs text-gray-500 mb-2">
+                  Tell the AI who it is, how it should respond, and any specific guidelines. This shapes the chatbot's personality and expertise.
+                </p>
+                <textarea
+                  value={formData.system_prompt}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, system_prompt: e.target.value }))}
+                  rows={10}
+                  placeholder="e.g., You are a friendly customer support agent for [Company Name]. Be helpful, professional, and concise. If you don't know something, suggest contacting support@company.com"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm font-mono"
+                />
+                <div className="mt-2 p-3 bg-blue-50 rounded-lg">
+                  <p className="text-xs text-blue-700">
+                    <strong>Tip:</strong> Be specific about your chatbot's role, tone, and limitations. Customize the template above or write your own instructions.
+                  </p>
+                </div>
               </div>
             </div>
 
-            <div className="pt-2 sm:pt-4">
+            {/* Appearance Section */}
+            <div className="bg-white rounded-xl shadow-sm p-6">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="p-2 bg-green-100 rounded-lg">
+                  <Eye className="w-5 h-5 text-green-600" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900">Widget Appearance</h3>
+                  <p className="text-sm text-gray-500">Customize how the chat widget looks on your website</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Brand Color</label>
+                  <p className="text-xs text-gray-500 mb-2">Used for the chat bubble and header</p>
+                  <div className="flex items-center space-x-3">
+                    <input
+                      type="color"
+                      value={formData.primary_color}
+                      onChange={(e) => setFormData((prev) => ({ ...prev, primary_color: e.target.value }))}
+                      className="w-14 h-14 rounded-lg cursor-pointer border-2 border-gray-200 flex-shrink-0"
+                    />
+                    <input
+                      type="text"
+                      value={formData.primary_color}
+                      onChange={(e) => setFormData((prev) => ({ ...prev, primary_color: e.target.value }))}
+                      className="flex-1 px-4 py-3 border border-gray-300 rounded-lg text-sm font-mono"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Widget Position</label>
+                  <p className="text-xs text-gray-500 mb-2">Where the chat bubble appears on your site</p>
+                  <select
+                    value={formData.position}
+                    onChange={(e) => setFormData((prev) => ({ ...prev, position: e.target.value }))}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                  >
+                    <option value="bottom-right">Bottom Right (Recommended)</option>
+                    <option value="bottom-left">Bottom Left</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Preview */}
+              <div className="mt-6 p-4 bg-gray-100 rounded-lg">
+                <p className="text-xs text-gray-500 mb-3">Preview</p>
+                <div className="flex items-center gap-3">
+                  <div
+                    className="w-14 h-14 rounded-full flex items-center justify-center shadow-lg"
+                    style={{ backgroundColor: formData.primary_color }}
+                  >
+                    <MessageSquare className="w-6 h-6 text-white" />
+                  </div>
+                  <div className="text-sm text-gray-600">
+                    This is how your chat bubble will look
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Save Button */}
+            <div className="flex justify-end">
               <button
                 onClick={handleSave}
                 disabled={saving}
-                className="w-full sm:w-auto px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 min-h-[44px] text-sm sm:text-base"
+                className="px-8 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 font-medium text-sm flex items-center gap-2"
               >
-                {saving ? 'Saving...' : 'Save Changes'}
+                {saving ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <Check className="w-4 h-4" />
+                    Save Changes
+                  </>
+                )}
               </button>
             </div>
-          </div>
 
-          {/* Feature Toggles Section */}
-          <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6 max-w-2xl mt-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Chat Widget Features</h3>
-            <p className="text-sm text-gray-500 mb-6">Enable or disable features in your chat widget</p>
-
-            <div className="space-y-4">
-              {/* Lead Capture Toggle - Hidden in Personal Mode */}
-              {!isPersonal && (
-                <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-blue-100 rounded-lg">
-                      <Users className="w-5 h-5 text-blue-600" />
-                    </div>
-                    <div>
-                      <p className="font-medium text-gray-900">Lead Capture Form</p>
-                      <p className="text-sm text-gray-500">Collect visitor information</p>
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => handleToggleLeadForm(!leadFormEnabled)}
-                    disabled={savingFeatures}
-                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors disabled:opacity-50 ${
-                      leadFormEnabled ? 'bg-blue-600' : 'bg-gray-300'
-                    }`}
-                  >
-                    <span
-                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                        leadFormEnabled ? 'translate-x-6' : 'translate-x-1'
-                      }`}
-                    />
-                  </button>
+            {/* Feature Toggles Section */}
+            <div className="bg-white rounded-xl shadow-sm p-6">
+              <div className="flex items-center gap-3 mb-2">
+                <div className="p-2 bg-indigo-100 rounded-lg">
+                  <BarChart3 className="w-5 h-5 text-indigo-600" />
                 </div>
-              )}
-
-              {/* Human Handoff Toggle - Hidden in Personal Mode */}
-              {!isPersonal && (
-                <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-green-100 rounded-lg">
-                      <Phone className="w-5 h-5 text-green-600" />
-                    </div>
-                    <div>
-                      <p className="font-medium text-gray-900">Human Handoff</p>
-                      <p className="text-sm text-gray-500">Allow visitors to request live chat</p>
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => handleToggleHandoff(!handoffEnabled)}
-                    disabled={savingFeatures}
-                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors disabled:opacity-50 ${
-                      handoffEnabled ? 'bg-blue-600' : 'bg-gray-300'
-                    }`}
-                  >
-                    <span
-                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                        handoffEnabled ? 'translate-x-6' : 'translate-x-1'
-                      }`}
-                    />
-                  </button>
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900">Features & Capabilities</h3>
+                  <p className="text-sm text-gray-500">Enable advanced features for your chatbot</p>
                 </div>
-              )}
-
-              {/* Multi-Language Toggle */}
-              <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-purple-100 rounded-lg">
-                    <Globe className="w-5 h-5 text-purple-600" />
-                  </div>
-                  <div>
-                    <p className="font-medium text-gray-900">Multi-Language</p>
-                    <p className="text-sm text-gray-500">Show language selector in widget</p>
-                  </div>
-                </div>
-                <button
-                  onClick={() => handleToggleMultiLanguage(!multiLanguageEnabled)}
-                  disabled={savingFeatures}
-                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors disabled:opacity-50 ${
-                    multiLanguageEnabled ? 'bg-blue-600' : 'bg-gray-300'
-                  }`}
-                >
-                  <span
-                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                      multiLanguageEnabled ? 'translate-x-6' : 'translate-x-1'
-                    }`}
-                  />
-                </button>
               </div>
 
-              {/* Personal Mode Toggle */}
-              <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-purple-100 rounded-lg">
-                    <MessageSquare className="w-5 h-5 text-purple-600" />
+              <div className="mt-6 space-y-4">
+                {/* Lead Capture Toggle - Hidden in Personal Mode */}
+                {!isPersonal && (
+                  <div className="p-4 bg-gradient-to-r from-blue-50 to-white rounded-xl border border-blue-100">
+                    <div className="flex items-start sm:items-center justify-between gap-4">
+                      <div className="flex items-start sm:items-center gap-3 sm:gap-4 flex-1 min-w-0">
+                        <div className="p-2 sm:p-2.5 bg-blue-100 rounded-lg sm:rounded-xl flex-shrink-0">
+                          <Users className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="font-medium text-gray-900 text-sm sm:text-base">Smart Lead Capture</p>
+                          <p className="text-xs sm:text-sm text-gray-500 mt-0.5">AI asks for contact info when interested</p>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => handleToggleLeadForm(!leadFormEnabled)}
+                        disabled={savingFeatures}
+                        className={`relative inline-flex h-8 w-14 sm:h-7 sm:w-12 items-center rounded-full transition-colors disabled:opacity-50 flex-shrink-0 ${
+                          leadFormEnabled ? 'bg-blue-600' : 'bg-gray-300'
+                        }`}
+                      >
+                        <span
+                          className={`inline-block h-6 w-6 sm:h-5 sm:w-5 transform rounded-full bg-white shadow transition-transform ${
+                            leadFormEnabled ? 'translate-x-7 sm:translate-x-6' : 'translate-x-1'
+                          }`}
+                        />
+                      </button>
+                    </div>
                   </div>
-                  <div>
-                    <p className="font-medium text-gray-900">Personal Mode</p>
-                    <p className="text-sm text-gray-500">ChatGPT-like experience with conversation history</p>
+                )}
+
+                {/* Human Handoff Toggle - Hidden in Personal Mode */}
+                {!isPersonal && (
+                  <div className="p-4 bg-gradient-to-r from-green-50 to-white rounded-xl border border-green-100">
+                    <div className="flex items-start sm:items-center justify-between gap-4">
+                      <div className="flex items-start sm:items-center gap-3 sm:gap-4 flex-1 min-w-0">
+                        <div className="p-2 sm:p-2.5 bg-green-100 rounded-lg sm:rounded-xl flex-shrink-0">
+                          <Phone className="w-4 h-4 sm:w-5 sm:h-5 text-green-600" />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="font-medium text-gray-900 text-sm sm:text-base">Human Handoff</p>
+                          <p className="text-xs sm:text-sm text-gray-500 mt-0.5">Let visitors request live support</p>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => handleToggleHandoff(!handoffEnabled)}
+                        disabled={savingFeatures}
+                        className={`relative inline-flex h-8 w-14 sm:h-7 sm:w-12 items-center rounded-full transition-colors disabled:opacity-50 flex-shrink-0 ${
+                          handoffEnabled ? 'bg-green-600' : 'bg-gray-300'
+                        }`}
+                      >
+                        <span
+                          className={`inline-block h-6 w-6 sm:h-5 sm:w-5 transform rounded-full bg-white shadow transition-transform ${
+                            handoffEnabled ? 'translate-x-7 sm:translate-x-6' : 'translate-x-1'
+                          }`}
+                        />
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Booking Notifications Toggle - Hidden in Personal Mode */}
+                {!isPersonal && (
+                  <div className="p-4 bg-gradient-to-r from-amber-50 to-white rounded-xl border border-amber-100">
+                    <div className="flex items-start sm:items-center justify-between gap-4">
+                      <div className="flex items-start sm:items-center gap-3 sm:gap-4 flex-1 min-w-0">
+                        <div className="p-2 sm:p-2.5 bg-amber-100 rounded-lg sm:rounded-xl flex-shrink-0">
+                          <Calendar className="w-4 h-4 sm:w-5 sm:h-5 text-amber-600" />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="font-medium text-gray-900 text-sm sm:text-base">Booking System</p>
+                          <p className="text-xs sm:text-sm text-gray-500 mt-0.5">Accept reservations via chat</p>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => handleToggleBooking(!bookingEnabled)}
+                        disabled={savingFeatures}
+                        className={`relative inline-flex h-8 w-14 sm:h-7 sm:w-12 items-center rounded-full transition-colors disabled:opacity-50 flex-shrink-0 ${
+                          bookingEnabled ? 'bg-amber-600' : 'bg-gray-300'
+                        }`}
+                      >
+                        <span
+                          className={`inline-block h-6 w-6 sm:h-5 sm:w-5 transform rounded-full bg-white shadow transition-transform ${
+                            bookingEnabled ? 'translate-x-7 sm:translate-x-6' : 'translate-x-1'
+                          }`}
+                        />
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Booking Prompt - Shows when booking is enabled */}
+                {!isPersonal && bookingEnabled && (
+                  <div className="ml-4 p-5 bg-amber-50 border border-amber-200 rounded-xl space-y-4">
+                    <div>
+                      <div className="flex items-center gap-2 mb-1">
+                        <Calendar className="w-4 h-4 text-amber-700" />
+                        <label className="text-sm font-semibold text-amber-900">Booking Instructions</label>
+                      </div>
+                      <p className="text-xs text-amber-700">
+                        Tell the AI how to handle booking requests. These instructions guide what information to collect and how to confirm reservations.
+                      </p>
+                    </div>
+                    <textarea
+                      value={bookingPrompt}
+                      onChange={(e) => setBookingPrompt(e.target.value)}
+                      rows={6}
+                      className="w-full px-4 py-3 text-sm border border-amber-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 bg-white"
+                      placeholder="e.g., When a customer wants to book, collect their name, phone number, preferred date and time, and number of guests. Confirm the details before submitting."
+                    />
+                    <button
+                      onClick={handleSaveBookingPrompt}
+                      disabled={savingBookingPrompt}
+                      className="px-5 py-2.5 text-sm font-medium text-white bg-amber-600 rounded-lg hover:bg-amber-700 disabled:opacity-50 flex items-center gap-2"
+                    >
+                      {savingBookingPrompt ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          Saving...
+                        </>
+                      ) : (
+                        'Save Instructions'
+                      )}
+                    </button>
+                  </div>
+                )}
+
+                {/* Multi-Language Toggle */}
+                <div className="p-4 bg-gradient-to-r from-purple-50 to-white rounded-xl border border-purple-100">
+                  <div className="flex items-start sm:items-center justify-between gap-4">
+                    <div className="flex items-start sm:items-center gap-3 sm:gap-4 flex-1 min-w-0">
+                      <div className="p-2 sm:p-2.5 bg-purple-100 rounded-lg sm:rounded-xl flex-shrink-0">
+                        <Globe className="w-4 h-4 sm:w-5 sm:h-5 text-purple-600" />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="font-medium text-gray-900 text-sm sm:text-base">Multi-Language Support</p>
+                        <p className="text-xs sm:text-sm text-gray-500 mt-0.5">Language selector in widget</p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => handleToggleMultiLanguage(!multiLanguageEnabled)}
+                      disabled={savingFeatures}
+                      className={`relative inline-flex h-8 w-14 sm:h-7 sm:w-12 items-center rounded-full transition-colors disabled:opacity-50 flex-shrink-0 ${
+                        multiLanguageEnabled ? 'bg-purple-600' : 'bg-gray-300'
+                      }`}
+                    >
+                      <span
+                        className={`inline-block h-6 w-6 sm:h-5 sm:w-5 transform rounded-full bg-white shadow transition-transform ${
+                          multiLanguageEnabled ? 'translate-x-7 sm:translate-x-6' : 'translate-x-1'
+                        }`}
+                      />
+                    </button>
                   </div>
                 </div>
-                <button
-                  onClick={() => handleTogglePersonalMode(!isPersonal)}
-                  disabled={savingFeatures}
-                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors disabled:opacity-50 ${
-                    isPersonal ? 'bg-purple-600' : 'bg-gray-300'
-                  }`}
-                >
-                  <span
-                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform shadow-sm ${
-                      isPersonal ? 'translate-x-6' : 'translate-x-1'
-                    }`}
-                  />
-                </button>
+
+                {/* Personal Mode Toggle */}
+                <div className="p-4 bg-gradient-to-r from-indigo-50 to-white rounded-xl border border-indigo-100">
+                  <div className="flex items-start sm:items-center justify-between gap-4">
+                    <div className="flex items-start sm:items-center gap-3 sm:gap-4 flex-1 min-w-0">
+                      <div className="p-2 sm:p-2.5 bg-indigo-100 rounded-lg sm:rounded-xl flex-shrink-0">
+                        <MessageSquare className="w-4 h-4 sm:w-5 sm:h-5 text-indigo-600" />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="font-medium text-gray-900 text-sm sm:text-base">Personal Assistant Mode</p>
+                        <p className="text-xs sm:text-sm text-gray-500 mt-0.5">Full-page chat with history</p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => handleTogglePersonalMode(!isPersonal)}
+                      disabled={savingFeatures}
+                      className={`relative inline-flex h-8 w-14 sm:h-7 sm:w-12 items-center rounded-full transition-colors disabled:opacity-50 flex-shrink-0 ${
+                        isPersonal ? 'bg-indigo-600' : 'bg-gray-300'
+                      }`}
+                    >
+                      <span
+                        className={`inline-block h-6 w-6 sm:h-5 sm:w-5 transform rounded-full bg-white shadow transition-transform ${
+                          isPersonal ? 'translate-x-7 sm:translate-x-6' : 'translate-x-1'
+                        }`}
+                      />
+                    </button>
+                  </div>
+                </div>
+
+                {isPersonal && (
+                  <div className="ml-4 p-4 bg-indigo-50 border border-indigo-200 rounded-xl">
+                    <p className="text-sm text-indigo-700">
+                      <strong>Personal Mode is active.</strong> Your chatbot now has a full-page interface with conversation history.
+                      Lead capture, handoff, and booking features are disabled in this mode.
+                    </p>
+                  </div>
+                )}
               </div>
+
+              {!isPersonal && (
+                <p className="text-xs text-gray-400 mt-6 flex items-center gap-1">
+                  <AlertCircle className="w-3 h-3" />
+                  Configure detailed settings in the Leads or Live Chat tabs above
+                </p>
+              )}
             </div>
-
-            {!isPersonal && (
-              <p className="text-xs text-gray-400 mt-4">
-                Click the Leads or Live Chat tabs above for detailed configuration
-              </p>
-            )}
           </div>
-          </>
         )}
 
         {/* Documents Tab */}

@@ -1,4 +1,5 @@
 import asyncio
+import os
 from .celery_app import celery_app
 from .services.ingestion import ingest_document
 from .core.database import connect_all, close_all
@@ -18,6 +19,26 @@ def run_async(coro):
 def process_document_task(self, file_path: str, document_id: str, tenant_id: str, bot_id: str, content_type: str, filename: str):
     """Celery task to process document ingestion."""
     try:
+        # Check if file exists before processing
+        if not os.path.exists(file_path):
+            print(f"File not found (likely deleted): {file_path}")
+            # Mark document as deleted/cancelled if it still exists in DB
+            async def _mark_cancelled():
+                from .core.database import get_mongodb
+                await connect_all()
+                try:
+                    db = get_mongodb()
+                    doc = await db.documents.find_one({"_id": document_id})
+                    if doc:
+                        await db.documents.update_one(
+                            {"_id": document_id},
+                            {"$set": {"status": "cancelled", "error": "File was deleted before processing"}}
+                        )
+                finally:
+                    await close_all()
+            run_async(_mark_cancelled())
+            return {"status": "cancelled", "reason": "file_deleted"}
+
         async def _process():
             await connect_all()
             try:
@@ -35,6 +56,11 @@ def process_document_task(self, file_path: str, document_id: str, tenant_id: str
 
         return run_async(_process())
 
+    except FileNotFoundError:
+        # File was deleted during processing - don't retry
+        print(f"File deleted during processing: {file_path}")
+        return {"status": "cancelled", "reason": "file_deleted"}
+
     except Exception as exc:
         # Update document status to failed
         async def _mark_failed():
@@ -50,6 +76,67 @@ def process_document_task(self, file_path: str, document_id: str, tenant_id: str
                 await close_all()
 
         run_async(_mark_failed())
+        raise self.retry(exc=exc, countdown=60)
+
+
+@celery_app.task(bind=True, max_retries=3)
+def send_booking_notification_task(self, booking_id: str, owner_email: str):
+    """Celery task to send booking notification email."""
+    try:
+        async def _send():
+            from .services.booking import get_booking, mark_booking_notified
+            from .services.email import send_booking_notification
+            from .core.database import get_mongodb
+
+            await connect_all()
+            try:
+                # Get booking details
+                booking = await get_booking(booking_id)
+                if not booking:
+                    print(f"Booking {booking_id} not found")
+                    return {"status": "error", "reason": "booking_not_found"}
+
+                # Get bot name for email
+                db = get_mongodb()
+                bot = await db.chatbots.find_one({"_id": booking.get("bot_id")})
+                bot_name = bot.get("name", "Aiden") if bot else "Aiden"
+
+                # Build booking details for email
+                booking_details = {
+                    "booking_type": booking.get("booking_type", "booking"),
+                    "guest_name": booking.get("guest_name"),
+                    "phone": booking.get("phone"),
+                    "date": booking.get("date"),
+                    "time": booking.get("time"),
+                    "people_count": booking.get("people_count"),
+                    "purpose": booking.get("purpose"),
+                    "duration": booking.get("duration"),
+                    "extras": booking.get("extras", []),
+                    "notes": booking.get("notes")
+                }
+
+                # Send email
+                success = await send_booking_notification(
+                    to_email=owner_email,
+                    booking_details=booking_details,
+                    bot_name=bot_name
+                )
+
+                if success:
+                    await mark_booking_notified(booking_id)
+                    print(f"Booking notification sent for {booking_id}")
+                    return {"status": "sent"}
+                else:
+                    print(f"Failed to send booking notification for {booking_id}")
+                    return {"status": "failed"}
+
+            finally:
+                await close_all()
+
+        return run_async(_send())
+
+    except Exception as exc:
+        print(f"Booking notification task error: {exc}")
         raise self.retry(exc=exc, countdown=60)
 
 

@@ -18,7 +18,9 @@ import {
   UserCheck,
   RefreshCw,
   Loader2,
-  X
+  X,
+  Calendar,
+  MapPin
 } from 'lucide-react';
 
 // Source citation badge
@@ -401,8 +403,13 @@ const ChatbotHandoff = () => {
                           <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${PRIORITY_COLORS[h.priority]}`}>
                             {h.priority}
                           </span>
+                          {h.trigger === 'booking' && (
+                            <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-700">
+                              Booking
+                            </span>
+                          )}
                         </div>
-                        <p className="text-sm text-gray-600 mt-1">{h.trigger}</p>
+                        <p className="text-sm text-gray-600 mt-1">{h.trigger === 'booking' ? `Booking: ${h.booking_details?.guest_name || 'Guest'}` : h.trigger}</p>
                         {h.assigned_to_name && (
                           <p className="text-xs text-gray-400 mt-1">
                             Agent: {h.assigned_to_name}
@@ -455,6 +462,104 @@ const ChatbotHandoff = () => {
                     </div>
                   </div>
                 </div>
+
+                {/* Booking Details Card - Show for booking triggers */}
+                {selectedHandoff.trigger === 'booking' && selectedHandoff.booking_details && (
+                  <div className="mx-4 mb-4 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                    <h4 className="font-semibold text-amber-800 mb-3 flex items-center gap-2">
+                      <Calendar className="w-5 h-5" />
+                      Booking Details
+                    </h4>
+                    <div className="grid grid-cols-2 gap-3 text-sm">
+                      <div>
+                        <span className="text-gray-600">Type:</span>
+                        <span className="ml-2 font-medium capitalize">
+                          {selectedHandoff.booking_details.booking_type || 'Booking'}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-gray-600">Guest:</span>
+                        <span className="ml-2 font-medium">
+                          {selectedHandoff.booking_details.guest_name}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-gray-600">Phone:</span>
+                        <a
+                          href={`https://wa.me/${selectedHandoff.booking_details.phone?.replace(/[^\d+]/g, '')}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="ml-2 text-green-600 hover:underline font-medium"
+                        >
+                          {selectedHandoff.booking_details.phone}
+                        </a>
+                      </div>
+                      <div>
+                        <span className="text-gray-600">Date:</span>
+                        <span className="ml-2 font-medium">
+                          {selectedHandoff.booking_details.date}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-gray-600">Time:</span>
+                        <span className="ml-2 font-medium">
+                          {selectedHandoff.booking_details.time}
+                        </span>
+                      </div>
+                      {selectedHandoff.booking_details.people_count && (
+                        <div>
+                          <span className="text-gray-600">People:</span>
+                          <span className="ml-2 font-medium">
+                            {selectedHandoff.booking_details.people_count}
+                          </span>
+                        </div>
+                      )}
+                      {selectedHandoff.booking_details.purpose && (
+                        <div className="col-span-2">
+                          <span className="text-gray-600">Purpose:</span>
+                          <span className="ml-2 font-medium">
+                            {selectedHandoff.booking_details.purpose}
+                          </span>
+                        </div>
+                      )}
+                      {selectedHandoff.booking_details.duration && (
+                        <div className="col-span-2">
+                          <span className="text-gray-600">Duration:</span>
+                          <span className="ml-2 font-medium">
+                            {selectedHandoff.booking_details.duration}
+                          </span>
+                        </div>
+                      )}
+                      {selectedHandoff.booking_details.extras?.length > 0 && (
+                        <div className="col-span-2">
+                          <span className="text-gray-600">Extras:</span>
+                          <span className="ml-2 font-medium">
+                            {selectedHandoff.booking_details.extras.join(', ')}
+                          </span>
+                        </div>
+                      )}
+                      {selectedHandoff.booking_details.notes && (
+                        <div className="col-span-2">
+                          <span className="text-gray-600">Notes:</span>
+                          <span className="ml-2 font-medium">
+                            {selectedHandoff.booking_details.notes}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                    <div className="mt-4 flex gap-2">
+                      <a
+                        href={`https://wa.me/${selectedHandoff.booking_details.phone?.replace(/[^\d+]/g, '')}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="px-4 py-2 bg-green-600 text-white rounded-lg text-sm hover:bg-green-700 flex items-center gap-2"
+                      >
+                        <Phone className="w-4 h-4" />
+                        Contact on WhatsApp
+                      </a>
+                    </div>
+                  </div>
+                )}
 
                 {/* Messages */}
                 <div className="flex-1 p-4 overflow-y-auto max-h-[400px] space-y-3">

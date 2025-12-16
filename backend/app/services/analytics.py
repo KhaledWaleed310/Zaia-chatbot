@@ -30,8 +30,52 @@ FALLBACK_PHRASES = [
     "sorry, i don't have"
 ]
 
+# Simple greetings and confirmations that don't need document context
+SKIP_PATTERNS = [
+    r'^(hi|hello|hey|hola|مرحبا|السلام عليكم|صباح الخير|مساء الخير)[\s!.,?]*$',
+    r'^(yes|no|ok|okay|sure|thanks|thank you|yep|nope|yeah|nah)[\s!.,?]*$',
+    r'^(good|great|nice|cool|awesome|perfect|excellent)[\s!.,?]*$',
+    r'^(bye|goodbye|see you|later)[\s!.,?]*$',
+    r'^[\s!.,?]*$',  # Empty or just punctuation
+]
+
 # Minimum context score threshold for a "good" answer
 CONTEXT_SCORE_THRESHOLD = 0.3
+
+# Minimum query length to consider as a real question
+MIN_QUERY_LENGTH = 10
+
+
+def is_simple_message(query: str) -> bool:
+    """Check if query is a simple greeting/confirmation that doesn't need document context."""
+    query_lower = query.lower().strip()
+
+    # Check against skip patterns
+    for pattern in SKIP_PATTERNS:
+        if re.match(pattern, query_lower, re.IGNORECASE):
+            return True
+
+    # Very short messages (less than 3 words) that aren't questions
+    words = query_lower.split()
+    if len(words) <= 2 and '?' not in query:
+        return True
+
+    return False
+
+
+def looks_like_question(query: str) -> bool:
+    """Check if query looks like a real question needing specific information."""
+    query_lower = query.lower().strip()
+
+    # Contains question indicators
+    question_words = ['what', 'how', 'why', 'when', 'where', 'who', 'which', 'can', 'could', 'would', 'should', 'is', 'are', 'do', 'does']
+    has_question_word = any(query_lower.startswith(w) or f' {w} ' in f' {query_lower} ' for w in question_words)
+    has_question_mark = '?' in query
+
+    # Is long enough to be a real question
+    is_long_enough = len(query_lower) >= MIN_QUERY_LENGTH
+
+    return (has_question_word or has_question_mark) and is_long_enough
 
 
 async def detect_unanswered_question(
@@ -44,37 +88,43 @@ async def detect_unanswered_question(
 ) -> Optional[Dict]:
     """
     Detect if a query was not properly answered based on:
-    1. Low context relevance scores
-    2. Empty retrieval results
-    3. Explicit fallback phrases in response
+    1. Explicit fallback phrases in response (strongest signal)
+    2. Low context relevance scores for real questions
+    3. Empty retrieval results for questions that need specific info
 
+    Skips simple greetings and confirmations.
     Returns the unanswered question record if detected, None otherwise.
     """
+    # Skip simple greetings and confirmations - they don't need document context
+    if is_simple_message(query):
+        return None
+
     detection_method = None
     max_score = 0
 
-    # Check 1: No sources retrieved
-    if not context or len(context) == 0:
-        detection_method = "no_sources"
-        max_score = 0
-    else:
-        # Get the highest fused score from context
-        max_score = max(
-            c.get("fused_score", c.get("score", 0))
-            for c in context
-        )
+    # Check 1: Explicit fallback phrases in response (strongest signal - always check)
+    response_lower = response.lower()
+    for phrase in FALLBACK_PHRASES:
+        if phrase in response_lower:
+            detection_method = "explicit_fallback"
+            break
 
-        # Check 2: Low context relevance
-        if max_score < CONTEXT_SCORE_THRESHOLD:
-            detection_method = "low_context_score"
+    # For the following checks, only flag if the query looks like a real question
+    if not detection_method and looks_like_question(query):
+        # Check 2: No sources retrieved for a real question
+        if not context or len(context) == 0:
+            detection_method = "no_sources"
+            max_score = 0
+        else:
+            # Get the highest fused score from context
+            max_score = max(
+                c.get("fused_score", c.get("score", 0))
+                for c in context
+            )
 
-    # Check 3: Explicit fallback phrases in response
-    if not detection_method:
-        response_lower = response.lower()
-        for phrase in FALLBACK_PHRASES:
-            if phrase in response_lower:
-                detection_method = "explicit_fallback"
-                break
+            # Check 3: Low context relevance for a real question
+            if max_score < CONTEXT_SCORE_THRESHOLD:
+                detection_method = "low_context_score"
 
     if detection_method:
         db = get_mongodb()

@@ -285,6 +285,11 @@ export const handoff = {
 
   // Get agents status
   getAgentsStatus: () => api.get('/handoff/agents/status'),
+
+  // Booking config
+  getBookingConfig: (botId) => api.get(`/handoff/${botId}/booking-config`),
+  updateBookingConfig: (botId, config) => api.put(`/handoff/${botId}/booking-config`, config),
+  toggleBooking: (botId, enabled) => api.patch(`/handoff/${botId}/booking-config/toggle?enabled=${enabled}`),
 };
 
 // Leads API
@@ -433,6 +438,36 @@ export const gdpr = {
 
   // Update marketing consent
   updateConsent: (marketingConsent) => api.patch('/gdpr/consent', { marketing_consent: marketingConsent }),
+};
+
+// Bookings API
+export const bookings = {
+  // List bookings for a bot
+  list: (botId, params = {}) => {
+    const query = buildQueryString(params);
+    return api.get(`/bookings/${botId}${query ? '?' + query : ''}`);
+  },
+
+  // Get calendar view (bookings grouped by date)
+  getCalendar: (botId, year, month) =>
+    api.get(`/bookings/${botId}/calendar?year=${year}&month=${month}`),
+
+  // Check time slot availability
+  checkAvailability: (botId, date, time, duration = null) => {
+    const params = new URLSearchParams({ date, time });
+    if (duration) params.append('duration', duration);
+    return api.get(`/bookings/${botId}/check-availability?${params.toString()}`);
+  },
+
+  // Get single booking
+  get: (botId, bookingId) => api.get(`/bookings/${botId}/${bookingId}`),
+
+  // Update booking status
+  updateStatus: (botId, bookingId, status) =>
+    api.patch(`/bookings/${botId}/${bookingId}?status=${status}`),
+
+  // Cancel booking
+  cancel: (botId, bookingId) => api.delete(`/bookings/${botId}/${bookingId}`),
 };
 
 export default api;

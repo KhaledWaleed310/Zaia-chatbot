@@ -170,12 +170,30 @@ async def send_message(
                 top_k=5
             )
 
+        # Build system prompt with booking and lead capture instructions if enabled
+        base_system_prompt = bot.get("system_prompt", "You are a helpful assistant.")
+        effective_system_prompt = base_system_prompt
+
+        # Add booking instructions if enabled
+        booking_config = bot.get("booking_config", {})
+        if booking_config.get("enabled", False):
+            from ..schemas.booking import DEFAULT_BOOKING_PROMPT
+            booking_prompt = booking_config.get("booking_prompt") or DEFAULT_BOOKING_PROMPT
+            effective_system_prompt = f"{effective_system_prompt}\n\n## Booking Instructions\n{booking_prompt}"
+
+        # Add smart lead capture instructions if enabled
+        lead_config = bot.get("lead_form_config", {})
+        if lead_config.get("enabled", False) and lead_config.get("smart_capture", False):
+            from ..schemas.leads import DEFAULT_SMART_CAPTURE_PROMPT
+            smart_prompt = lead_config.get("smart_capture_prompt") or DEFAULT_SMART_CAPTURE_PROMPT
+            effective_system_prompt = f"{effective_system_prompt}\n\n## Lead Capture Instructions\n{smart_prompt}"
+
         # Generate response with enhanced LLM
         if enhanced:
             llm_result = await generate_enhanced_response(
                 query=message.message,
                 context=context,
-                system_prompt=bot.get("system_prompt", "You are a helpful assistant."),
+                system_prompt=effective_system_prompt,
                 conversation_history=history,
                 query_analysis=query_analysis,
                 tenant_id=tenant_id,
@@ -193,16 +211,106 @@ async def send_message(
             response_text = await generate_response(
                 query=message.message,
                 context=context,
-                system_prompt=bot.get("system_prompt", "You are a helpful assistant."),
+                system_prompt=effective_system_prompt,
                 conversation_history=history,
                 tenant_id=tenant_id,
                 bot_id=bot_id,
                 session_id=session_id
             )
 
-        # Run analytics in background to not block the response
-        # These operations are important but shouldn't delay the user
-        async def run_analytics_background():
+        # Check for booking trigger and process booking notification
+        booking_config = bot.get("booking_config", {})
+        if booking_config.get("enabled", False):
+            from ..services.booking import check_booking_trigger, extract_booking_details, create_booking, check_availability
+            from ..services.handoff import create_booking_handoff
+
+            # Check if response indicates a booking was made
+            custom_keywords = booking_config.get("trigger_keywords")
+            if check_booking_trigger(response_text, custom_keywords):
+                logger.info(f"Booking trigger detected in session {session_id}")
+
+                # Build full conversation history for extraction
+                full_history = history + [
+                    {"role": "user", "content": message.message},
+                    {"role": "assistant", "content": response_text}
+                ]
+
+                # Extract booking details via LLM
+                try:
+                    booking_details = await extract_booking_details(
+                        conversation_history=full_history,
+                        tenant_id=tenant_id,
+                        bot_id=bot_id
+                    )
+
+                    if booking_details and booking_details.get("guest_name") and booking_details.get("phone"):
+                        # Set default booking type if not detected
+                        if not booking_details.get("booking_type"):
+                            booking_details["booking_type"] = booking_config.get("default_booking_type", "other")
+
+                        # Check availability before creating booking
+                        availability = await check_availability(
+                            bot_id=bot_id,
+                            tenant_id=tenant_id,
+                            date_str=booking_details.get("date", ""),
+                            time_str=booking_details.get("time", ""),
+                            duration_str=booking_details.get("duration")
+                        )
+
+                        if not availability.get("available", True):
+                            # Time slot is taken - append conflict message to response
+                            conflict_times = [c.get("time", "") for c in availability.get("conflicts", [])]
+                            conflict_msg = f"\n\nI apologize, but that time slot is already booked. There's an existing booking at {', '.join(conflict_times)}. Would you like to choose a different time?"
+                            response_text += conflict_msg
+                            logger.info(f"Booking blocked due to conflict: {availability.get('message')}")
+                        else:
+                            # Time slot is available - create booking
+                            booking = await create_booking(
+                                bot_id=bot_id,
+                                tenant_id=tenant_id,
+                                session_id=session_id,
+                                booking_data=booking_details
+                            )
+
+                            # Create booking handoff for dashboard notification
+                            await create_booking_handoff(
+                                session_id=session_id,
+                                bot_id=bot_id,
+                                tenant_id=tenant_id,
+                                booking_details=booking_details,
+                                conversation_context=history[-20:]
+                            )
+
+                            logger.info(f"Booking created: {booking['_id']} for {booking_details.get('guest_name')}")
+                    else:
+                        logger.warning(f"Booking trigger detected but extraction incomplete (missing name or phone)")
+                except Exception as e:
+                    logger.error(f"Booking processing failed: {e}")
+
+        # Generate message IDs upfront for updating later
+        user_msg_id = str(uuid.uuid4())
+        assistant_msg_id = str(uuid.uuid4())
+
+        # Store messages with analytics data
+        user_msg = {
+            "role": "user",
+            "content": message.message,
+            "timestamp": datetime.utcnow(),
+            # NEW: Context data
+            "intent": working_memory.get("current_intent", {}).get("intent") if working_memory else None,
+            "stage": working_memory.get("current_stage") if working_memory else None,
+            "extracted_facts": working_memory.get("new_facts", {}) if working_memory else {}
+        }
+
+        assistant_msg = {
+            "role": "assistant",
+            "content": response_text,
+            "timestamp": datetime.utcnow(),
+            "query": message.message  # Store the original query for quality analysis
+        }
+
+        # Run analytics in background and UPDATE stored messages
+        async def run_analytics_background(user_msg_id: str, assistant_msg_id: str):
             try:
                 user_sentiment = await analyze_sentiment(message.message)
                 quality_score = await calculate_quality_score(
@@ -219,38 +327,23 @@ async def send_message(
                     session_id=session_id
                 )
                 await track_usage_realtime(bot_id, session_id)
-                return user_sentiment, quality_score
+
+                # Update the stored messages with actual analytics data
+                await db.messages.update_one(
+                    {"_id": user_msg_id},
+                    {"$set": {"sentiment": user_sentiment}}
+                )
+                await db.messages.update_one(
+                    {"_id": assistant_msg_id},
+                    {"$set": {"quality_score": quality_score}}
+                )
+                logger.debug(f"Analytics updated for session {session_id}: sentiment={user_sentiment.get('label') if isinstance(user_sentiment, dict) else user_sentiment}, quality={quality_score.get('overall') if isinstance(quality_score, dict) else quality_score}")
             except Exception as e:
                 logger.warning(f"Background analytics failed: {e}")
-                return "neutral", 0.5
 
         # Start analytics in background (non-blocking)
         import asyncio
-        analytics_task = asyncio.create_task(run_analytics_background())
-
-        # Use default values for immediate response
-        user_sentiment = "neutral"
-        quality_score = 0.5
-
-        # Store messages with analytics data
-        user_msg = {
-            "role": "user",
-            "content": message.message,
-            "timestamp": datetime.utcnow(),
-            "sentiment": user_sentiment,
-            # NEW: Context data
-            "intent": working_memory.get("current_intent", {}).get("intent") if working_memory else None,
-            "stage": working_memory.get("current_stage") if working_memory else None,
-            "extracted_facts": working_memory.get("new_facts", {}) if working_memory else {}
-        }
-
-        assistant_msg = {
-            "role": "assistant",
-            "content": response_text,
-            "timestamp": datetime.utcnow(),
-            "quality_score": quality_score,
-            "query": message.message  # Store the original query for quality analysis
-        }
+        asyncio.create_task(run_analytics_background(user_msg_id, assistant_msg_id))
 
         # Update conversation
         if conversation:
@@ -274,17 +367,17 @@ async def send_message(
                 "updated_at": datetime.utcnow()
             })
 
-        # Store individual messages for analytics
+        # Store individual messages for analytics (using pre-generated IDs for later update)
         await db.messages.insert_many([
             {
-                "_id": str(uuid.uuid4()),
+                "_id": user_msg_id,
                 "session_id": session_id,
                 "bot_id": bot_id,
                 "tenant_id": tenant_id,
                 **user_msg
             },
             {
-                "_id": str(uuid.uuid4()),
+                "_id": assistant_msg_id,
                 "session_id": session_id,
                 "bot_id": bot_id,
                 "tenant_id": tenant_id,
@@ -341,7 +434,8 @@ async def send_message_stream(
     bot_id: str,
     message: ChatMessage,
     enhanced: bool = Query(default=True, description="Use enhanced RAG pipeline"),
-    visitor_id: Optional[str] = Query(None, description="Visitor ID for personal mode")
+    visitor_id: Optional[str] = Query(None, description="Visitor ID for personal mode"),
+    timezone: Optional[str] = Query(None, description="Customer timezone (e.g., Africa/Cairo)")
 ):
     """
     Send a message and stream the response.
@@ -441,6 +535,24 @@ async def send_message_stream(
             top_k=5
         )
 
+    # Build system prompt with booking and lead capture instructions if enabled (streaming)
+    base_system_prompt = bot.get("system_prompt", "You are a helpful assistant.")
+    effective_system_prompt = base_system_prompt
+
+    # Add booking instructions if enabled
+    booking_config = bot.get("booking_config", {})
+    if booking_config.get("enabled", False):
+        from ..schemas.booking import DEFAULT_BOOKING_PROMPT
+        booking_prompt = booking_config.get("booking_prompt") or DEFAULT_BOOKING_PROMPT
+        effective_system_prompt = f"{effective_system_prompt}\n\n## Booking Instructions\n{booking_prompt}"
+
+    # Add smart lead capture instructions if enabled
+    lead_config = bot.get("lead_form_config", {})
+    if lead_config.get("enabled", False) and lead_config.get("smart_capture", False):
+        from ..schemas.leads import DEFAULT_SMART_CAPTURE_PROMPT
+        smart_prompt = lead_config.get("smart_capture_prompt") or DEFAULT_SMART_CAPTURE_PROMPT
+        effective_system_prompt = f"{effective_system_prompt}\n\n## Lead Capture Instructions\n{smart_prompt}"
+
     async def generate():
         full_response = ""
 
@@ -450,7 +562,7 @@ async def send_message_stream(
         async for chunk in generate_response_stream(
             query=message.message,
             context=context,
-            system_prompt=bot.get("system_prompt", "You are a helpful assistant."),
+            system_prompt=effective_system_prompt,
             conversation_history=history,
             tenant_id=tenant_id,
             bot_id=bot_id,
@@ -458,6 +570,10 @@ async def send_message_stream(
         ):
             full_response += chunk
             yield f"data: {json.dumps({'content': chunk})}\n\n"
+
+        # Generate message IDs upfront for updating later
+        user_msg_id = str(uuid.uuid4())
+        assistant_msg_id = str(uuid.uuid4())
 
         # Store messages after streaming completes
         user_msg = {
@@ -473,7 +589,8 @@ async def send_message_stream(
         assistant_msg = {
             "role": "assistant",
             "content": full_response,
-            "timestamp": datetime.utcnow()
+            "timestamp": datetime.utcnow(),
+            "query": message.message  # Store the original query for quality analysis
         }
 
         # Store conversation in database (same as non-streaming endpoint)
@@ -499,23 +616,59 @@ async def send_message_stream(
                     "updated_at": datetime.utcnow()
                 })
 
-            # Store individual messages for analytics
+            # Store individual messages for analytics (using pre-generated IDs for later update)
             await db.messages.insert_many([
                 {
-                    "_id": str(uuid.uuid4()),
+                    "_id": user_msg_id,
                     "session_id": session_id,
                     "bot_id": bot_id,
                     "tenant_id": tenant_id,
                     **user_msg
                 },
                 {
-                    "_id": str(uuid.uuid4()),
+                    "_id": assistant_msg_id,
                     "session_id": session_id,
                     "bot_id": bot_id,
                     "tenant_id": tenant_id,
                     **assistant_msg
                 }
             ])
+
+            # Run analytics in background and UPDATE stored messages
+            async def run_streaming_analytics():
+                try:
+                    user_sentiment = await analyze_sentiment(message.message)
+                    quality_score = await calculate_quality_score(
+                        query=message.message,
+                        response=full_response,
+                        context=context
+                    )
+                    await detect_unanswered_question(
+                        query=message.message,
+                        response=full_response,
+                        context=context,
+                        tenant_id=tenant_id,
+                        bot_id=bot_id,
+                        session_id=session_id
+                    )
+                    await track_usage_realtime(bot_id, session_id)
+
+                    # Update the stored messages with actual analytics data
+                    await db.messages.update_one(
+                        {"_id": user_msg_id},
+                        {"$set": {"sentiment": user_sentiment}}
+                    )
+                    await db.messages.update_one(
+                        {"_id": assistant_msg_id},
+                        {"$set": {"quality_score": quality_score}}
+                    )
+                    logger.debug(f"[STREAMING] Analytics updated for session {session_id}")
+                except Exception as e:
+                    logger.warning(f"[STREAMING] Background analytics failed: {e}")
+
+            # Start analytics in background (non-blocking)
+            import asyncio
+            asyncio.create_task(run_streaming_analytics())
 
             # Generate title for first message in personal mode
             is_first_message = conversation is None or len(conversation.get("messages", [])) == 0
@@ -532,6 +685,86 @@ async def send_message_stream(
                     logger.warning(f"Title generation failed: {e}")
         except Exception as e:
             logger.error(f"Failed to store streaming messages: {e}")
+
+        # Check for booking trigger and process booking notification (streaming endpoint)
+        booking_config = bot.get("booking_config", {})
+        if booking_config.get("enabled", False):
+            from ..services.booking import check_booking_trigger, extract_booking_details, create_booking, check_availability
+            from ..services.handoff import create_booking_handoff
+
+            # Check if response indicates a booking was made
+            custom_keywords = booking_config.get("trigger_keywords")
+            if check_booking_trigger(full_response, custom_keywords):
+                logger.info(f"[STREAMING] Booking trigger detected in session {session_id}, customer timezone: {timezone}")
+
+                # Fetch full conversation history for booking extraction
+                # Note: The conversation was already saved above, so it includes the current exchange
+                booking_conversation = await db.conversations.find_one({"session_id": session_id, "bot_id": bot_id})
+
+                if booking_conversation and booking_conversation.get("messages"):
+                    # Conversation already includes the just-saved messages
+                    full_history = booking_conversation.get("messages", [])[-20:]
+                else:
+                    # Fallback: use raw_history plus current exchange
+                    full_history = raw_history + [
+                        {"role": "user", "content": message.message},
+                        {"role": "assistant", "content": full_response}
+                    ]
+
+                logger.info(f"[STREAMING] Extracting from {len(full_history)} messages")
+
+                # Extract booking details via LLM
+                try:
+                    booking_details = await extract_booking_details(
+                        conversation_history=full_history,
+                        tenant_id=tenant_id,
+                        bot_id=bot_id,
+                        customer_timezone=timezone
+                    )
+
+                    logger.info(f"[STREAMING] Extraction result: {booking_details}")
+
+                    if booking_details and booking_details.get("guest_name") and booking_details.get("phone"):
+                        # Set default booking type if not detected
+                        if not booking_details.get("booking_type"):
+                            booking_details["booking_type"] = booking_config.get("default_booking_type", "other")
+
+                        # Check availability before creating booking
+                        availability = await check_availability(
+                            bot_id=bot_id,
+                            tenant_id=tenant_id,
+                            date_str=booking_details.get("date", ""),
+                            time_str=booking_details.get("time", ""),
+                            duration_str=booking_details.get("duration"),
+                            customer_timezone=timezone
+                        )
+
+                        if not availability.get("available", True):
+                            # Time slot is taken - log the conflict
+                            logger.info(f"[STREAMING] Booking blocked due to conflict: {availability.get('message')}")
+                        else:
+                            # Time slot is available - create booking
+                            booking = await create_booking(
+                                bot_id=bot_id,
+                                tenant_id=tenant_id,
+                                session_id=session_id,
+                                booking_data=booking_details
+                            )
+
+                            # Create booking handoff for dashboard notification
+                            await create_booking_handoff(
+                                session_id=session_id,
+                                bot_id=bot_id,
+                                tenant_id=tenant_id,
+                                booking_details=booking_details,
+                                conversation_context=raw_history[-20:]
+                            )
+
+                            logger.info(f"[STREAMING] Booking created: {booking['_id']} for {booking_details.get('guest_name')}")
+                    else:
+                        logger.warning(f"[STREAMING] Booking trigger detected but extraction incomplete (missing name or phone)")
+                except Exception as e:
+                    logger.error(f"[STREAMING] Booking processing failed: {e}")
 
         # Format sources with enhanced metadata
         sources = []

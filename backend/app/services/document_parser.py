@@ -6,14 +6,52 @@ from bs4 import BeautifulSoup
 import requests
 import tiktoken
 
+# OCR imports
+try:
+    import pytesseract
+    from pdf2image import convert_from_path
+    OCR_AVAILABLE = True
+except ImportError:
+    OCR_AVAILABLE = False
+
+
+def parse_pdf_with_ocr(file_path: str) -> str:
+    """Extract text from PDF using OCR (for scanned documents)."""
+    if not OCR_AVAILABLE:
+        raise ValueError("OCR libraries not available")
+
+    text = ""
+    try:
+        # Convert PDF pages to images
+        images = convert_from_path(file_path, dpi=300)
+
+        for i, image in enumerate(images):
+            # Run OCR on each page
+            page_text = pytesseract.image_to_string(image, lang='eng')
+            text += page_text + "\n"
+
+        return text.strip()
+    except Exception as e:
+        raise ValueError(f"OCR failed: {str(e)}")
+
 
 def parse_pdf(file_path: str) -> str:
-    """Extract text from PDF file."""
+    """Extract text from PDF file, with OCR fallback for scanned documents."""
     reader = PdfReader(file_path)
     text = ""
     for page in reader.pages:
-        text += page.extract_text() + "\n"
-    return text.strip()
+        page_text = page.extract_text()
+        if page_text:
+            text += page_text + "\n"
+
+    text = text.strip()
+
+    # If no text extracted and OCR is available, try OCR
+    if not text and OCR_AVAILABLE:
+        print(f"No text extracted from PDF, attempting OCR: {file_path}")
+        text = parse_pdf_with_ocr(file_path)
+
+    return text
 
 
 def parse_docx(file_path: str) -> str:

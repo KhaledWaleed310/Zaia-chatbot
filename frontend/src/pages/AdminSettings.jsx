@@ -28,7 +28,7 @@ const AdminSettings = () => {
     // General
     app_name: 'Aiden',
     app_description: 'AI-powered chatbot platform',
-    support_email: 'support@aidenlink.cloud',
+    support_email: 'info@zaiasystems.com',
 
     // Registration
     allow_registration: true,

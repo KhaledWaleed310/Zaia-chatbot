@@ -5,7 +5,7 @@ from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from .core.database import connect_all, close_all
 from .core.config import settings
-from .api import auth, chatbots, chat, integrations, admin, users, analytics, leads, handoff, translation, feedback, api_keys, greeting, gdpr
+from .api import auth, chatbots, chat, integrations, admin, users, analytics, leads, handoff, translation, feedback, api_keys, greeting, gdpr, booking
 
 
 @asynccontextmanager
@@ -98,6 +98,7 @@ app.include_router(feedback.router, prefix="/api/v1")
 app.include_router(api_keys.router, prefix="/api/v1")
 app.include_router(greeting.router, prefix="/api/v1")
 app.include_router(gdpr.router, prefix="/api/v1")
+app.include_router(booking.router, prefix="/api/v1")
 
 
 @app.get("/")

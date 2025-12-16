@@ -316,8 +316,4 @@ Risks shall be addressed through:
 ## Appendix B: Contact Information
 
 **Information Security Team:**
-Email: security@zaiasystems.com
-Emergency: security-emergency@zaiasystems.com
-
-**Policy Questions:**
-Email: compliance@zaiasystems.com
+Email: info@zaiasystems.com
