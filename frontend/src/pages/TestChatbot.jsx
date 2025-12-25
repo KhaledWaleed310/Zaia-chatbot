@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import Layout from '../components/Layout';
@@ -60,6 +61,7 @@ const TextWithCitations = ({ children }) => {
 const formatSourceCitations = (text) => normalizeCitations(text);
 
 const TestChatbot = () => {
+  const { t } = useTranslation('dashboard');
   const [searchParams] = useSearchParams();
   const [botList, setBotList] = useState([]);
   const [selectedBot, setSelectedBot] = useState(null);
@@ -286,13 +288,13 @@ const TestChatbot = () => {
       <Layout>
         <div className="flex flex-col items-center justify-center h-64 text-center px-4">
           <MessageSquare className="w-12 h-12 text-gray-300 mb-4" />
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">No Chatbots Yet</h2>
-          <p className="text-gray-500 mb-4">Create your first chatbot to start testing.</p>
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">{t('chatbots.noChatbots', 'No Chatbots Yet')}</h2>
+          <p className="text-gray-500 mb-4">{t('chatbots.createFirst', 'Create your first chatbot to start testing.')}</p>
           <a
             href="/chatbots/new"
             className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
           >
-            Create Chatbot
+            {t('chatbots.create', 'Create Chatbot')}
           </a>
         </div>
       </Layout>
@@ -305,8 +307,8 @@ const TestChatbot = () => {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 mb-3 sm:mb-4">
           <div>
-            <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900">Test Chatbot</h1>
-            <p className="text-xs sm:text-sm text-gray-500">Test your chatbots before deploying</p>
+            <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900">{t('test.title', 'Test Chatbot')}</h1>
+            <p className="text-xs sm:text-sm text-gray-500">{t('test.subtitle', 'Test your chatbots before deploying')}</p>
           </div>
           <div className="flex items-center gap-2 sm:gap-3">
             {/* Bot Selector */}
@@ -329,7 +331,7 @@ const TestChatbot = () => {
             <button
               onClick={resetConversation}
               className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors min-h-[38px] min-w-[38px] sm:min-h-[42px] sm:min-w-[42px] flex items-center justify-center flex-shrink-0"
-              title="Reset conversation"
+              title={t('test.resetConversation', 'Reset conversation')}
             >
               <RefreshCw className="w-4 h-4 sm:w-5 sm:h-5" />
             </button>
@@ -409,7 +411,7 @@ const TestChatbot = () => {
                   {msg.sources && getUniqueSources(msg.sources).length > 0 && (
                     <div className="mt-3 pt-3 border-t border-gray-300">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <span className="text-xs text-gray-500">Sources:</span>
+                        <span className="text-xs text-gray-500">{t('test.sources', 'Sources')}:</span>
                         {getUniqueSources(msg.sources).slice(0, 3).map((source, i) => (
                           <span
                             key={i}
@@ -434,7 +436,7 @@ const TestChatbot = () => {
                 <div className="bg-gray-100 rounded-2xl px-4 py-3">
                   <div className="flex items-center gap-2">
                     <Loader2 className="w-4 h-4 animate-spin text-gray-500" />
-                    <span className="text-sm text-gray-500">Thinking...</span>
+                    <span className="text-sm text-gray-500">{t('test.thinking', 'Thinking...')}</span>
                   </div>
                 </div>
               </div>
@@ -450,7 +452,7 @@ const TestChatbot = () => {
                 type="text"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                placeholder="Type a message..."
+                placeholder={t('test.placeholder', 'Type a message...')}
                 disabled={loading}
                 className="flex-1 px-3 sm:px-4 py-2 sm:py-2.5 border border-gray-300 rounded-full focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm disabled:opacity-50 min-h-[40px] sm:min-h-[44px]"
               />

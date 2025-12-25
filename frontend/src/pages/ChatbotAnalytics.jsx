@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import Layout from '../components/Layout';
 import { analytics, chatbots } from '../utils/api';
 import {
@@ -20,6 +21,7 @@ import {
 } from 'lucide-react';
 
 const ChatbotAnalytics = () => {
+  const { t } = useTranslation('dashboard');
   const { id } = useParams();
   const [bot, setBot] = useState(null);
   const [dashboard, setDashboard] = useState(null);
@@ -159,9 +161,9 @@ const ChatbotAnalytics = () => {
     return (
       <Layout>
         <div className="text-center py-12">
-          <p className="text-gray-500">Chatbot not found</p>
+          <p className="text-gray-500">{t('analytics.notFound', 'Chatbot not found')}</p>
           <Link to="/chatbots" className="text-blue-600 hover:underline mt-2 inline-block">
-            Back to Chatbots
+            {t('analytics.backToChatbots', 'Back to Chatbots')}
           </Link>
         </div>
       </Layout>
@@ -171,11 +173,11 @@ const ChatbotAnalytics = () => {
   const { unanswered_summary, sentiment_summary, quality_summary, realtime_usage, topic_distribution } = dashboard || {};
 
   const tabs = [
-    { id: 'overview', label: 'Overview' },
-    { id: 'unanswered', label: 'Unanswered' },
-    { id: 'sentiment', label: 'Sentiment' },
-    { id: 'quality', label: 'Quality' },
-    { id: 'usage', label: 'Usage' }
+    { id: 'overview', label: t('analytics.tabs.overview', 'Overview') },
+    { id: 'unanswered', label: t('analytics.tabs.unanswered', 'Unanswered') },
+    { id: 'sentiment', label: t('analytics.tabs.sentiment', 'Sentiment') },
+    { id: 'quality', label: t('analytics.tabs.quality', 'Quality') },
+    { id: 'usage', label: t('analytics.tabs.usage', 'Usage') }
   ];
 
   return (
@@ -189,7 +191,7 @@ const ChatbotAnalytics = () => {
             </Link>
             <div className="min-w-0">
               <h1 className="text-xl sm:text-2xl font-bold text-gray-900 truncate">{bot.name}</h1>
-              <p className="text-sm text-gray-500 hidden sm:block">Detailed insights and performance metrics</p>
+              <p className="text-sm text-gray-500 hidden sm:block">{t('analytics.subtitle', 'Detailed insights and performance metrics')}</p>
             </div>
           </div>
 
@@ -202,9 +204,9 @@ const ChatbotAnalytics = () => {
                 onChange={(e) => setDays(Number(e.target.value))}
                 className="bg-transparent pr-8 py-1.5 text-sm focus:outline-none"
               >
-                <option value={7}>7 days</option>
-                <option value={30}>30 days</option>
-                <option value={90}>90 days</option>
+                <option value={7}>{t('analytics.days7', '7 days')}</option>
+                <option value={30}>{t('analytics.days30', '30 days')}</option>
+                <option value={90}>{t('analytics.days90', '90 days')}</option>
               </select>
             </div>
             <button
@@ -244,7 +246,7 @@ const ChatbotAnalytics = () => {
               <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6">
                 <div className="flex items-center justify-between">
                   <div className="min-w-0">
-                    <p className="text-xs sm:text-sm text-gray-500 truncate">Active Sessions</p>
+                    <p className="text-xs sm:text-sm text-gray-500 truncate">{t('analytics.activeSessions', 'Active Sessions')}</p>
                     <p className="text-xl sm:text-2xl font-bold text-gray-900">
                       {realtime_usage?.active_sessions || 0}
                     </p>
@@ -256,7 +258,7 @@ const ChatbotAnalytics = () => {
               <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6">
                 <div className="flex items-center justify-between">
                   <div className="min-w-0">
-                    <p className="text-xs sm:text-sm text-gray-500 truncate">Msgs/Hour</p>
+                    <p className="text-xs sm:text-sm text-gray-500 truncate">{t('analytics.msgsHour', 'Msgs/Hour')}</p>
                     <p className="text-xl sm:text-2xl font-bold text-gray-900">
                       {realtime_usage?.messages_last_hour || 0}
                     </p>
@@ -268,7 +270,7 @@ const ChatbotAnalytics = () => {
               <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6">
                 <div className="flex items-center justify-between">
                   <div className="min-w-0">
-                    <p className="text-xs sm:text-sm text-gray-500 truncate">Unanswered</p>
+                    <p className="text-xs sm:text-sm text-gray-500 truncate">{t('analytics.unanswered', 'Unanswered')}</p>
                     <p className="text-xl sm:text-2xl font-bold text-gray-900">
                       {unanswered_summary?.unresolved || 0}
                     </p>
@@ -280,7 +282,7 @@ const ChatbotAnalytics = () => {
               <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6">
                 <div className="flex items-center justify-between">
                   <div className="min-w-0">
-                    <p className="text-xs sm:text-sm text-gray-500 truncate">Quality</p>
+                    <p className="text-xs sm:text-sm text-gray-500 truncate">{t('analytics.quality', 'Quality')}</p>
                     <p className="text-xl sm:text-2xl font-bold text-gray-900">
                       {(quality_summary?.avg_overall || 0).toFixed(1)}/10
                     </p>
@@ -292,44 +294,44 @@ const ChatbotAnalytics = () => {
 
             {/* Sentiment Overview */}
             <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6">
-              <h3 className="text-base sm:text-lg font-semibold mb-4">Sentiment Overview</h3>
+              <h3 className="text-base sm:text-lg font-semibold mb-4">{t('analytics.sentimentOverview', 'Sentiment Overview')}</h3>
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
                 <div className="text-center p-3 sm:p-4 bg-green-50 rounded-lg">
                   <Smile className="w-6 h-6 sm:w-8 sm:h-8 text-green-500 mx-auto mb-1 sm:mb-2" />
                   <p className="text-lg sm:text-2xl font-bold text-green-700">
                     {sentiment_summary?.positive_count || 0}
                   </p>
-                  <p className="text-xs sm:text-sm text-green-600">Positive</p>
+                  <p className="text-xs sm:text-sm text-green-600">{t('analytics.positive', 'Positive')}</p>
                 </div>
                 <div className="text-center p-3 sm:p-4 bg-yellow-50 rounded-lg">
                   <Meh className="w-6 h-6 sm:w-8 sm:h-8 text-yellow-500 mx-auto mb-1 sm:mb-2" />
                   <p className="text-lg sm:text-2xl font-bold text-yellow-700">
                     {sentiment_summary?.neutral_count || 0}
                   </p>
-                  <p className="text-xs sm:text-sm text-yellow-600">Neutral</p>
+                  <p className="text-xs sm:text-sm text-yellow-600">{t('analytics.neutral', 'Neutral')}</p>
                 </div>
                 <div className="text-center p-3 sm:p-4 bg-red-50 rounded-lg">
                   <Frown className="w-6 h-6 sm:w-8 sm:h-8 text-red-500 mx-auto mb-1 sm:mb-2" />
                   <p className="text-lg sm:text-2xl font-bold text-red-700">
                     {sentiment_summary?.negative_count || 0}
                   </p>
-                  <p className="text-xs sm:text-sm text-red-600">Negative</p>
+                  <p className="text-xs sm:text-sm text-red-600">{t('analytics.negative', 'Negative')}</p>
                 </div>
                 <div className="text-center p-3 sm:p-4 bg-blue-50 rounded-lg">
                   <div className="text-lg sm:text-2xl font-bold text-blue-700 mb-1 sm:mb-2">
                     {formatTrend(sentiment_summary?.trend || 0)}
                   </div>
-                  <p className="text-xs sm:text-sm text-blue-600">Trend</p>
+                  <p className="text-xs sm:text-sm text-blue-600">{t('analytics.trend', 'Trend')}</p>
                 </div>
               </div>
             </div>
 
             {/* Usage Heatmap */}
             <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6">
-              <h3 className="text-base sm:text-lg font-semibold mb-4">Usage Patterns</h3>
+              <h3 className="text-base sm:text-lg font-semibold mb-4">{t('analytics.usagePatterns', 'Usage Patterns')}</h3>
               {renderHeatmap()}
               <p className="text-xs sm:text-sm text-gray-500 mt-4">
-                Message activity by day and hour
+                {t('analytics.usageDescription', 'Message activity by day and hour')}
               </p>
             </div>
           </div>
@@ -339,17 +341,17 @@ const ChatbotAnalytics = () => {
         {activeTab === 'unanswered' && (
           <div className="bg-white rounded-xl shadow-sm">
             <div className="p-4 sm:p-6 border-b">
-              <h3 className="text-base sm:text-lg font-semibold">Unanswered Questions</h3>
+              <h3 className="text-base sm:text-lg font-semibold">{t('analytics.unansweredQuestions', 'Unanswered Questions')}</h3>
               <p className="text-xs sm:text-sm text-gray-500 mt-1">
-                Questions your chatbot couldn't answer confidently
+                {t('analytics.unansweredDescription', "Questions your chatbot couldn't answer confidently")}
               </p>
             </div>
 
             {unansweredQuestions.length === 0 ? (
               <div className="p-8 text-center text-gray-500">
                 <CheckCircle className="w-12 h-12 mx-auto mb-4 text-green-500" />
-                <p className="font-medium">No unanswered questions!</p>
-                <p className="text-sm">Your chatbot is handling all queries well.</p>
+                <p className="font-medium">{t('analytics.noUnanswered', 'No unanswered questions!')}</p>
+                <p className="text-sm">{t('analytics.handlingWell', 'Your chatbot is handling all queries well.')}</p>
               </div>
             ) : (
               <div className="divide-y">
@@ -379,14 +381,14 @@ const ChatbotAnalytics = () => {
                         {question.resolved ? (
                           <span className="inline-flex items-center text-green-600 text-xs sm:text-sm">
                             <CheckCircle className="w-4 h-4 mr-1" />
-                            Resolved
+                            {t('analytics.resolved', 'Resolved')}
                           </span>
                         ) : (
                           <button
                             onClick={() => handleResolveQuestion(question.id)}
                             className="px-3 py-1.5 text-xs sm:text-sm bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100"
                           >
-                            Mark Resolved
+                            {t('analytics.markResolved', 'Mark Resolved')}
                           </button>
                         )}
                       </div>
@@ -402,10 +404,10 @@ const ChatbotAnalytics = () => {
         {activeTab === 'sentiment' && (
           <div className="space-y-4 sm:space-y-6">
             <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6">
-              <h3 className="text-base sm:text-lg font-semibold mb-4">Sentiment Analysis</h3>
+              <h3 className="text-base sm:text-lg font-semibold mb-4">{t('analytics.sentimentAnalysis', 'Sentiment Analysis')}</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
                 <div>
-                  <p className="text-xs sm:text-sm text-gray-500 mb-2">Average Sentiment Score</p>
+                  <p className="text-xs sm:text-sm text-gray-500 mb-2">{t('analytics.avgSentiment', 'Average Sentiment Score')}</p>
                   <div className="flex items-center gap-3 sm:gap-4">
                     <div className="text-3xl sm:text-4xl font-bold">
                       {((sentiment_summary?.average_score || 0) * 100).toFixed(0)}
@@ -415,7 +417,7 @@ const ChatbotAnalytics = () => {
                   </div>
                 </div>
                 <div>
-                  <p className="text-xs sm:text-sm text-gray-500 mb-2">Distribution</p>
+                  <p className="text-xs sm:text-sm text-gray-500 mb-2">{t('analytics.distribution', 'Distribution')}</p>
                   <div className="h-4 rounded-full overflow-hidden flex bg-gray-100">
                     <div
                       className="bg-green-500"
@@ -451,7 +453,7 @@ const ChatbotAnalytics = () => {
         {activeTab === 'quality' && (
           <div className="space-y-4 sm:space-y-6">
             <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6">
-              <h3 className="text-base sm:text-lg font-semibold mb-4">Response Quality</h3>
+              <h3 className="text-base sm:text-lg font-semibold mb-4">{t('analytics.responseQuality', 'Response Quality')}</h3>
 
               {/* Quality scores - scrollable on mobile */}
               <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 sm:gap-4">
@@ -459,19 +461,19 @@ const ChatbotAnalytics = () => {
                   <p className="text-xl sm:text-3xl font-bold text-blue-600">
                     {(quality_summary?.avg_overall || 0).toFixed(1)}
                   </p>
-                  <p className="text-[10px] sm:text-sm text-gray-500">Overall</p>
+                  <p className="text-[10px] sm:text-sm text-gray-500">{t('analytics.overall', 'Overall')}</p>
                 </div>
                 <div className="text-center p-2 sm:p-4 bg-gray-50 rounded-lg">
                   <p className="text-xl sm:text-3xl font-bold text-purple-600">
                     {(quality_summary?.avg_relevance || 0).toFixed(1)}
                   </p>
-                  <p className="text-[10px] sm:text-sm text-gray-500">Relevance</p>
+                  <p className="text-[10px] sm:text-sm text-gray-500">{t('analytics.relevance', 'Relevance')}</p>
                 </div>
                 <div className="text-center p-2 sm:p-4 bg-gray-50 rounded-lg">
                   <p className="text-xl sm:text-3xl font-bold text-green-600">
                     {(quality_summary?.avg_completeness || 0).toFixed(1)}
                   </p>
-                  <p className="text-[10px] sm:text-sm text-gray-500">Complete</p>
+                  <p className="text-[10px] sm:text-sm text-gray-500">{t('analytics.complete', 'Complete')}</p>
                 </div>
                 <div className="text-center p-2 sm:p-4 bg-gray-50 rounded-lg hidden sm:block">
                   <p className="text-xl sm:text-3xl font-bold text-orange-600">
@@ -508,13 +510,13 @@ const ChatbotAnalytics = () => {
                   <p className="text-base sm:text-lg font-semibold text-green-700">
                     {quality_summary?.high_quality_count || 0}
                   </p>
-                  <p className="text-xs sm:text-sm text-green-600">High Quality Responses (8+)</p>
+                  <p className="text-xs sm:text-sm text-green-600">{t('analytics.highQuality', 'High Quality Responses (8+)')}</p>
                 </div>
                 <div className="p-3 sm:p-4 bg-red-50 rounded-lg">
                   <p className="text-base sm:text-lg font-semibold text-red-700">
                     {quality_summary?.low_quality_count || 0}
                   </p>
-                  <p className="text-xs sm:text-sm text-red-600">Low Quality Responses (&lt;5)</p>
+                  <p className="text-xs sm:text-sm text-red-600">{t('analytics.lowQuality', 'Low Quality Responses (<5)')}</p>
                 </div>
               </div>
             </div>
@@ -525,33 +527,33 @@ const ChatbotAnalytics = () => {
         {activeTab === 'usage' && (
           <div className="space-y-4 sm:space-y-6">
             <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6">
-              <h3 className="text-base sm:text-lg font-semibold mb-4">Usage Heatmap</h3>
+              <h3 className="text-base sm:text-lg font-semibold mb-4">{t('analytics.usageHeatmap', 'Usage Heatmap')}</h3>
               {renderHeatmap()}
             </div>
 
             <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6">
-              <h3 className="text-base sm:text-lg font-semibold mb-4">Real-time Stats</h3>
+              <h3 className="text-base sm:text-lg font-semibold mb-4">{t('analytics.realtimeStats', 'Real-time Stats')}</h3>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
                 <div className="text-center p-3 sm:p-4 bg-blue-50 rounded-lg">
                   <Activity className="w-6 h-6 sm:w-8 sm:h-8 text-blue-500 mx-auto mb-1 sm:mb-2" />
                   <p className="text-lg sm:text-2xl font-bold text-blue-700">
                     {realtime_usage?.active_sessions || 0}
                   </p>
-                  <p className="text-xs sm:text-sm text-blue-600">Active Sessions</p>
+                  <p className="text-xs sm:text-sm text-blue-600">{t('analytics.activeSessions', 'Active Sessions')}</p>
                 </div>
                 <div className="text-center p-3 sm:p-4 bg-green-50 rounded-lg">
                   <Clock className="w-6 h-6 sm:w-8 sm:h-8 text-green-500 mx-auto mb-1 sm:mb-2" />
                   <p className="text-lg sm:text-2xl font-bold text-green-700">
                     {realtime_usage?.messages_last_hour || 0}
                   </p>
-                  <p className="text-xs sm:text-sm text-green-600">Messages (Last Hour)</p>
+                  <p className="text-xs sm:text-sm text-green-600">{t('analytics.msgsLastHour', 'Messages (Last Hour)')}</p>
                 </div>
                 <div className="text-center p-3 sm:p-4 bg-purple-50 rounded-lg">
                   <MessageSquare className="w-6 h-6 sm:w-8 sm:h-8 text-purple-500 mx-auto mb-1 sm:mb-2" />
                   <p className="text-lg sm:text-2xl font-bold text-purple-700">
                     {realtime_usage?.messages_last_minute || 0}
                   </p>
-                  <p className="text-xs sm:text-sm text-purple-600">Messages (Last Min)</p>
+                  <p className="text-xs sm:text-sm text-purple-600">{t('analytics.msgsLastMin', 'Messages (Last Min)')}</p>
                 </div>
               </div>
             </div>

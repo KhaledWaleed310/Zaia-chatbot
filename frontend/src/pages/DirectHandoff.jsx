@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import {
@@ -22,6 +23,7 @@ const getWsBase = () => {
 };
 
 const DirectHandoff = () => {
+  const { t } = useTranslation('dashboard');
   const { botId, handoffId } = useParams();
 
   const [loading, setLoading] = useState(true);
@@ -211,8 +213,8 @@ const DirectHandoff = () => {
             <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <Lock className="w-8 h-8 text-blue-600" />
             </div>
-            <h1 className="text-2xl font-bold text-gray-900">Password Required</h1>
-            <p className="text-gray-600 mt-2">Enter your notification password to access this chat</p>
+            <h1 className="text-2xl font-bold text-gray-900">{t('handoff.passwordRequired', 'Password Required')}</h1>
+            <p className="text-gray-600 mt-2">{t('handoff.enterPassword', 'Enter your notification password to access this chat')}</p>
           </div>
 
           <form onSubmit={handlePasswordSubmit} className="space-y-4">
@@ -221,7 +223,7 @@ const DirectHandoff = () => {
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="Enter password"
+                placeholder={t('handoff.passwordPlaceholder', 'Enter password')}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 autoFocus
               />
@@ -239,7 +241,7 @@ const DirectHandoff = () => {
               className="w-full py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50 flex items-center justify-center gap-2"
             >
               {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : null}
-              Access Chat
+              {t('handoff.accessChat', 'Access Chat')}
             </button>
           </form>
         </div>
@@ -262,7 +264,7 @@ const DirectHandoff = () => {
       <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
         <div className="bg-white rounded-xl shadow-lg p-8 max-w-md w-full text-center">
           <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
-          <h1 className="text-xl font-bold text-gray-900 mb-2">Access Error</h1>
+          <h1 className="text-xl font-bold text-gray-900 mb-2">{t('handoff.accessError', 'Access Error')}</h1>
           <p className="text-gray-600">{error}</p>
         </div>
       </div>
@@ -278,8 +280,8 @@ const DirectHandoff = () => {
             <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <User className="w-8 h-8 text-green-600" />
             </div>
-            <h1 className="text-2xl font-bold text-gray-900">Enter Your Name</h1>
-            <p className="text-gray-600 mt-2">The customer will see this name in the chat</p>
+            <h1 className="text-2xl font-bold text-gray-900">{t('handoff.enterName', 'Enter Your Name')}</h1>
+            <p className="text-gray-600 mt-2">{t('handoff.nameVisibility', 'The customer will see this name in the chat')}</p>
           </div>
 
           <form onSubmit={handleSetAgentName} className="space-y-4">
@@ -287,7 +289,7 @@ const DirectHandoff = () => {
               type="text"
               value={agentNameInput}
               onChange={(e) => setAgentNameInput(e.target.value)}
-              placeholder="Your name"
+              placeholder={t('handoff.namePlaceholder', 'Your name')}
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
               autoFocus
             />
@@ -296,7 +298,7 @@ const DirectHandoff = () => {
               type="submit"
               className="w-full py-3 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700"
             >
-              Start Chatting
+              {t('handoff.startChatting', 'Start Chatting')}
             </button>
           </form>
         </div>
@@ -315,20 +317,20 @@ const DirectHandoff = () => {
             <MessageSquare className="w-5 h-5 text-blue-600" />
           </div>
           <div>
-            <h1 className="font-semibold text-gray-900">{botName} - Live Chat</h1>
+            <h1 className="font-semibold text-gray-900">{botName} - {t('handoff.liveChat', 'Live Chat')}</h1>
             <div className="flex items-center gap-2 text-sm">
               {wsConnected ? (
                 <span className="flex items-center gap-1 text-green-600">
                   <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-                  Connected
+                  {t('handoff.connected', 'Connected')}
                 </span>
               ) : (
-                <span className="text-gray-500">Connecting...</span>
+                <span className="text-gray-500">{t('handoff.connecting', 'Connecting...')}</span>
               )}
               {isResolved && (
                 <span className="flex items-center gap-1 text-gray-500">
                   <CheckCircle className="w-4 h-4" />
-                  Resolved
+                  {t('handoff.resolved', 'Resolved')}
                 </span>
               )}
             </div>
@@ -340,7 +342,7 @@ const DirectHandoff = () => {
             onClick={resolveHandoff}
             className="px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700"
           >
-            Mark Resolved
+            {t('handoff.markResolved', 'Mark Resolved')}
           </button>
         )}
       </div>
@@ -350,7 +352,7 @@ const DirectHandoff = () => {
         {/* Conversation Context */}
         {conversationContext.length > 0 && (
           <div className="mb-4">
-            <div className="text-xs text-gray-500 uppercase tracking-wide mb-2">Previous Bot Conversation</div>
+            <div className="text-xs text-gray-500 uppercase tracking-wide mb-2">{t('handoff.previousConversation', 'Previous Bot Conversation')}</div>
             <div className="space-y-2 opacity-60">
               {conversationContext.slice(-5).map((msg, idx) => (
                 <div
@@ -371,7 +373,7 @@ const DirectHandoff = () => {
             </div>
             <div className="border-b border-dashed border-gray-300 mt-4 mb-2">
               <span className="bg-gray-100 px-2 text-xs text-gray-500 relative -bottom-2">
-                Handoff Started
+                {t('handoff.handoffStarted', 'Handoff Started')}
               </span>
             </div>
           </div>
@@ -434,7 +436,7 @@ const DirectHandoff = () => {
               type="text"
               value={messageInput}
               onChange={(e) => setMessageInput(e.target.value)}
-              placeholder="Type your message..."
+              placeholder={t('handoff.typePlaceholder', 'Type your message...')}
               className="flex-1 px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               disabled={!wsConnected}
             />

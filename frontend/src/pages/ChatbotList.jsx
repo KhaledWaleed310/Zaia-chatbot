@@ -135,12 +135,12 @@ const ChatbotList = () => {
                         {bot.is_public ? (
                           <span className="flex items-center gap-1">
                             <Globe className="w-3 h-3" />
-                            Public
+                            {t('chatbots.public', 'Public')}
                           </span>
                         ) : (
                           <span className="flex items-center gap-1">
                             <Lock className="w-3 h-3" />
-                            Private
+                            {t('chatbots.private', 'Private')}
                           </span>
                         )}
                       </span>
@@ -170,7 +170,7 @@ const ChatbotList = () => {
                       title="Preview shared chatbot link"
                     >
                       <Eye className="w-4 h-4 me-1 flex-shrink-0" />
-                      <span className="truncate">Preview</span>
+                      <span className="truncate">{t('chatbots.preview', 'Preview')}</span>
                     </a>
                   </div>
                   <button

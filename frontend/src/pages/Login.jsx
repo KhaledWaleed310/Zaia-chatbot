@@ -1,11 +1,13 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../context/AuthContext';
 import { auth } from '../utils/api';
 import { MessageSquare, Mail, CheckCircle } from 'lucide-react';
 import { trackEvent, EVENTS } from '../utils/tracking';
 
 const Login = () => {
+  const { t } = useTranslation('auth');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -64,8 +66,8 @@ const Login = () => {
             <div className="inline-flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 bg-blue-100 rounded-2xl mb-4">
               <MessageSquare className="w-7 h-7 sm:w-8 sm:h-8 text-blue-600" />
             </div>
-            <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Welcome back</h2>
-            <p className="text-sm sm:text-base text-gray-500 mt-2">Sign in to your Aiden Link account</p>
+            <h2 className="text-xl sm:text-2xl font-bold text-gray-900">{t('login.title')}</h2>
+            <p className="text-sm sm:text-base text-gray-500 mt-2">{t('login.subtitle')}</p>
           </div>
 
           {error && (
@@ -79,9 +81,9 @@ const Login = () => {
               <div className="flex items-start gap-3">
                 <Mail className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" />
                 <div className="flex-1">
-                  <p className="text-sm text-yellow-800 font-medium">Email not verified</p>
+                  <p className="text-sm text-yellow-800 font-medium">{t('verifyEmail.errors.notVerified', 'Email not verified')}</p>
                   <p className="text-xs text-yellow-700 mt-1">
-                    Please check your inbox for the verification link.
+                    {t('verifyEmail.checkInbox')}
                   </p>
                   <button
                     type="button"
@@ -89,7 +91,7 @@ const Login = () => {
                     disabled={resendLoading || !email}
                     className="mt-2 text-sm font-medium text-yellow-800 hover:text-yellow-900 underline disabled:opacity-50"
                   >
-                    {resendLoading ? 'Sending...' : 'Resend verification email'}
+                    {resendLoading ? t('verifyEmail.resending') : t('verifyEmail.resend')}
                   </button>
                 </div>
               </div>
@@ -101,9 +103,9 @@ const Login = () => {
               <div className="flex items-start gap-3">
                 <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
                 <div className="flex-1">
-                  <p className="text-sm text-green-800 font-medium">Verification email sent!</p>
+                  <p className="text-sm text-green-800 font-medium">{t('verifyEmail.resent')}</p>
                   <p className="text-xs text-green-700 mt-1">
-                    Please check your inbox and click the verification link.
+                    {t('verifyEmail.checkInbox')}
                   </p>
                 </div>
               </div>
@@ -113,14 +115,14 @@ const Login = () => {
           <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Email
+                {t('login.email')}
               </label>
               <input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="w-full px-3 sm:px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base min-h-[44px]"
-                placeholder="you@example.com"
+                placeholder={t('login.emailPlaceholder')}
                 required
               />
             </div>
@@ -128,10 +130,10 @@ const Login = () => {
             <div>
               <div className="flex items-center justify-between mb-1">
                 <label className="block text-sm font-medium text-gray-700">
-                  Password
+                  {t('login.password')}
                 </label>
                 <Link to="/forgot-password" className="text-sm text-blue-600 hover:underline">
-                  Forgot password?
+                  {t('login.forgotPassword')}
                 </Link>
               </div>
               <input
@@ -139,7 +141,7 @@ const Login = () => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="w-full px-3 sm:px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base min-h-[44px]"
-                placeholder="••••••••"
+                placeholder={t('login.passwordPlaceholder')}
                 required
               />
             </div>
@@ -149,14 +151,14 @@ const Login = () => {
               disabled={loading}
               className="w-full py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 min-h-[44px] text-sm sm:text-base"
             >
-              {loading ? 'Signing in...' : 'Sign in'}
+              {loading ? t('login.signingIn') : t('login.signIn')}
             </button>
           </form>
 
           <p className="mt-5 sm:mt-6 text-center text-sm sm:text-base text-gray-500">
-            Don't have an account?{' '}
+            {t('login.noAccount')}{' '}
             <Link to="/register" className="text-blue-600 font-medium hover:underline">
-              Create one
+              {t('login.signUp')}
             </Link>
           </p>
         </div>

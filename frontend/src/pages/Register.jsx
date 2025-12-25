@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../context/AuthContext';
 import { MessageSquare, Building2, Mail, Lock, Users, Briefcase, Target, Globe, Megaphone, CheckCircle } from 'lucide-react';
 import { trackEvent, EVENTS } from '../utils/tracking';
@@ -79,6 +80,7 @@ const COUNTRIES = [
 ];
 
 const Register = () => {
+  const { t } = useTranslation('auth');
   const [step, setStep] = useState(1);
   const [registered, setRegistered] = useState(false);
   const [formData, setFormData] = useState({
@@ -171,15 +173,15 @@ const Register = () => {
               <div className="inline-flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 bg-green-100 rounded-2xl mb-4">
                 <CheckCircle className="w-7 h-7 sm:w-8 sm:h-8 text-green-600" />
               </div>
-              <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Check your email</h2>
+              <h2 className="text-xl sm:text-2xl font-bold text-gray-900">{t('register.success.title', 'Check your email')}</h2>
               <p className="text-sm sm:text-base text-gray-500 mt-3">
-                We've sent a verification link to <strong>{formData.email}</strong>. Please click the link to verify your email address.
+                {t('register.success.message', "We've sent a verification link to")} <strong>{formData.email}</strong>. {t('register.success.clickLink', 'Please click the link to verify your email address.')}
               </p>
               <div className="mt-6 p-4 bg-blue-50 rounded-lg">
                 <p className="text-sm text-blue-700">
-                  Didn't receive the email? Check your spam folder or{' '}
+                  {t('register.success.noEmail', "Didn't receive the email? Check your spam folder or")}{' '}
                   <Link to="/login" className="font-medium underline">
-                    request a new verification link
+                    {t('register.success.requestNew', 'request a new verification link')}
                   </Link>
                 </p>
               </div>
@@ -187,7 +189,7 @@ const Register = () => {
                 to="/login"
                 className="inline-block mt-6 px-6 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors"
               >
-                Go to Login
+                {t('register.goToLogin', 'Go to Login')}
               </Link>
             </div>
           </div>
@@ -205,10 +207,10 @@ const Register = () => {
               <MessageSquare className="w-7 h-7 sm:w-8 sm:h-8 text-blue-600" />
             </div>
             <h2 className="text-xl sm:text-2xl font-bold text-gray-900">
-              {step === 1 ? 'Create account' : 'Tell us about you'}
+              {step === 1 ? t('register.title', 'Create account') : t('register.step2Title', 'Tell us about you')}
             </h2>
             <p className="text-sm sm:text-base text-gray-500 mt-2">
-              {step === 1 ? 'Start building your AI chatbot today' : 'Help us personalize your experience'}
+              {step === 1 ? t('register.subtitle', 'Start building your AI chatbot today') : t('register.step2Subtitle', 'Help us personalize your experience')}
             </p>
 
             {/* Step indicator */}
@@ -230,14 +232,14 @@ const Register = () => {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     <Mail className="w-4 h-4 inline me-1" />
-                    Email *
+                    {t('register.email', 'Email')} *
                   </label>
                   <input
                     type="email"
                     value={formData.email}
                     onChange={(e) => handleChange('email', e.target.value)}
                     className="w-full px-3 sm:px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base min-h-[44px]"
-                    placeholder="you@example.com"
+                    placeholder={t('register.emailPlaceholder', 'you@example.com')}
                     required
                   />
                 </div>
@@ -245,7 +247,7 @@ const Register = () => {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     <Lock className="w-4 h-4 inline me-1" />
-                    Password *
+                    {t('register.password', 'Password')} *
                   </label>
                   <input
                     type="password"
@@ -256,20 +258,20 @@ const Register = () => {
                     required
                     minLength={6}
                   />
-                  <p className="text-xs text-gray-500 mt-1">At least 6 characters</p>
+                  <p className="text-xs text-gray-500 mt-1">{t('register.passwordHint', 'At least 6 characters')}</p>
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     <Building2 className="w-4 h-4 inline me-1" />
-                    Company Name
+                    {t('register.companyName', 'Company Name')}
                   </label>
                   <input
                     type="text"
                     value={formData.company_name}
                     onChange={(e) => handleChange('company_name', e.target.value)}
                     className="w-full px-3 sm:px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base min-h-[44px]"
-                    placeholder="Your company"
+                    placeholder={t('register.companyPlaceholder', 'Your company')}
                   />
                 </div>
 
@@ -284,11 +286,11 @@ const Register = () => {
                       required
                     />
                     <span className="text-sm text-gray-700">
-                      I agree to the{' '}
+                      {t('register.privacyAgree', 'I agree to the')}{' '}
                       <Link to="/privacy" target="_blank" className="text-blue-600 hover:underline font-medium">
-                        Privacy Policy
+                        {t('register.privacyPolicy', 'Privacy Policy')}
                       </Link>{' '}
-                      and consent to the processing of my personal data *
+                      {t('register.privacyConsent', 'and consent to the processing of my personal data')} *
                     </span>
                   </label>
 
@@ -300,7 +302,7 @@ const Register = () => {
                       className="mt-1 w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-2 focus:ring-blue-500"
                     />
                     <span className="text-sm text-gray-700">
-                      I agree to receive marketing emails and product updates (optional)
+                      {t('register.marketingConsent', 'I agree to receive marketing emails and product updates (optional)')}
                     </span>
                   </label>
                 </div>
@@ -309,7 +311,7 @@ const Register = () => {
                   type="submit"
                   className="w-full py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors min-h-[44px] text-sm sm:text-base"
                 >
-                  Continue
+                  {t('register.continue', 'Continue')}
                 </button>
               </>
             ) : (
@@ -317,14 +319,14 @@ const Register = () => {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     <Users className="w-4 h-4 inline me-1" />
-                    Company Size
+                    {t('register.companySize', 'Company Size')}
                   </label>
                   <select
                     value={formData.company_size}
                     onChange={(e) => handleChange('company_size', e.target.value)}
                     className="w-full px-3 sm:px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base min-h-[44px]"
                   >
-                    <option value="">Select size...</option>
+                    <option value="">{t('register.selectSize', 'Select size...')}</option>
                     {COMPANY_SIZES.map(size => (
                       <option key={size.value} value={size.value}>{size.label}</option>
                     ))}
@@ -334,14 +336,14 @@ const Register = () => {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     <Briefcase className="w-4 h-4 inline me-1" />
-                    Industry
+                    {t('register.industry', 'Industry')}
                   </label>
                   <select
                     value={formData.industry}
                     onChange={(e) => handleChange('industry', e.target.value)}
                     className="w-full px-3 sm:px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base min-h-[44px]"
                   >
-                    <option value="">Select industry...</option>
+                    <option value="">{t('register.selectIndustry', 'Select industry...')}</option>
                     {INDUSTRIES.map(ind => (
                       <option key={ind} value={ind}>{ind}</option>
                     ))}
@@ -351,14 +353,14 @@ const Register = () => {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     <Target className="w-4 h-4 inline me-1" />
-                    Primary Use Case
+                    {t('register.useCase', 'Primary Use Case')}
                   </label>
                   <select
                     value={formData.use_case}
                     onChange={(e) => handleChange('use_case', e.target.value)}
                     className="w-full px-3 sm:px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base min-h-[44px]"
                   >
-                    <option value="">Select use case...</option>
+                    <option value="">{t('register.selectUseCase', 'Select use case...')}</option>
                     {USE_CASES.map(uc => (
                       <option key={uc} value={uc}>{uc}</option>
                     ))}
@@ -368,14 +370,14 @@ const Register = () => {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     <Globe className="w-4 h-4 inline me-1" />
-                    Country
+                    {t('register.country', 'Country')}
                   </label>
                   <select
                     value={formData.country}
                     onChange={(e) => handleChange('country', e.target.value)}
                     className="w-full px-3 sm:px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base min-h-[44px]"
                   >
-                    <option value="">Select country...</option>
+                    <option value="">{t('register.selectCountry', 'Select country...')}</option>
                     {COUNTRIES.map(country => (
                       <option key={country} value={country}>{country}</option>
                     ))}
@@ -385,14 +387,14 @@ const Register = () => {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     <Megaphone className="w-4 h-4 inline me-1" />
-                    How did you hear about us?
+                    {t('register.referralSource', 'How did you hear about us?')}
                   </label>
                   <select
                     value={formData.referral_source}
                     onChange={(e) => handleChange('referral_source', e.target.value)}
                     className="w-full px-3 sm:px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base min-h-[44px]"
                   >
-                    <option value="">Select source...</option>
+                    <option value="">{t('register.selectSource', 'Select source...')}</option>
                     {REFERRAL_SOURCES.map(src => (
                       <option key={src} value={src}>{src}</option>
                     ))}
@@ -405,14 +407,14 @@ const Register = () => {
                     onClick={() => setStep(1)}
                     className="flex-1 py-3 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors min-h-[44px] text-sm sm:text-base"
                   >
-                    Back
+                    {t('register.back', 'Back')}
                   </button>
                   <button
                     type="submit"
                     disabled={loading}
                     className="flex-1 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 min-h-[44px] text-sm sm:text-base"
                   >
-                    {loading ? 'Creating...' : 'Create Account'}
+                    {loading ? t('register.creating', 'Creating...') : t('register.createAccount', 'Create Account')}
                   </button>
                 </div>
 
@@ -445,16 +447,16 @@ const Register = () => {
                   }}
                   className="w-full text-sm text-gray-500 hover:text-gray-700"
                 >
-                  Skip for now
+                  {t('register.skipForNow', 'Skip for now')}
                 </button>
               </>
             )}
           </form>
 
           <p className="mt-5 sm:mt-6 text-center text-sm sm:text-base text-gray-500">
-            Already have an account?{' '}
+            {t('register.hasAccount', 'Already have an account?')}{' '}
             <Link to="/login" className="text-blue-600 font-medium hover:underline">
-              Sign in
+              {t('login.signIn', 'Sign in')}
             </Link>
           </p>
         </div>
