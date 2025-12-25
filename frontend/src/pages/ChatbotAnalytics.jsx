@@ -98,7 +98,15 @@ const ChatbotAnalytics = () => {
   };
 
   const renderHeatmap = () => {
-    const dayLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    const dayLabels = [
+      t('analytics.days.mon', 'Mon'),
+      t('analytics.days.tue', 'Tue'),
+      t('analytics.days.wed', 'Wed'),
+      t('analytics.days.thu', 'Thu'),
+      t('analytics.days.fri', 'Fri'),
+      t('analytics.days.sat', 'Sat'),
+      t('analytics.days.sun', 'Sun')
+    ];
     const hours = Array.from({ length: 24 }, (_, i) => i);
 
     // Create a map for quick lookup
@@ -136,7 +144,7 @@ const ChatbotAnalytics = () => {
                       backgroundColor: `rgba(59, 130, 246, ${intensity})`,
                       border: '1px solid rgba(0,0,0,0.05)'
                     }}
-                    title={`${day} ${hour}:00 - ${value} messages`}
+                    title={`${day} ${hour}:00 - ${value} ${t('analytics.messages', 'messages')}`}
                   />
                 );
               })}
@@ -212,7 +220,7 @@ const ChatbotAnalytics = () => {
             <button
               onClick={loadData}
               className="p-2 hover:bg-gray-100 rounded-lg"
-              title="Refresh"
+              title={t('common.refresh', 'Refresh')}
             >
               <RefreshCw className="w-5 h-5 text-gray-600" />
             </button>
@@ -370,7 +378,7 @@ const ChatbotAnalytics = () => {
                           {question.detection_method.replace(/_/g, ' ')}
                         </span>
                         <span className="text-[10px] sm:text-xs text-gray-500">
-                          Score: {(question.context_score * 100).toFixed(0)}%
+                          {t('analytics.score', 'Score')}: {(question.context_score * 100).toFixed(0)}%
                         </span>
                         <span className="text-[10px] sm:text-xs text-gray-500">
                           {new Date(question.timestamp).toLocaleDateString()}
@@ -439,9 +447,9 @@ const ChatbotAnalytics = () => {
                     />
                   </div>
                   <div className="flex flex-wrap justify-between text-[10px] sm:text-xs text-gray-500 mt-2 gap-2">
-                    <span>Positive: {sentiment_summary?.positive_count || 0}</span>
-                    <span>Neutral: {sentiment_summary?.neutral_count || 0}</span>
-                    <span>Negative: {sentiment_summary?.negative_count || 0}</span>
+                    <span>{t('analytics.positive', 'Positive')}: {sentiment_summary?.positive_count || 0}</span>
+                    <span>{t('analytics.neutral', 'Neutral')}: {sentiment_summary?.neutral_count || 0}</span>
+                    <span>{t('analytics.negative', 'Negative')}: {sentiment_summary?.negative_count || 0}</span>
                   </div>
                 </div>
               </div>
@@ -479,13 +487,13 @@ const ChatbotAnalytics = () => {
                   <p className="text-xl sm:text-3xl font-bold text-orange-600">
                     {(quality_summary?.avg_accuracy || 0).toFixed(1)}
                   </p>
-                  <p className="text-[10px] sm:text-sm text-gray-500">Accuracy</p>
+                  <p className="text-[10px] sm:text-sm text-gray-500">{t('analytics.accuracy', 'Accuracy')}</p>
                 </div>
                 <div className="text-center p-2 sm:p-4 bg-gray-50 rounded-lg hidden sm:block">
                   <p className="text-xl sm:text-3xl font-bold text-teal-600">
                     {(quality_summary?.avg_clarity || 0).toFixed(1)}
                   </p>
-                  <p className="text-[10px] sm:text-sm text-gray-500">Clarity</p>
+                  <p className="text-[10px] sm:text-sm text-gray-500">{t('analytics.clarity', 'Clarity')}</p>
                 </div>
               </div>
 
@@ -495,13 +503,13 @@ const ChatbotAnalytics = () => {
                   <p className="text-xl font-bold text-orange-600">
                     {(quality_summary?.avg_accuracy || 0).toFixed(1)}
                   </p>
-                  <p className="text-[10px] text-gray-500">Accuracy</p>
+                  <p className="text-[10px] text-gray-500">{t('analytics.accuracy', 'Accuracy')}</p>
                 </div>
                 <div className="text-center p-2 bg-gray-50 rounded-lg">
                   <p className="text-xl font-bold text-teal-600">
                     {(quality_summary?.avg_clarity || 0).toFixed(1)}
                   </p>
-                  <p className="text-[10px] text-gray-500">Clarity</p>
+                  <p className="text-[10px] text-gray-500">{t('analytics.clarity', 'Clarity')}</p>
                 </div>
               </div>
 

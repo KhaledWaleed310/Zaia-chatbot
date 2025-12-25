@@ -82,7 +82,7 @@ export default function ChatbotBookings() {
       const response = await chatbots.get(id);
       setBot(response.data);
     } catch (err) {
-      setError('Failed to load chatbot');
+      setError(t('bookings.error.loadFailed', 'Failed to load chatbot'));
       console.error(err);
     }
   };

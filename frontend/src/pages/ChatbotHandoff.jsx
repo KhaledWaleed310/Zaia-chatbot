@@ -75,6 +75,28 @@ const PRIORITY_COLORS = {
 const ChatbotHandoff = () => {
   const { t } = useTranslation('dashboard');
   const { id } = useParams();
+
+  // Translation helpers for status and priority
+  const getStatusLabel = (status) => {
+    const labels = {
+      pending: t('livechat.status.pending', 'Pending'),
+      assigned: t('livechat.status.assigned', 'Assigned'),
+      active: t('livechat.status.active', 'Active'),
+      resolved: t('livechat.status.resolved', 'Resolved'),
+      abandoned: t('livechat.status.abandoned', 'Abandoned')
+    };
+    return labels[status] || status;
+  };
+
+  const getPriorityLabel = (priority) => {
+    const labels = {
+      low: t('livechat.priority.low', 'Low'),
+      medium: t('livechat.priority.medium', 'Medium'),
+      high: t('livechat.priority.high', 'High'),
+      urgent: t('livechat.priority.urgent', 'Urgent')
+    };
+    return labels[priority] || priority;
+  };
   const [bot, setBot] = useState(null);
   const [handoffs, setHandoffs] = useState({ items: [], total: 0 });
   const [stats, setStats] = useState(null);
@@ -400,10 +422,10 @@ const ChatbotHandoff = () => {
                       <div>
                         <div className="flex items-center gap-2">
                           <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_COLORS[h.status]}`}>
-                            {h.status}
+                            {getStatusLabel(h.status)}
                           </span>
                           <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${PRIORITY_COLORS[h.priority]}`}>
-                            {h.priority}
+                            {getPriorityLabel(h.priority)}
                           </span>
                           {h.trigger === 'booking' && (
                             <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-700">

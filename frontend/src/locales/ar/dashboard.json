@@ -34,6 +34,11 @@
     "engagement": "التفاعل",
     "distribution": "التوزيع"
   },
+  "common": {
+    "settings": "الإعدادات",
+    "cancel": "إلغاء",
+    "refresh": "تحديث"
+  },
   "sidebar": {
     "dashboard": "لوحة التحكم",
     "chatbots": "روبوتات المحادثة",
@@ -322,6 +327,10 @@
     "overall": "الإجمالي",
     "relevance": "الصلة",
     "complete": "الاكتمال",
+    "accuracy": "الدقة",
+    "clarity": "الوضوح",
+    "score": "النتيجة",
+    "messages": "رسائل",
     "highQuality": "ردود عالية الجودة (8+)",
     "lowQuality": "ردود منخفضة الجودة (<5)",
     "usageHeatmap": "خريطة حرارة الاستخدام",
@@ -334,6 +343,15 @@
       "sentiment": "المشاعر",
       "quality": "الجودة",
       "usage": "الاستخدام"
+    },
+    "days": {
+      "mon": "إثن",
+      "tue": "ثلا",
+      "wed": "أرب",
+      "thu": "خمي",
+      "fri": "جمع",
+      "sat": "سبت",
+      "sun": "أحد"
     },
     "metrics": {
       "activeSessions": "الجلسات النشطة",
@@ -493,6 +511,9 @@
     "pending": "معلق",
     "confirmed": "مؤكد",
     "cancelled": "ملغي",
+    "error": {
+      "loadFailed": "فشل في تحميل الروبوت"
+    },
     "total": "الإجمالي هذا الشهر",
     "selectDate": "اختر تاريخاً",
     "clickToSee": "انقر على تاريخ لعرض الحجوزات",
@@ -516,6 +537,19 @@
     "subtitle": "إدارة التحويلات للبشر",
     "pending": "معلق",
     "active": "نشط",
+    "status": {
+      "pending": "معلق",
+      "assigned": "معين",
+      "active": "نشط",
+      "resolved": "تم الحل",
+      "abandoned": "مهجور"
+    },
+    "priority": {
+      "low": "منخفض",
+      "medium": "متوسط",
+      "high": "عالي",
+      "urgent": "عاجل"
+    },
     "avgWait": "متوسط الانتظار",
     "resolvedToday": "تم الحل اليوم",
     "allStatus": "جميع الحالات",

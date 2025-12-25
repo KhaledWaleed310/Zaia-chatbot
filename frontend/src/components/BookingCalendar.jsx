@@ -1,11 +1,6 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-
-const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-const MONTHS = [
-  'January', 'February', 'March', 'April', 'May', 'June',
-  'July', 'August', 'September', 'October', 'November', 'December'
-];
 
 export default function BookingCalendar({
   year,
@@ -15,6 +10,23 @@ export default function BookingCalendar({
   onDateSelect,
   onMonthChange
 }) {
+  const { t, i18n } = useTranslation('dashboard');
+
+  // Get localized weekday and month names
+  const getLocalizedWeekdays = () => {
+    if (i18n.language === 'ar') {
+      return ['أحد', 'إثن', 'ثلا', 'أرب', 'خمي', 'جمع', 'سبت'];
+    }
+    return ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  };
+
+  const getLocalizedMonthName = (monthNum) => {
+    const date = new Date(year, monthNum - 1, 1);
+    return date.toLocaleDateString(i18n.language === 'ar' ? 'ar-EG' : 'en-US', { month: 'long' });
+  };
+
+  const WEEKDAYS = getLocalizedWeekdays();
+
   // Get today's date for highlighting
   const today = new Date();
   const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
@@ -79,7 +91,7 @@ export default function BookingCalendar({
           <ChevronLeft className="w-5 h-5 text-gray-600" />
         </button>
         <h2 className="text-lg font-semibold text-gray-900">
-          {MONTHS[month - 1]} {year}
+          {getLocalizedMonthName(month)} {year}
         </h2>
         <button
           onClick={handleNextMonth}
@@ -163,11 +175,11 @@ export default function BookingCalendar({
       <div className="mt-4 pt-4 border-t border-gray-100 flex items-center gap-4 text-xs text-gray-500">
         <div className="flex items-center gap-1">
           <span className="w-2 h-2 rounded-full bg-yellow-500" />
-          <span>Pending</span>
+          <span>{t('bookings.pending', 'Pending')}</span>
         </div>
         <div className="flex items-center gap-1">
           <span className="w-2 h-2 rounded-full bg-green-500" />
-          <span>Confirmed</span>
+          <span>{t('bookings.confirmed', 'Confirmed')}</span>
         </div>
       </div>
     </div>
