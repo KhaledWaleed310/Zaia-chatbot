@@ -212,19 +212,19 @@ const AdminSEO = () => {
     <Layout>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
         {/* Header */}
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-green-100 rounded-lg">
-              <Search className="w-6 h-6 text-green-600" />
+            <div className="p-2 bg-green-100 rounded-lg flex-shrink-0">
+              <Search className="w-5 h-5 sm:w-6 sm:h-6 text-green-600" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">SEO Tools</h1>
-              <p className="text-sm text-gray-500">Optimize your public pages for search engines</p>
+              <h1 className="text-xl sm:text-2xl font-bold text-gray-900">SEO Tools</h1>
+              <p className="text-xs sm:text-sm text-gray-500">Optimize your public pages for search engines</p>
             </div>
           </div>
           <button
             onClick={loadData}
-            className="flex items-center gap-2 px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
+            className="flex items-center justify-center gap-2 px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 w-full sm:w-auto"
           >
             <RefreshCw className="w-4 h-4" />
             Refresh
@@ -258,10 +258,10 @@ const AdminSEO = () => {
 
         {/* Tab Content */}
         {activeTab === 'meta' && (
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-lg font-semibold text-gray-900">Page Meta Tags</h2>
-              <p className="text-sm text-gray-500">Click on a page to edit its SEO settings</p>
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-6">
+              <h2 className="text-base sm:text-lg font-semibold text-gray-900">Page Meta Tags</h2>
+              <p className="text-xs sm:text-sm text-gray-500">Click on a page to edit its SEO settings</p>
             </div>
             <div className="space-y-4">
               {pages.map((page) => (
@@ -271,13 +271,13 @@ const AdminSEO = () => {
                     setSelectedPage(page);
                     setShowMetaEditor(true);
                   }}
-                  className="p-4 border border-gray-200 rounded-lg hover:border-blue-300 hover:bg-blue-50/30 cursor-pointer transition-colors"
+                  className="p-3 sm:p-4 border border-gray-200 rounded-lg hover:border-blue-300 hover:bg-blue-50/30 cursor-pointer transition-colors"
                 >
                   <div className="flex items-start justify-between">
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <h3 className="font-medium text-gray-900">{page.page_name}</h3>
-                        <span className="text-xs text-gray-400">{page.url}</span>
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
+                        <h3 className="font-medium text-gray-900 text-sm sm:text-base">{page.page_name}</h3>
+                        <span className="text-xs text-gray-400 truncate">{page.url}</span>
                       </div>
                       <p className="text-sm text-blue-600 mt-1 truncate">{page.title}</p>
                       <p className="text-sm text-gray-500 mt-1 line-clamp-2">{page.description}</p>
@@ -312,15 +312,15 @@ const AdminSEO = () => {
         )}
 
         {activeTab === 'keywords' && (
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-lg font-semibold text-gray-900">Tracked Keywords</h2>
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
+              <h2 className="text-base sm:text-lg font-semibold text-gray-900">Tracked Keywords</h2>
               <button
                 onClick={() => {
                   setEditingKeyword(null);
                   setShowKeywordModal(true);
                 }}
-                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 w-full sm:w-auto"
               >
                 <Plus className="w-4 h-4" />
                 Add Keyword
@@ -333,76 +333,122 @@ const AdminSEO = () => {
                 <p className="text-sm mt-1">Add keywords to track for SEO optimization</p>
               </div>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b border-gray-200">
-                      <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Keyword</th>
-                      <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Target Pages</th>
-                      <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Priority</th>
-                      <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Notes</th>
-                      <th className="text-right py-3 px-4 text-sm font-medium text-gray-500">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {keywords.map((kw) => (
-                      <tr key={kw.id} className="border-b border-gray-100 hover:bg-gray-50">
-                        <td className="py-3 px-4">
-                          <span className="font-medium text-gray-900">{kw.keyword}</span>
-                        </td>
-                        <td className="py-3 px-4">
-                          <div className="flex flex-wrap gap-1">
-                            {kw.target_pages?.map((p, i) => (
-                              <span key={i} className="px-2 py-0.5 bg-blue-100 text-blue-700 rounded text-xs">
-                                {p}
-                              </span>
-                            ))}
-                          </div>
-                        </td>
-                        <td className="py-3 px-4">{getPriorityBadge(kw.priority)}</td>
-                        <td className="py-3 px-4">
-                          <span className="text-sm text-gray-500 line-clamp-1">{kw.notes || '-'}</span>
-                        </td>
-                        <td className="py-3 px-4 text-right">
-                          <div className="flex items-center justify-end gap-2">
-                            <button
-                              onClick={() => {
-                                setEditingKeyword(kw);
-                                setShowKeywordModal(true);
-                              }}
-                              className="p-1 text-gray-400 hover:text-blue-600"
-                            >
-                              <Edit2 className="w-4 h-4" />
-                            </button>
-                            <button
-                              onClick={() => handleDeleteKeyword(kw.id)}
-                              className="p-1 text-gray-400 hover:text-red-600"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </div>
-                        </td>
+              <>
+                {/* Mobile Card View */}
+                <div className="sm:hidden space-y-3">
+                  {keywords.map((kw) => (
+                    <div key={kw.id} className="p-4 border border-gray-200 rounded-lg">
+                      <div className="flex items-start justify-between mb-2">
+                        <span className="font-medium text-gray-900">{kw.keyword}</span>
+                        <div className="flex items-center gap-1">
+                          <button
+                            onClick={() => {
+                              setEditingKeyword(kw);
+                              setShowKeywordModal(true);
+                            }}
+                            className="p-1.5 text-gray-400 hover:text-blue-600"
+                          >
+                            <Edit2 className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteKeyword(kw.id)}
+                            className="p-1.5 text-gray-400 hover:text-red-600"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 mb-2">
+                        {getPriorityBadge(kw.priority)}
+                      </div>
+                      {kw.target_pages?.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mb-2">
+                          {kw.target_pages.map((p, i) => (
+                            <span key={i} className="px-2 py-0.5 bg-blue-100 text-blue-700 rounded text-xs">
+                              {p}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                      {kw.notes && (
+                        <p className="text-sm text-gray-500 line-clamp-2">{kw.notes}</p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+
+                {/* Desktop Table View */}
+                <div className="hidden sm:block overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="border-b border-gray-200">
+                        <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Keyword</th>
+                        <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Target Pages</th>
+                        <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Priority</th>
+                        <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Notes</th>
+                        <th className="text-right py-3 px-4 text-sm font-medium text-gray-500">Actions</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                    </thead>
+                    <tbody>
+                      {keywords.map((kw) => (
+                        <tr key={kw.id} className="border-b border-gray-100 hover:bg-gray-50">
+                          <td className="py-3 px-4">
+                            <span className="font-medium text-gray-900">{kw.keyword}</span>
+                          </td>
+                          <td className="py-3 px-4">
+                            <div className="flex flex-wrap gap-1">
+                              {kw.target_pages?.map((p, i) => (
+                                <span key={i} className="px-2 py-0.5 bg-blue-100 text-blue-700 rounded text-xs">
+                                  {p}
+                                </span>
+                              ))}
+                            </div>
+                          </td>
+                          <td className="py-3 px-4">{getPriorityBadge(kw.priority)}</td>
+                          <td className="py-3 px-4">
+                            <span className="text-sm text-gray-500 line-clamp-1">{kw.notes || '-'}</span>
+                          </td>
+                          <td className="py-3 px-4 text-right">
+                            <div className="flex items-center justify-end gap-2">
+                              <button
+                                onClick={() => {
+                                  setEditingKeyword(kw);
+                                  setShowKeywordModal(true);
+                                }}
+                                className="p-1 text-gray-400 hover:text-blue-600"
+                              >
+                                <Edit2 className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={() => handleDeleteKeyword(kw.id)}
+                                className="p-1 text-gray-400 hover:text-red-600"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </>
             )}
           </div>
         )}
 
         {activeTab === 'audit' && (
           <div className="space-y-6">
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-              <div className="flex items-center justify-between mb-6">
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
                 <div>
-                  <h2 className="text-lg font-semibold text-gray-900">SEO Audit</h2>
-                  <p className="text-sm text-gray-500">Run an audit to check your SEO configuration</p>
+                  <h2 className="text-base sm:text-lg font-semibold text-gray-900">SEO Audit</h2>
+                  <p className="text-xs sm:text-sm text-gray-500">Run an audit to check your SEO configuration</p>
                 </div>
                 <button
                   onClick={handleRunAudit}
                   disabled={runningAudit}
-                  className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                  className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 w-full sm:w-auto"
                 >
                   {runningAudit ? (
                     <Loader2 className="w-4 h-4 animate-spin" />
@@ -424,17 +470,17 @@ const AdminSEO = () => {
             </div>
 
             {auditHistory.length > 0 && (
-              <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Audit History</h3>
+              <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-6">
+                <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-4">Audit History</h3>
                 <div className="space-y-2">
                   {auditHistory.slice(0, 5).map((audit) => (
                     <div
                       key={audit.id}
-                      className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                      className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 bg-gray-50 rounded-lg"
                     >
                       <div className="flex items-center gap-3">
                         <div
-                          className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold ${
+                          className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0 ${
                             audit.overall_score >= 80
                               ? 'bg-green-100 text-green-700'
                               : audit.overall_score >= 60
@@ -453,7 +499,7 @@ const AdminSEO = () => {
                           </p>
                         </div>
                       </div>
-                      <div className="flex items-center gap-3 text-xs">
+                      <div className="flex items-center gap-3 text-xs ml-13 sm:ml-0">
                         <span className="flex items-center gap-1 text-green-600">
                           <CheckCircle className="w-3 h-3" /> {audit.summary?.pass || 0}
                         </span>
@@ -475,11 +521,11 @@ const AdminSEO = () => {
         {activeTab === 'sitemap' && (
           <div className="space-y-6">
             {/* Sitemap Section */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-              <div className="flex items-center justify-between mb-6">
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
                 <div>
-                  <h2 className="text-lg font-semibold text-gray-900">Sitemap Configuration</h2>
-                  <p className="text-sm text-gray-500">Manage URLs in your sitemap.xml</p>
+                  <h2 className="text-base sm:text-lg font-semibold text-gray-900">Sitemap Configuration</h2>
+                  <p className="text-xs sm:text-sm text-gray-500">Manage URLs in your sitemap.xml</p>
                 </div>
                 <div className="flex items-center gap-2">
                   <button
@@ -489,15 +535,16 @@ const AdminSEO = () => {
                         { url: 'https://aidenlink.cloud/', changefreq: 'weekly', priority: 0.5 },
                       ]);
                     }}
-                    className="flex items-center gap-2 px-3 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200"
+                    className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-3 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 text-sm"
                   >
                     <Plus className="w-4 h-4" />
-                    Add URL
+                    <span className="hidden sm:inline">Add URL</span>
+                    <span className="sm:hidden">Add</span>
                   </button>
                   <button
                     onClick={handleSaveSitemap}
                     disabled={savingSitemap}
-                    className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                    className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 text-sm"
                   >
                     {savingSitemap ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                     Save
@@ -506,7 +553,7 @@ const AdminSEO = () => {
               </div>
               <div className="space-y-3">
                 {sitemapEntries.map((entry, index) => (
-                  <div key={index} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                  <div key={index} className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 p-3 bg-gray-50 rounded-lg">
                     <input
                       type="text"
                       value={entry.url}
@@ -515,70 +562,72 @@ const AdminSEO = () => {
                         updated[index].url = e.target.value;
                         setSitemapEntries(updated);
                       }}
-                      className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                      className="w-full sm:flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm"
                       placeholder="https://aidenlink.cloud/page"
                     />
-                    <select
-                      value={entry.changefreq}
-                      onChange={(e) => {
-                        const updated = [...sitemapEntries];
-                        updated[index].changefreq = e.target.value;
-                        setSitemapEntries(updated);
-                      }}
-                      className="px-3 py-2 border border-gray-300 rounded-lg text-sm"
-                    >
-                      <option value="always">Always</option>
-                      <option value="hourly">Hourly</option>
-                      <option value="daily">Daily</option>
-                      <option value="weekly">Weekly</option>
-                      <option value="monthly">Monthly</option>
-                      <option value="yearly">Yearly</option>
-                      <option value="never">Never</option>
-                    </select>
-                    <input
-                      type="number"
-                      value={entry.priority}
-                      onChange={(e) => {
-                        const updated = [...sitemapEntries];
-                        updated[index].priority = parseFloat(e.target.value) || 0.5;
-                        setSitemapEntries(updated);
-                      }}
-                      min="0"
-                      max="1"
-                      step="0.1"
-                      className="w-20 px-3 py-2 border border-gray-300 rounded-lg text-sm"
-                    />
-                    <button
-                      onClick={() => {
-                        setSitemapEntries(sitemapEntries.filter((_, i) => i !== index));
-                      }}
-                      className="p-2 text-gray-400 hover:text-red-600"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+                    <div className="flex items-center gap-2">
+                      <select
+                        value={entry.changefreq}
+                        onChange={(e) => {
+                          const updated = [...sitemapEntries];
+                          updated[index].changefreq = e.target.value;
+                          setSitemapEntries(updated);
+                        }}
+                        className="flex-1 sm:flex-none px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                      >
+                        <option value="always">Always</option>
+                        <option value="hourly">Hourly</option>
+                        <option value="daily">Daily</option>
+                        <option value="weekly">Weekly</option>
+                        <option value="monthly">Monthly</option>
+                        <option value="yearly">Yearly</option>
+                        <option value="never">Never</option>
+                      </select>
+                      <input
+                        type="number"
+                        value={entry.priority}
+                        onChange={(e) => {
+                          const updated = [...sitemapEntries];
+                          updated[index].priority = parseFloat(e.target.value) || 0.5;
+                          setSitemapEntries(updated);
+                        }}
+                        min="0"
+                        max="1"
+                        step="0.1"
+                        className="w-16 sm:w-20 px-2 sm:px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                      />
+                      <button
+                        onClick={() => {
+                          setSitemapEntries(sitemapEntries.filter((_, i) => i !== index));
+                        }}
+                        className="p-2 text-gray-400 hover:text-red-600 flex-shrink-0"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>
             </div>
 
             {/* Robots.txt Section */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-              <div className="flex items-center justify-between mb-6">
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
                 <div>
-                  <h2 className="text-lg font-semibold text-gray-900">Robots.txt Configuration</h2>
-                  <p className="text-sm text-gray-500">Control what search engines can crawl</p>
+                  <h2 className="text-base sm:text-lg font-semibold text-gray-900">Robots.txt Configuration</h2>
+                  <p className="text-xs sm:text-sm text-gray-500">Control what search engines can crawl</p>
                 </div>
                 <button
                   onClick={handleSaveRobots}
                   disabled={savingRobots}
-                  className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                  className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 w-full sm:w-auto"
                 >
                   {savingRobots ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                   Save
                 </button>
               </div>
               {robotsConfig && (
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
                   <div className="space-y-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">User Agent</label>
@@ -652,18 +701,18 @@ const AdminSEO = () => {
             </div>
 
             {/* Generate Files */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-              <div className="flex items-center justify-between">
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
-                  <h2 className="text-lg font-semibold text-gray-900">Generate Files</h2>
-                  <p className="text-sm text-gray-500">
-                    Regenerate sitemap.xml and robots.txt files from your configuration
+                  <h2 className="text-base sm:text-lg font-semibold text-gray-900">Generate Files</h2>
+                  <p className="text-xs sm:text-sm text-gray-500">
+                    Regenerate sitemap.xml and robots.txt files
                   </p>
                 </div>
                 <button
                   onClick={handleGenerateFiles}
                   disabled={generatingFiles}
-                  className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
+                  className="flex items-center justify-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 w-full sm:w-auto"
                 >
                   {generatingFiles ? (
                     <Loader2 className="w-4 h-4 animate-spin" />
@@ -673,7 +722,7 @@ const AdminSEO = () => {
                   {generatingFiles ? 'Generating...' : 'Generate Files'}
                 </button>
               </div>
-              <div className="mt-4 flex items-center gap-4">
+              <div className="mt-4 flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4">
                 <a
                   href="/sitemap.xml"
                   target="_blank"
