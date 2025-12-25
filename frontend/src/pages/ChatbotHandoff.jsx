@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import Layout from '../components/Layout';
@@ -72,6 +73,7 @@ const PRIORITY_COLORS = {
 };
 
 const ChatbotHandoff = () => {
+  const { t } = useTranslation('dashboard');
   const { id } = useParams();
   const [bot, setBot] = useState(null);
   const [handoffs, setHandoffs] = useState({ items: [], total: 0 });
@@ -294,8 +296,8 @@ const ChatbotHandoff = () => {
               <ArrowLeft className="w-5 h-5" />
             </Link>
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">{bot?.name} - Live Chat</h1>
-              <p className="text-gray-500">Manage human handoffs</p>
+              <h1 className="text-2xl font-bold text-gray-900">{bot?.name} - {t('handoff.liveChat', 'Live Chat')}</h1>
+              <p className="text-gray-500">{t('livechat.subtitle', 'Manage human handoffs')}</p>
             </div>
           </div>
           <div className="flex gap-2">
@@ -310,7 +312,7 @@ const ChatbotHandoff = () => {
               className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 flex items-center gap-2"
             >
               <Settings className="w-4 h-4" />
-              Settings
+              {t('common.settings', 'Settings')}
             </button>
           </div>
         </div>
@@ -321,7 +323,7 @@ const ChatbotHandoff = () => {
             <div className="bg-white rounded-xl p-4 shadow-sm">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-500">Pending</p>
+                  <p className="text-sm text-gray-500">{t('livechat.pending', 'Pending')}</p>
                   <p className="text-2xl font-bold text-yellow-600">{stats.pending}</p>
                 </div>
                 <AlertTriangle className="w-8 h-8 text-yellow-200" />
@@ -331,7 +333,7 @@ const ChatbotHandoff = () => {
             <div className="bg-white rounded-xl p-4 shadow-sm">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-500">Active</p>
+                  <p className="text-sm text-gray-500">{t('livechat.active', 'Active')}</p>
                   <p className="text-2xl font-bold text-green-600">{stats.active}</p>
                 </div>
                 <MessageSquare className="w-8 h-8 text-green-200" />
@@ -341,7 +343,7 @@ const ChatbotHandoff = () => {
             <div className="bg-white rounded-xl p-4 shadow-sm">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-500">Avg Wait</p>
+                  <p className="text-sm text-gray-500">{t('livechat.avgWait', 'Avg Wait')}</p>
                   <p className="text-2xl font-bold text-gray-900">
                     {formatTime(stats.avg_wait_time_seconds)}
                   </p>
@@ -353,7 +355,7 @@ const ChatbotHandoff = () => {
             <div className="bg-white rounded-xl p-4 shadow-sm">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-500">Resolved Today</p>
+                  <p className="text-sm text-gray-500">{t('livechat.resolvedToday', 'Resolved Today')}</p>
                   <p className="text-2xl font-bold text-blue-600">{stats.resolved_today}</p>
                 </div>
                 <CheckCircle className="w-8 h-8 text-blue-200" />
@@ -371,11 +373,11 @@ const ChatbotHandoff = () => {
                 onChange={(e) => setStatusFilter(e.target.value)}
                 className="w-full px-3 py-2 border rounded-lg"
               >
-                <option value="">All Status</option>
-                <option value="pending">Pending</option>
-                <option value="assigned">Assigned</option>
-                <option value="active">Active</option>
-                <option value="resolved">Resolved</option>
+                <option value="">{t('livechat.allStatus', 'All Status')}</option>
+                <option value="pending">{t('livechat.pending', 'Pending')}</option>
+                <option value="assigned">{t('livechat.assigned', 'Assigned')}</option>
+                <option value="active">{t('livechat.active', 'Active')}</option>
+                <option value="resolved">{t('livechat.resolved', 'Resolved')}</option>
               </select>
             </div>
 
@@ -383,7 +385,7 @@ const ChatbotHandoff = () => {
               {handoffs.items.length === 0 ? (
                 <div className="p-8 text-center text-gray-500">
                   <Phone className="w-12 h-12 mx-auto mb-4 text-gray-300" />
-                  <p>No handoff requests</p>
+                  <p>{t('livechat.noHandoffs', 'No handoff requests')}</p>
                 </div>
               ) : (
                 handoffs.items.map((h) => (
@@ -405,14 +407,14 @@ const ChatbotHandoff = () => {
                           </span>
                           {h.trigger === 'booking' && (
                             <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-700">
-                              Booking
+                              {t('livechat.booking', 'Booking')}
                             </span>
                           )}
                         </div>
-                        <p className="text-sm text-gray-600 mt-1">{h.trigger === 'booking' ? `Booking: ${h.booking_details?.guest_name || 'Guest'}` : h.trigger}</p>
+                        <p className="text-sm text-gray-600 mt-1">{h.trigger === 'booking' ? `${t('livechat.booking', 'Booking')}: ${h.booking_details?.guest_name || t('livechat.guest', 'Guest')}` : h.trigger}</p>
                         {h.assigned_to_name && (
                           <p className="text-xs text-gray-400 mt-1">
-                            Agent: {h.assigned_to_name}
+                            {t('livechat.agentLabel', 'Agent')}: {h.assigned_to_name}
                           </p>
                         )}
                       </div>
@@ -434,12 +436,12 @@ const ChatbotHandoff = () => {
                   <div className="flex items-center justify-between">
                     <div>
                       <div className="flex items-center gap-2">
-                        <h3 className="font-semibold">Session: {selectedHandoff.session_id.slice(0, 8)}...</h3>
-                        <span className={`w-2 h-2 rounded-full ${wsConnected ? 'bg-green-500' : 'bg-red-500'}`} title={wsConnected ? 'Live' : 'Disconnected'} />
-                        {wsConnected && <span className="text-xs text-green-600">Live</span>}
+                        <h3 className="font-semibold">{t('livechat.session', 'Session')}: {selectedHandoff.session_id.slice(0, 8)}...</h3>
+                        <span className={`w-2 h-2 rounded-full ${wsConnected ? 'bg-green-500' : 'bg-red-500'}`} title={wsConnected ? t('livechat.live', 'Live') : t('livechat.disconnected', 'Disconnected')} />
+                        {wsConnected && <span className="text-xs text-green-600">{t('livechat.live', 'Live')}</span>}
                       </div>
                       <p className="text-sm text-gray-500">
-                        Trigger: {selectedHandoff.trigger_reason || selectedHandoff.trigger}
+                        {t('livechat.trigger', 'Trigger')}: {selectedHandoff.trigger_reason || selectedHandoff.trigger}
                       </p>
                     </div>
                     <div className="flex gap-2">
@@ -448,7 +450,7 @@ const ChatbotHandoff = () => {
                           onClick={handleAcceptChat}
                           className="px-3 py-1 bg-green-600 text-white rounded-lg text-sm hover:bg-green-700"
                         >
-                          Accept
+                          {t('livechat.accept', 'Accept')}
                         </button>
                       )}
                       {['assigned', 'active'].includes(selectedHandoff.status) && (
@@ -456,7 +458,7 @@ const ChatbotHandoff = () => {
                           onClick={() => handleStatusChange(selectedHandoff.id, 'resolved')}
                           className="px-3 py-1 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700"
                         >
-                          Resolve
+                          {t('livechat.resolve', 'Resolve')}
                         </button>
                       )}
                     </div>
@@ -468,23 +470,23 @@ const ChatbotHandoff = () => {
                   <div className="mx-4 mb-4 p-4 bg-amber-50 border border-amber-200 rounded-lg">
                     <h4 className="font-semibold text-amber-800 mb-3 flex items-center gap-2">
                       <Calendar className="w-5 h-5" />
-                      Booking Details
+                      {t('livechat.bookingDetails', 'Booking Details')}
                     </h4>
                     <div className="grid grid-cols-2 gap-3 text-sm">
                       <div>
-                        <span className="text-gray-600">Type:</span>
+                        <span className="text-gray-600">{t('livechat.bookingType', 'Type')}:</span>
                         <span className="ml-2 font-medium capitalize">
-                          {selectedHandoff.booking_details.booking_type || 'Booking'}
+                          {selectedHandoff.booking_details.booking_type || t('livechat.booking', 'Booking')}
                         </span>
                       </div>
                       <div>
-                        <span className="text-gray-600">Guest:</span>
+                        <span className="text-gray-600">{t('livechat.guestName', 'Guest')}:</span>
                         <span className="ml-2 font-medium">
                           {selectedHandoff.booking_details.guest_name}
                         </span>
                       </div>
                       <div>
-                        <span className="text-gray-600">Phone:</span>
+                        <span className="text-gray-600">{t('livechat.phone', 'Phone')}:</span>
                         <a
                           href={`https://wa.me/${selectedHandoff.booking_details.phone?.replace(/[^\d+]/g, '')}`}
                           target="_blank"
@@ -495,20 +497,20 @@ const ChatbotHandoff = () => {
                         </a>
                       </div>
                       <div>
-                        <span className="text-gray-600">Date:</span>
+                        <span className="text-gray-600">{t('livechat.date', 'Date')}:</span>
                         <span className="ml-2 font-medium">
                           {selectedHandoff.booking_details.date}
                         </span>
                       </div>
                       <div>
-                        <span className="text-gray-600">Time:</span>
+                        <span className="text-gray-600">{t('livechat.time', 'Time')}:</span>
                         <span className="ml-2 font-medium">
                           {selectedHandoff.booking_details.time}
                         </span>
                       </div>
                       {selectedHandoff.booking_details.people_count && (
                         <div>
-                          <span className="text-gray-600">People:</span>
+                          <span className="text-gray-600">{t('livechat.people', 'People')}:</span>
                           <span className="ml-2 font-medium">
                             {selectedHandoff.booking_details.people_count}
                           </span>
@@ -516,7 +518,7 @@ const ChatbotHandoff = () => {
                       )}
                       {selectedHandoff.booking_details.purpose && (
                         <div className="col-span-2">
-                          <span className="text-gray-600">Purpose:</span>
+                          <span className="text-gray-600">{t('livechat.purpose', 'Purpose')}:</span>
                           <span className="ml-2 font-medium">
                             {selectedHandoff.booking_details.purpose}
                           </span>
@@ -524,7 +526,7 @@ const ChatbotHandoff = () => {
                       )}
                       {selectedHandoff.booking_details.duration && (
                         <div className="col-span-2">
-                          <span className="text-gray-600">Duration:</span>
+                          <span className="text-gray-600">{t('livechat.duration', 'Duration')}:</span>
                           <span className="ml-2 font-medium">
                             {selectedHandoff.booking_details.duration}
                           </span>
@@ -532,7 +534,7 @@ const ChatbotHandoff = () => {
                       )}
                       {selectedHandoff.booking_details.extras?.length > 0 && (
                         <div className="col-span-2">
-                          <span className="text-gray-600">Extras:</span>
+                          <span className="text-gray-600">{t('livechat.extras', 'Extras')}:</span>
                           <span className="ml-2 font-medium">
                             {selectedHandoff.booking_details.extras.join(', ')}
                           </span>
@@ -540,7 +542,7 @@ const ChatbotHandoff = () => {
                       )}
                       {selectedHandoff.booking_details.notes && (
                         <div className="col-span-2">
-                          <span className="text-gray-600">Notes:</span>
+                          <span className="text-gray-600">{t('livechat.notes', 'Notes')}:</span>
                           <span className="ml-2 font-medium">
                             {selectedHandoff.booking_details.notes}
                           </span>
@@ -555,7 +557,7 @@ const ChatbotHandoff = () => {
                         className="px-4 py-2 bg-green-600 text-white rounded-lg text-sm hover:bg-green-700 flex items-center gap-2"
                       >
                         <Phone className="w-4 h-4" />
-                        Contact on WhatsApp
+                        {t('livechat.contactWhatsApp', 'Contact on WhatsApp')}
                       </a>
                     </div>
                   </div>
@@ -577,7 +579,7 @@ const ChatbotHandoff = () => {
                         }`}
                       >
                         <p className="text-xs text-gray-400 mb-1">
-                          {msg.role === 'user' ? 'Visitor (Bot Chat)' : 'Bot'}
+                          {msg.role === 'user' ? t('livechat.visitorBotChat', 'Visitor (Bot Chat)') : t('livechat.bot', 'Bot')}
                         </p>
                         <div className="prose prose-sm max-w-none">
                           <ReactMarkdown
@@ -602,7 +604,7 @@ const ChatbotHandoff = () => {
 
                   {selectedHandoff.conversation_context?.length > 0 && (
                     <div className="text-center text-xs text-gray-400 py-2">
-                      --- Handoff Started ---
+                      --- {t('handoff.handoffStarted', 'Handoff Started')} ---
                     </div>
                   )}
 
@@ -620,7 +622,7 @@ const ChatbotHandoff = () => {
                         }`}
                       >
                         <p className="text-xs text-gray-400 mb-1">
-                          {msg.sender_type === 'visitor' ? 'Visitor' : msg.sender_name || 'Agent'}
+                          {msg.sender_type === 'visitor' ? t('livechat.visitor', 'Visitor') : msg.sender_name || t('livechat.agent', 'Agent')}
                         </p>
                         <div className="prose prose-sm max-w-none">
                           <ReactMarkdown
@@ -654,7 +656,7 @@ const ChatbotHandoff = () => {
                         value={messageInput}
                         onChange={(e) => setMessageInput(e.target.value)}
                         onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
-                        placeholder="Type a message..."
+                        placeholder={t('livechat.typePlaceholder', 'Type a message...')}
                         className="flex-1 px-4 py-2 border rounded-lg"
                       />
                       <button
@@ -672,7 +674,7 @@ const ChatbotHandoff = () => {
               <div className="flex-1 flex items-center justify-center text-gray-500">
                 <div className="text-center">
                   <MessageSquare className="w-12 h-12 mx-auto mb-4 text-gray-300" />
-                  <p>Select a handoff to view details</p>
+                  <p>{t('livechat.selectHandoff', 'Select a handoff to view details')}</p>
                 </div>
               </div>
             )}
@@ -684,7 +686,7 @@ const ChatbotHandoff = () => {
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
             <div className="bg-white rounded-xl max-w-lg w-full mx-4 max-h-[80vh] overflow-auto">
               <div className="p-6 border-b flex items-center justify-between">
-                <h3 className="text-lg font-semibold">Handoff Settings</h3>
+                <h3 className="text-lg font-semibold">{t('livechat.handoffSettings', 'Handoff Settings')}</h3>
                 <button onClick={() => setShowConfigModal(false)} className="p-2 hover:bg-gray-100 rounded">
                   <X className="w-5 h-5" />
                 </button>
@@ -692,8 +694,8 @@ const ChatbotHandoff = () => {
               <div className="p-6 space-y-4">
                 <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                   <div>
-                    <p className="font-medium">Enable Human Handoff</p>
-                    <p className="text-sm text-gray-500">Allow visitors to request live agent</p>
+                    <p className="font-medium">{t('livechat.enableHandoff', 'Enable Human Handoff')}</p>
+                    <p className="text-sm text-gray-500">{t('livechat.allowVisitors', 'Allow visitors to request live agent')}</p>
                   </div>
                   <button
                     onClick={() => setConfig({ ...config, enabled: !config.enabled })}
@@ -709,7 +711,7 @@ const ChatbotHandoff = () => {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Trigger Keywords (one per line)
+                    {t('livechat.triggerKeywords', 'Trigger Keywords (one per line)')}
                   </label>
                   <textarea
                     value={config.keywords?.join('\n') || ''}
@@ -721,7 +723,7 @@ const ChatbotHandoff = () => {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Sentiment Threshold (-1 to 1)
+                    {t('livechat.sentimentThreshold', 'Sentiment Threshold (-1 to 1)')}
                   </label>
                   <input
                     type="number"
@@ -736,7 +738,7 @@ const ChatbotHandoff = () => {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Unanswered Questions Threshold
+                    {t('livechat.unansweredThreshold', 'Unanswered Questions Threshold')}
                   </label>
                   <input
                     type="number"
@@ -749,7 +751,7 @@ const ChatbotHandoff = () => {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Offline Message
+                    {t('livechat.offlineMessage', 'Offline Message')}
                   </label>
                   <textarea
                     value={config.offline_message}
@@ -764,7 +766,7 @@ const ChatbotHandoff = () => {
                     onClick={handleSaveConfig}
                     className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
                   >
-                    Save Settings
+                    {t('livechat.saveSettings', 'Save Settings')}
                   </button>
                 </div>
               </div>
@@ -777,7 +779,7 @@ const ChatbotHandoff = () => {
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
             <div className="bg-white rounded-xl max-w-md w-full mx-4">
               <div className="p-6 border-b flex items-center justify-between">
-                <h3 className="text-lg font-semibold">Accept Chat</h3>
+                <h3 className="text-lg font-semibold">{t('livechat.acceptChat', 'Accept Chat')}</h3>
                 <button onClick={() => setShowAcceptModal(false)} className="p-2 hover:bg-gray-100 rounded">
                   <X className="w-5 h-5" />
                 </button>
@@ -785,17 +787,17 @@ const ChatbotHandoff = () => {
               <div className="p-6 space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Enter your name
+                    {t('livechat.enterYourName', 'Enter your name')}
                   </label>
                   <p className="text-sm text-gray-500 mb-3">
-                    This name will be shown to the customer during the chat.
+                    {t('livechat.nameShownToCustomer', 'This name will be shown to the customer during the chat.')}
                   </p>
                   <input
                     type="text"
                     value={agentNameInput}
                     onChange={(e) => setAgentNameInput(e.target.value)}
                     onKeyPress={(e) => e.key === 'Enter' && agentNameInput.trim() && confirmAcceptChat()}
-                    placeholder="e.g., John, Sarah, Support Team"
+                    placeholder={t('livechat.namePlaceholder', 'e.g., John, Sarah, Support Team')}
                     className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
                     autoFocus
                   />
@@ -805,14 +807,14 @@ const ChatbotHandoff = () => {
                     onClick={() => setShowAcceptModal(false)}
                     className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
                   >
-                    Cancel
+                    {t('common.cancel', 'Cancel')}
                   </button>
                   <button
                     onClick={confirmAcceptChat}
                     disabled={!agentNameInput.trim()}
                     className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    Start Chat
+                    {t('livechat.startChat', 'Start Chat')}
                   </button>
                 </div>
               </div>

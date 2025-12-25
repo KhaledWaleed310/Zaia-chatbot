@@ -17,15 +17,23 @@ import {
 import { chatbots, bookings } from '../utils/api';
 import BookingCalendar from '../components/BookingCalendar';
 
-const MONTHS = [
-  'January', 'February', 'March', 'April', 'May', 'June',
-  'July', 'August', 'September', 'October', 'November', 'December'
-];
-
-const WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-
 export default function ChatbotBookings() {
-  const { t } = useTranslation('dashboard');
+  const { t, i18n } = useTranslation('dashboard');
+
+  // Use localized month and weekday names
+  const formatDate = (dateStr) => {
+    if (!dateStr) return '';
+    try {
+      const date = new Date(dateStr);
+      return date.toLocaleDateString(i18n.language === 'ar' ? 'ar-EG' : 'en-US', {
+        weekday: 'long',
+        month: 'long',
+        day: 'numeric'
+      });
+    } catch {
+      return dateStr;
+    }
+  };
   const { id } = useParams();
   const navigate = useNavigate();
 
@@ -120,16 +128,6 @@ export default function ChatbotBookings() {
     }
   };
 
-  const formatDate = (dateStr) => {
-    if (!dateStr) return '';
-    try {
-      const date = new Date(dateStr);
-      return `${WEEKDAYS[date.getDay()]}, ${MONTHS[date.getMonth()]} ${date.getDate()}`;
-    } catch {
-      return dateStr;
-    }
-  };
-
   const getStatusBadge = (status) => {
     const badges = {
       pending: 'bg-yellow-100 text-yellow-800',
@@ -141,15 +139,24 @@ export default function ChatbotBookings() {
 
   const getBookingTypeLabel = (type) => {
     const labels = {
-      room: 'Room Booking',
-      meeting: 'Meeting',
-      table: 'Table Reservation',
-      appointment: 'Appointment',
-      service: 'Service',
-      event: 'Event',
-      other: 'Booking'
+      room: t('bookings.types.room', 'Room Booking'),
+      meeting: t('bookings.types.meeting', 'Meeting'),
+      table: t('bookings.types.table', 'Table Reservation'),
+      appointment: t('bookings.types.appointment', 'Appointment'),
+      service: t('bookings.types.service', 'Service'),
+      event: t('bookings.types.event', 'Event'),
+      other: t('bookings.types.other', 'Booking')
     };
     return labels[type] || labels.other;
+  };
+
+  const getStatusLabel = (status) => {
+    const labels = {
+      pending: t('bookings.pending', 'Pending'),
+      confirmed: t('bookings.confirmed', 'Confirmed'),
+      cancelled: t('bookings.cancelled', 'Cancelled')
+    };
+    return labels[status] || status;
   };
 
   const getWhatsAppLink = (phone) => {
@@ -325,7 +332,7 @@ export default function ChatbotBookings() {
                         </h4>
                       </div>
                       <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusBadge(booking.status)}`}>
-                        {booking.status}
+                        {getStatusLabel(booking.status)}
                       </span>
                     </div>
 
@@ -354,7 +361,7 @@ export default function ChatbotBookings() {
                       {booking.people_count && (
                         <div className="flex items-center gap-2">
                           <Users className="w-4 h-4 text-gray-400" />
-                          <span>{booking.people_count} people</span>
+                          <span>{booking.people_count} {t('bookings.people', 'people')}</span>
                         </div>
                       )}
 
