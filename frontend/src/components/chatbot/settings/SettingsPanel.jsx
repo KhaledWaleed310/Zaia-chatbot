@@ -359,15 +359,15 @@ const SettingsPanel = () => {
             <Eye className="w-5 h-5 text-green-600" />
           </div>
           <div>
-            <h3 className="text-lg font-semibold text-gray-900">Widget Appearance</h3>
-            <p className="text-sm text-gray-500">Customize how the chat widget looks on your website</p>
+            <h3 className="text-lg font-semibold text-gray-900">{t('chatbotDetail.settings.appearance')}</h3>
+            <p className="text-sm text-gray-500">{t('chatbotDetail.settings.appearanceDesc')}</p>
           </div>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">Brand Color</label>
-            <p className="text-xs text-gray-500 mb-2">Used for the chat bubble and header</p>
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">{t('chatbotDetail.settings.brandColor')}</label>
+            <p className="text-xs text-gray-500 mb-2">{t('chatbotDetail.settings.brandColorDesc')}</p>
             <div className="flex items-center space-x-3">
               <input
                 type="color"
@@ -384,22 +384,22 @@ const SettingsPanel = () => {
             </div>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">Widget Position</label>
-            <p className="text-xs text-gray-500 mb-2">Where the chat bubble appears on your site</p>
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">{t('chatbotDetail.settings.widgetPosition')}</label>
+            <p className="text-xs text-gray-500 mb-2">{t('chatbotDetail.settings.widgetPositionDesc')}</p>
             <select
               value={formData.position}
               onChange={(e) => setFormData((prev) => ({ ...prev, position: e.target.value }))}
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
             >
-              <option value="bottom-right">Bottom Right (Recommended)</option>
-              <option value="bottom-left">Bottom Left</option>
+              <option value="bottom-right">{t('chatbotDetail.settings.positions.bottomRight')}</option>
+              <option value="bottom-left">{t('chatbotDetail.settings.positions.bottomLeft')}</option>
             </select>
           </div>
         </div>
 
         {/* Preview */}
         <div className="mt-6 p-4 bg-gray-100 rounded-lg">
-          <p className="text-xs text-gray-500 mb-3">Preview</p>
+          <p className="text-xs text-gray-500 mb-3">{t('chatbotDetail.settings.preview')}</p>
           <div className="flex items-center gap-3">
             <div
               className="w-14 h-14 rounded-full flex items-center justify-center shadow-lg"
@@ -408,7 +408,7 @@ const SettingsPanel = () => {
               <MessageSquare className="w-6 h-6 text-white" />
             </div>
             <div className="text-sm text-gray-600">
-              This is how your chat bubble will look
+              {t('chatbotDetail.settings.previewText')}
             </div>
           </div>
         </div>
@@ -424,12 +424,12 @@ const SettingsPanel = () => {
           {saving ? (
             <>
               <Loader2 className="w-4 h-4 animate-spin" />
-              Saving...
+              {t('chatbotDetail.saving')}
             </>
           ) : (
             <>
               <Check className="w-4 h-4" />
-              Save Changes
+              {t('chatbotDetail.saveChanges')}
             </>
           )}
         </button>
@@ -442,8 +442,8 @@ const SettingsPanel = () => {
             <Sparkles className="w-5 h-5 text-indigo-600" />
           </div>
           <div>
-            <h3 className="text-lg font-semibold text-gray-900">Features & Capabilities</h3>
-            <p className="text-sm text-gray-500">Enable advanced features for your chatbot</p>
+            <h3 className="text-lg font-semibold text-gray-900">{t('chatbotDetail.settings.features')}</h3>
+            <p className="text-sm text-gray-500">{t('chatbotDetail.settings.featuresDesc')}</p>
           </div>
         </div>
 
@@ -455,8 +455,8 @@ const SettingsPanel = () => {
               onChange={handleToggleLeadForm}
               icon={Users}
               color="blue"
-              title="Smart Lead Capture"
-              description="AI asks for contact info when interested"
+              title={t('chatbotDetail.settings.smartLeadCapture')}
+              description={t('chatbotDetail.settings.smartLeadCaptureDesc')}
               disabled={savingFeatures}
             />
           )}
@@ -468,8 +468,8 @@ const SettingsPanel = () => {
               onChange={handleToggleHandoff}
               icon={Phone}
               color="green"
-              title="Human Handoff"
-              description="Let visitors request live support"
+              title={t('chatbotDetail.settings.humanHandoff')}
+              description={t('chatbotDetail.settings.humanHandoffDesc')}
               disabled={savingFeatures}
             />
           )}
@@ -481,8 +481,8 @@ const SettingsPanel = () => {
               onChange={handleToggleBooking}
               icon={Calendar}
               color="amber"
-              title="Booking System"
-              description="Accept reservations via chat"
+              title={t('chatbotDetail.settings.bookingSystem')}
+              description={t('chatbotDetail.settings.bookingSystemDesc')}
               disabled={savingFeatures}
             >
               {/* Booking Prompt */}
@@ -490,10 +490,10 @@ const SettingsPanel = () => {
                 <div>
                   <div className="flex items-center gap-2 mb-1">
                     <Calendar className="w-4 h-4 text-amber-700" />
-                    <label className="text-sm font-semibold text-amber-900">Booking Instructions</label>
+                    <label className="text-sm font-semibold text-amber-900">{t('chatbotDetail.settings.bookingInstructions')}</label>
                   </div>
                   <p className="text-xs text-amber-700">
-                    Tell the AI how to handle booking requests.
+                    {t('chatbotDetail.settings.bookingInstructionsDesc')}
                   </p>
                 </div>
                 <textarea
@@ -501,7 +501,7 @@ const SettingsPanel = () => {
                   onChange={(e) => setBookingPrompt(e.target.value)}
                   rows={4}
                   className="w-full px-3 py-2 text-sm border border-amber-300 rounded-lg focus:ring-2 focus:ring-amber-500 bg-white"
-                  placeholder="e.g., When a customer wants to book, collect their name, phone number, preferred date and time..."
+                  placeholder={t('chatbotDetail.settings.bookingPlaceholder')}
                 />
                 <button
                   onClick={handleSaveBookingPrompt}
@@ -511,10 +511,10 @@ const SettingsPanel = () => {
                   {savingBookingPrompt ? (
                     <>
                       <Loader2 className="w-4 h-4 animate-spin" />
-                      Saving...
+                      {t('chatbotDetail.saving')}
                     </>
                   ) : (
-                    'Save Instructions'
+                    t('chatbotDetail.settings.saveInstructions')
                   )}
                 </button>
               </div>
@@ -527,8 +527,8 @@ const SettingsPanel = () => {
             onChange={handleToggleMultiLanguage}
             icon={Globe}
             color="purple"
-            title="Multi-Language Support"
-            description="Language selector in widget"
+            title={t('chatbotDetail.settings.multiLanguage')}
+            description={t('chatbotDetail.settings.multiLanguageDesc')}
             disabled={savingFeatures}
           />
 
@@ -538,14 +538,13 @@ const SettingsPanel = () => {
             onChange={handleTogglePersonalMode}
             icon={MessageSquare}
             color="indigo"
-            title="Personal Assistant Mode"
-            description="Full-page chat with history"
+            title={t('chatbotDetail.settings.personalMode')}
+            description={t('chatbotDetail.settings.personalModeDesc')}
             disabled={savingFeatures}
           >
             <div className="p-3 bg-indigo-50 border border-indigo-200 rounded-lg mt-3">
               <p className="text-sm text-indigo-700">
-                <strong>Personal Mode is active.</strong> Your chatbot now has a full-page interface with conversation history.
-                Lead capture, handoff, and booking features are disabled in this mode.
+                {t('chatbotDetail.settings.personalModeActive')}
               </p>
             </div>
           </FeatureToggle>
@@ -554,7 +553,7 @@ const SettingsPanel = () => {
         {!isPersonalMode && (
           <p className="text-xs text-gray-400 mt-6 flex items-center gap-1">
             <AlertCircle className="w-3 h-3" />
-            Configure detailed settings in the Leads or Live Chat sections
+            {t('chatbotDetail.settings.featuresNote')}
           </p>
         )}
       </div>

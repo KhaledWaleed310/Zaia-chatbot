@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import Layout from '../components/Layout';
 import { chatbots } from '../utils/api';
 import { StepIndicator } from '@/components/shared/StepIndicator';
@@ -38,12 +39,12 @@ import {
   Trash2,
 } from 'lucide-react';
 
-const SETUP_STEPS = [
-  { id: 'basics', name: 'Basics', icon: MessageSquare },
-  { id: 'personality', name: 'Personality', icon: Sparkles },
-  { id: 'knowledge', name: 'Knowledge', icon: Upload },
-  { id: 'appearance', name: 'Appearance', icon: Eye },
-  { id: 'features', name: 'Features', icon: Settings2 },
+const getSetupSteps = (t) => [
+  { id: 'basics', name: t('setup.steps.basics', 'Basics'), icon: MessageSquare },
+  { id: 'personality', name: t('setup.steps.personality', 'Personality'), icon: Sparkles },
+  { id: 'knowledge', name: t('setup.steps.knowledge', 'Knowledge'), icon: Upload },
+  { id: 'appearance', name: t('setup.steps.appearance', 'Appearance'), icon: Eye },
+  { id: 'features', name: t('setup.steps.features', 'Features'), icon: Settings2 },
 ];
 
 const PROMPT_TEMPLATES = [
@@ -128,6 +129,7 @@ const PROMPT_TEMPLATES = [
 const ChatbotSetup = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { t } = useTranslation('dashboard');
   const [currentStep, setCurrentStep] = useState(0);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -265,8 +267,10 @@ const ChatbotSetup = () => {
     setFormData(prev => ({ ...prev, system_prompt: template.prompt }));
   };
 
+  const SETUP_STEPS = getSetupSteps(t);
+
   if (loading) {
-    return <LoadingState variant="page" text="Loading setup wizard..." />;
+    return <LoadingState variant="page" text={t('common:loading', 'Loading...')} />;
   }
 
   const progress = ((currentStep + 1) / SETUP_STEPS.length) * 100;
@@ -284,7 +288,7 @@ const ChatbotSetup = () => {
         <div className="mb-6">
           <Progress value={progress} className="h-2" />
           <p className="text-sm text-muted-foreground mt-2 text-center">
-            Step {currentStep + 1} of {SETUP_STEPS.length}
+            {t('setup.stepProgress', { current: currentStep + 1, total: SETUP_STEPS.length })}
           </p>
         </div>
 
@@ -314,11 +318,11 @@ const ChatbotSetup = () => {
               {SETUP_STEPS[currentStep].name}
             </CardTitle>
             <CardDescription>
-              {currentStep === 0 && "Set up your chatbot's basic information"}
-              {currentStep === 1 && "Define how your chatbot responds and behaves"}
-              {currentStep === 2 && "Upload documents to train your chatbot"}
-              {currentStep === 3 && "Customize how the chat widget looks"}
-              {currentStep === 4 && "Enable advanced features for your chatbot"}
+              {currentStep === 0 && t('setup.descriptions.basics')}
+              {currentStep === 1 && t('setup.descriptions.personality')}
+              {currentStep === 2 && t('setup.descriptions.knowledge')}
+              {currentStep === 3 && t('setup.descriptions.appearance')}
+              {currentStep === 4 && t('setup.descriptions.features')}
             </CardDescription>
           </CardHeader>
 
@@ -327,24 +331,24 @@ const ChatbotSetup = () => {
             {currentStep === 0 && (
               <>
                 <div className="space-y-2">
-                  <Label htmlFor="name">Chatbot Name</Label>
-                  <p className="text-xs text-muted-foreground">This name will be displayed to your visitors</p>
+                  <Label htmlFor="name">{t('chatbotDetail.settings.name')}</Label>
+                  <p className="text-xs text-muted-foreground">{t('chatbotDetail.settings.nameDesc')}</p>
                   <Input
                     id="name"
                     value={formData.name}
                     onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                    placeholder="e.g., Support Assistant, Sales Bot"
+                    placeholder={t('chatbotDetail.settings.namePlaceholder')}
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="welcome">Welcome Message</Label>
-                  <p className="text-xs text-muted-foreground">The first message visitors see when they open the chat</p>
+                  <Label htmlFor="welcome">{t('chatbotDetail.settings.welcomeMessage')}</Label>
+                  <p className="text-xs text-muted-foreground">{t('chatbotDetail.settings.welcomeMessageDesc')}</p>
                   <Input
                     id="welcome"
                     value={formData.welcome_message}
                     onChange={(e) => setFormData(prev => ({ ...prev, welcome_message: e.target.value }))}
-                    placeholder="e.g., Hi! How can I help you today?"
+                    placeholder={t('chatbotDetail.settings.welcomeMessagePlaceholder')}
                   />
                 </div>
               </>
@@ -354,8 +358,8 @@ const ChatbotSetup = () => {
             {currentStep === 1 && (
               <>
                 <div className="space-y-3">
-                  <Label>Quick Start Templates</Label>
-                  <p className="text-xs text-muted-foreground">Choose a template to get started quickly</p>
+                  <Label>{t('chatbotDetail.settings.promptTemplate')}</Label>
+                  <p className="text-xs text-muted-foreground">{t('chatbotDetail.settings.tipText', 'Choose a template to get started quickly')}</p>
                   <div className="grid grid-cols-2 gap-3">
                     {PROMPT_TEMPLATES.map((template) => {
                       const Icon = template.icon;
@@ -377,16 +381,16 @@ const ChatbotSetup = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="prompt">System Instructions</Label>
+                  <Label htmlFor="prompt">{t('chatbotDetail.settings.systemPrompt')}</Label>
                   <p className="text-xs text-muted-foreground">
-                    Tell the AI who it is, how it should respond, and any specific guidelines
+                    {t('chatbotDetail.settings.systemPromptDesc')}
                   </p>
                   <Textarea
                     id="prompt"
                     value={formData.system_prompt}
                     onChange={(e) => setFormData(prev => ({ ...prev, system_prompt: e.target.value }))}
                     rows={10}
-                    placeholder="e.g., You are a friendly customer support agent..."
+                    placeholder={t('chatbotDetail.settings.systemPromptPlaceholder')}
                     className="font-mono text-sm"
                   />
                 </div>
@@ -398,9 +402,9 @@ const ChatbotSetup = () => {
               <>
                 <div className="border-2 border-dashed rounded-lg p-8 text-center">
                   <Upload className="w-10 h-10 text-muted-foreground mx-auto mb-4" />
-                  <p className="font-medium mb-2">Upload Documents</p>
+                  <p className="font-medium mb-2">{t('chatbotDetail.documents.upload')}</p>
                   <p className="text-sm text-muted-foreground mb-4">
-                    PDF, DOCX, TXT files up to 10MB each
+                    {t('chatbotDetail.documents.supportedFormats')} - {t('chatbotDetail.documents.maxSize')}
                   </p>
                   <input
                     type="file"
@@ -415,10 +419,10 @@ const ChatbotSetup = () => {
                       {uploading ? (
                         <>
                           <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                          Uploading...
+                          {t('chatbotDetail.documents.uploading')}
                         </>
                       ) : (
-                        'Choose Files'
+                        t('chatbotDetail.documents.dragDrop', 'Choose Files')
                       )}
                     </label>
                   </Button>
@@ -426,7 +430,7 @@ const ChatbotSetup = () => {
 
                 {documents.length > 0 && (
                   <div className="space-y-2">
-                    <Label>Uploaded Documents ({documents.length})</Label>
+                    <Label>{t('setup.uploadedDocuments')} ({documents.length})</Label>
                     <div className="space-y-2">
                       {documents.map((doc) => (
                         <div key={doc.id} className="flex items-center justify-between p-3 bg-muted rounded-lg">
@@ -435,7 +439,7 @@ const ChatbotSetup = () => {
                             <div>
                               <p className="text-sm font-medium">{doc.filename}</p>
                               <p className="text-xs text-muted-foreground">
-                                {doc.status === 'processed' ? 'Ready' : 'Processing...'}
+                                {doc.status === 'processed' ? t('chatbotDetail.documents.ready') : t('chatbotDetail.documents.processing')}
                               </p>
                             </div>
                           </div>
@@ -454,7 +458,7 @@ const ChatbotSetup = () => {
 
                 <div className="p-4 bg-muted rounded-lg">
                   <p className="text-sm text-muted-foreground">
-                    <strong>Tip:</strong> Upload your FAQs, product documentation, or any content you want your chatbot to reference when answering questions.
+                    <strong>{t('chatbotDetail.settings.tip')}:</strong> {t('setup.tip')}
                   </p>
                 </div>
               </>
@@ -465,8 +469,8 @@ const ChatbotSetup = () => {
               <>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                   <div className="space-y-2">
-                    <Label>Brand Color</Label>
-                    <p className="text-xs text-muted-foreground">Used for the chat bubble and header</p>
+                    <Label>{t('chatbotDetail.settings.brandColor')}</Label>
+                    <p className="text-xs text-muted-foreground">{t('chatbotDetail.settings.brandColorDesc')}</p>
                     <div className="flex items-center gap-3">
                       <input
                         type="color"
@@ -483,22 +487,22 @@ const ChatbotSetup = () => {
                   </div>
 
                   <div className="space-y-2">
-                    <Label>Widget Position</Label>
-                    <p className="text-xs text-muted-foreground">Where the chat bubble appears</p>
+                    <Label>{t('chatbotDetail.settings.widgetPosition')}</Label>
+                    <p className="text-xs text-muted-foreground">{t('chatbotDetail.settings.widgetPositionDesc')}</p>
                     <select
                       value={formData.position}
                       onChange={(e) => setFormData(prev => ({ ...prev, position: e.target.value }))}
                       className="w-full h-10 px-3 border rounded-md bg-background"
                     >
-                      <option value="bottom-right">Bottom Right (Recommended)</option>
-                      <option value="bottom-left">Bottom Left</option>
+                      <option value="bottom-right">{t('chatbotDetail.settings.positions.bottomRight')}</option>
+                      <option value="bottom-left">{t('chatbotDetail.settings.positions.bottomLeft')}</option>
                     </select>
                   </div>
                 </div>
 
                 {/* Preview */}
                 <div className="p-6 bg-muted rounded-lg">
-                  <p className="text-sm text-muted-foreground mb-4">Preview</p>
+                  <p className="text-sm text-muted-foreground mb-4">{t('chatbotDetail.settings.preview')}</p>
                   <div className="flex items-center gap-4">
                     <div
                       className="w-14 h-14 rounded-full flex items-center justify-center shadow-lg"
@@ -507,7 +511,7 @@ const ChatbotSetup = () => {
                       <MessageSquare className="w-6 h-6 text-white" />
                     </div>
                     <div className="text-sm text-muted-foreground">
-                      This is how your chat bubble will look on your website
+                      {t('chatbotDetail.settings.previewText')}
                     </div>
                   </div>
                 </div>
@@ -524,8 +528,8 @@ const ChatbotSetup = () => {
                       <Users className="w-5 h-5 text-blue-600" />
                     </div>
                     <div>
-                      <p className="font-medium">Smart Lead Capture</p>
-                      <p className="text-sm text-muted-foreground">AI asks for contact info when visitors show interest</p>
+                      <p className="font-medium">{t('chatbotDetail.settings.smartLeadCapture')}</p>
+                      <p className="text-sm text-muted-foreground">{t('chatbotDetail.settings.smartLeadCaptureDesc')}</p>
                     </div>
                   </div>
                   <Switch
@@ -541,8 +545,8 @@ const ChatbotSetup = () => {
                       <Phone className="w-5 h-5 text-green-600" />
                     </div>
                     <div>
-                      <p className="font-medium">Human Handoff</p>
-                      <p className="text-sm text-muted-foreground">Let visitors request live support</p>
+                      <p className="font-medium">{t('chatbotDetail.settings.humanHandoff')}</p>
+                      <p className="text-sm text-muted-foreground">{t('chatbotDetail.settings.humanHandoffDesc')}</p>
                     </div>
                   </div>
                   <Switch
@@ -558,8 +562,8 @@ const ChatbotSetup = () => {
                       <Calendar className="w-5 h-5 text-amber-600" />
                     </div>
                     <div>
-                      <p className="font-medium">Booking System</p>
-                      <p className="text-sm text-muted-foreground">Accept reservations via chat</p>
+                      <p className="font-medium">{t('chatbotDetail.settings.bookingSystem')}</p>
+                      <p className="text-sm text-muted-foreground">{t('chatbotDetail.settings.bookingSystemDesc')}</p>
                     </div>
                   </div>
                   <Switch
@@ -575,8 +579,8 @@ const ChatbotSetup = () => {
                       <Globe className="w-5 h-5 text-purple-600" />
                     </div>
                     <div>
-                      <p className="font-medium">Multi-Language Support</p>
-                      <p className="text-sm text-muted-foreground">Language selector in widget</p>
+                      <p className="font-medium">{t('chatbotDetail.settings.multiLanguage')}</p>
+                      <p className="text-sm text-muted-foreground">{t('chatbotDetail.settings.multiLanguageDesc')}</p>
                     </div>
                   </div>
                   <Switch
@@ -595,7 +599,7 @@ const ChatbotSetup = () => {
               disabled={currentStep === 0 || saving}
             >
               <ArrowLeft className="w-4 h-4 mr-2" />
-              Back
+              {t('common:actions.back', 'Back')}
             </Button>
 
             {currentStep === SETUP_STEPS.length - 1 ? (
@@ -603,12 +607,12 @@ const ChatbotSetup = () => {
                 {saving ? (
                   <>
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Saving...
+                    {t('chatbotDetail.saving')}
                   </>
                 ) : (
                   <>
                     <Check className="w-4 h-4 mr-2" />
-                    Complete Setup
+                    {t('setup.complete')}
                   </>
                 )}
               </Button>
@@ -617,11 +621,11 @@ const ChatbotSetup = () => {
                 {saving ? (
                   <>
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Saving...
+                    {t('chatbotDetail.saving')}
                   </>
                 ) : (
                   <>
-                    Continue
+                    {t('common:actions.continue', 'Continue')}
                     <ArrowRight className="w-4 h-4 ml-2" />
                   </>
                 )}
@@ -633,7 +637,7 @@ const ChatbotSetup = () => {
         {/* Skip wizard link */}
         <p className="text-center mt-6 text-sm text-muted-foreground">
           <Link to={`/chatbots/${id}?tab=settings`} className="underline hover:text-foreground">
-            Skip wizard and configure manually
+            {t('setup.skipWizard')}
           </Link>
         </p>
       </div>

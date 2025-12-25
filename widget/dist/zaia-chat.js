@@ -93,6 +93,11 @@
   let handoffWs = null;
   let handoffData = null;
 
+  // Lead capture state
+  let leadConfig = null;
+  let showLeadForm = false;
+  let leadSubmitted = false;
+
   // Create styles
   const styles = document.createElement('style');
   styles.textContent = `
@@ -416,6 +421,113 @@
       vertical-align: middle;
       margin: 0 8px;
     }
+    .zaia-lead-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0,0,0,0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 10000000;
+    }
+    .zaia-lead-modal {
+      background: white;
+      border-radius: 16px;
+      max-width: 380px;
+      width: 90%;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+      position: relative;
+    }
+    .zaia-lead-header {
+      padding: 20px;
+      border-bottom: 1px solid #e5e7eb;
+    }
+    .zaia-lead-header h3 {
+      margin: 0;
+      font-size: 18px;
+      font-weight: 600;
+      color: #1f2937;
+    }
+    .zaia-lead-header p {
+      margin: 8px 0 0;
+      font-size: 14px;
+      color: #6b7280;
+    }
+    .zaia-lead-close {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 4px;
+      color: #6b7280;
+    }
+    .zaia-lead-close:hover {
+      color: #1f2937;
+    }
+    .zaia-lead-form {
+      padding: 20px;
+    }
+    .zaia-lead-field {
+      margin-bottom: 16px;
+    }
+    .zaia-lead-field label {
+      display: block;
+      font-size: 14px;
+      font-weight: 500;
+      color: #374151;
+      margin-bottom: 6px;
+    }
+    .zaia-lead-field input,
+    .zaia-lead-field textarea,
+    .zaia-lead-field select {
+      width: 100%;
+      padding: 10px 14px;
+      border: 1px solid #d1d5db;
+      border-radius: 8px;
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.2s;
+      box-sizing: border-box;
+      color: #374151;
+      background: white;
+    }
+    .zaia-lead-field input:focus,
+    .zaia-lead-field textarea:focus,
+    .zaia-lead-field select:focus {
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 3px rgba(59,130,246,0.1);
+    }
+    .zaia-lead-submit {
+      width: 100%;
+      padding: 12px;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 500;
+      color: white;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+    .zaia-lead-submit:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+    .zaia-lead-required {
+      color: #ef4444;
+    }
+    .zaia-lead-error {
+      color: #ef4444;
+      font-size: 13px;
+      margin-top: 8px;
+      text-align: center;
+    }
   `;
   document.head.appendChild(styles);
 
@@ -510,6 +622,16 @@
     } catch (error) {
       console.error('ZAIA Chat: Failed to load handoff config', error);
     }
+
+    // Load lead form config
+    try {
+      const response = await fetch(`${API_BASE}/leads/${botId}/public-form-config`);
+      if (response.ok) {
+        leadConfig = await response.json();
+      }
+    } catch (error) {
+      console.error('ZAIA Chat: Failed to load lead config', error);
+    }
   }
 
   function applyConfig() {
@@ -586,6 +708,150 @@
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
+  }
+
+  // Lead form functions
+  function createLeadFormModal() {
+    // Remove existing modal if present
+    const existing = document.querySelector('.zaia-lead-overlay');
+    if (existing) existing.remove();
+
+    if (!leadConfig || !leadConfig.enabled || leadSubmitted) return null;
+
+    const overlay = document.createElement('div');
+    overlay.className = 'zaia-lead-overlay';
+
+    const fieldsHtml = (leadConfig.fields || []).map(field => {
+      const requiredSpan = field.required ? '<span class="zaia-lead-required">*</span>' : '';
+      const placeholder = escapeHtml(field.placeholder || '');
+
+      if (field.type === 'textarea') {
+        return `<div class="zaia-lead-field">
+          <label>${escapeHtml(field.label)} ${requiredSpan}</label>
+          <textarea name="${field.id}" ${field.required ? 'required' : ''} placeholder="${placeholder}" rows="3"></textarea>
+        </div>`;
+      } else if (field.type === 'select') {
+        const options = (field.options || []).map(opt => `<option value="${escapeHtml(opt)}">${escapeHtml(opt)}</option>`).join('');
+        return `<div class="zaia-lead-field">
+          <label>${escapeHtml(field.label)} ${requiredSpan}</label>
+          <select name="${field.id}" ${field.required ? 'required' : ''}>
+            <option value="">Select...</option>
+            ${options}
+          </select>
+        </div>`;
+      } else {
+        return `<div class="zaia-lead-field">
+          <label>${escapeHtml(field.label)} ${requiredSpan}</label>
+          <input type="${field.type || 'text'}" name="${field.id}" ${field.required ? 'required' : ''} placeholder="${placeholder}"/>
+        </div>`;
+      }
+    }).join('');
+
+    overlay.innerHTML = `
+      <div class="zaia-lead-modal">
+        <button class="zaia-lead-close">
+          <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </button>
+        <div class="zaia-lead-header">
+          <h3>${escapeHtml(leadConfig.title || 'Get in touch')}</h3>
+          ${leadConfig.description ? `<p>${escapeHtml(leadConfig.description)}</p>` : ''}
+        </div>
+        <form class="zaia-lead-form">
+          ${fieldsHtml}
+          <button type="submit" class="zaia-lead-submit" style="background-color: ${config.primary_color}">
+            ${escapeHtml(leadConfig.submit_button_text || 'Submit')}
+          </button>
+        </form>
+      </div>
+    `;
+
+    // Close button handler
+    overlay.querySelector('.zaia-lead-close').addEventListener('click', () => {
+      overlay.remove();
+      showLeadForm = false;
+    });
+
+    // Click outside to close
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) {
+        overlay.remove();
+        showLeadForm = false;
+      }
+    });
+
+    // Form submit handler
+    overlay.querySelector('.zaia-lead-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      await submitLeadForm(e.target, overlay);
+    });
+
+    return overlay;
+  }
+
+  async function submitLeadForm(form, overlay) {
+    const submitBtn = form.querySelector('.zaia-lead-submit');
+    const originalText = submitBtn.textContent;
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Submitting...';
+
+    // Collect form data
+    const fields = {};
+    (leadConfig.fields || []).forEach(field => {
+      const input = form.querySelector(`[name="${field.id}"]`);
+      if (input) {
+        fields[field.id] = input.value;
+      }
+    });
+
+    try {
+      const response = await fetch(`${API_BASE}/leads/${botId}/submit`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          fields: fields,
+          session_id: sessionId
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Submission failed');
+      }
+
+      const result = await response.json();
+      leadSubmitted = true;
+      showLeadForm = false;
+      overlay.remove();
+
+      // Show success message
+      addMessage(result.message || leadConfig.success_message || "Thanks! We'll be in touch soon.", 'bot');
+
+      // Track conversion
+      trackMarketingEvent('lead_captured', { session_id: sessionId });
+
+    } catch (error) {
+      console.error('ZAIA Chat: Lead submission failed', error);
+      submitBtn.disabled = false;
+      submitBtn.textContent = originalText;
+      // Show inline error
+      let errorEl = form.querySelector('.zaia-lead-error');
+      if (!errorEl) {
+        errorEl = document.createElement('p');
+        errorEl.className = 'zaia-lead-error';
+        form.appendChild(errorEl);
+      }
+      errorEl.textContent = 'Failed to submit. Please try again.';
+    }
+  }
+
+  function showLeadFormModal() {
+    if (showLeadForm || leadSubmitted || !leadConfig?.enabled) return;
+    showLeadForm = true;
+    const modal = createLeadFormModal();
+    if (modal) {
+      document.body.appendChild(modal);
+    }
   }
 
   function updateHandoffStatus(status, agentName) {
@@ -809,6 +1075,33 @@
             }
           }
         }
+      }
+
+      // Check for smart lead form trigger [SHOW_LEAD_FORM]
+      if (fullContent.includes('[SHOW_LEAD_FORM]')) {
+        // Strip the marker from displayed content
+        const contentEl = streamingMsgEl?.querySelector('.zaia-msg-text');
+        if (contentEl) {
+          const cleanContent = fullContent.replace(/\[SHOW_LEAD_FORM\]/g, '').trim();
+          contentEl.innerHTML = formatMessage(cleanContent);
+        }
+
+        // Show lead form if smart capture is enabled
+        if (leadConfig?.enabled && leadConfig?.smart_capture && !leadSubmitted) {
+          setTimeout(() => {
+            showLeadFormModal();
+          }, 500);
+        }
+      }
+
+      // Check after_messages trigger
+      if (leadConfig?.enabled &&
+          leadConfig?.trigger === 'after_messages' &&
+          !leadSubmitted &&
+          messageCount >= (leadConfig.trigger_after_messages || 3)) {
+        setTimeout(() => {
+          showLeadFormModal();
+        }, 1000);
       }
 
       // Check if we should show handoff button after a few messages

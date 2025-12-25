@@ -1,4 +1,25 @@
 {
+  "setup": {
+    "steps": {
+      "basics": "Basics",
+      "personality": "Personality",
+      "knowledge": "Knowledge",
+      "appearance": "Appearance",
+      "features": "Features"
+    },
+    "stepProgress": "Step {{current}} of {{total}}",
+    "descriptions": {
+      "basics": "Set up your chatbot's basic information",
+      "personality": "Define how your chatbot responds and behaves",
+      "knowledge": "Upload documents to train your chatbot",
+      "appearance": "Customize how the chat widget looks on your website",
+      "features": "Enable advanced features for your chatbot"
+    },
+    "uploadedDocuments": "Uploaded Documents",
+    "complete": "Complete Setup",
+    "skipWizard": "Skip wizard and configure manually",
+    "tip": "Upload your FAQs, product documentation, or any content you want your chatbot to reference when answering questions."
+  },
   "nav": {
     "settings": "Settings",
     "knowledge": "Knowledge Base",
