@@ -25,6 +25,52 @@
   const API_BASE = `https://${baseHost}/api/v1`;
   const WS_BASE = `wss://${baseHost}/api/v1`;
 
+  // Marketing tracking
+  let chatOpened = false;
+  let messageCount = 0;
+
+  function getOrCreateVisitorId() {
+    let visitorId = localStorage.getItem('zaia_visitor_id');
+    if (!visitorId) {
+      visitorId = 'v_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+      localStorage.setItem('zaia_visitor_id', visitorId);
+    }
+    return visitorId;
+  }
+
+  function getDeviceType() {
+    const ua = navigator.userAgent;
+    if (/(tablet|ipad|playbook|silk)|(android(?!.*mobi))/i.test(ua)) return 'Tablet';
+    if (/Mobile|Android|iP(hone|od)|IEMobile|BlackBerry|Kindle|Silk-Accelerated|(hpw|web)OS|Opera M(obi|ini)/.test(ua)) return 'Mobile';
+    return 'Desktop';
+  }
+
+  async function trackMarketingEvent(eventType, additionalData = {}) {
+    try {
+      const visitorId = getOrCreateVisitorId();
+      const params = new URLSearchParams({
+        event_type: eventType,
+        visitor_id: visitorId,
+        source: document.referrer ? new URL(document.referrer).hostname : 'direct',
+        bot_id: botId,
+      });
+      const metadata = {
+        device: getDeviceType(),
+        page: window.location.href,
+        bot_id: botId,
+        ...additionalData,
+      };
+      fetch(`${API_BASE}/marketing/track-conversion?${params.toString()}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ metadata }),
+        keepalive: true,
+      }).catch(() => {});
+    } catch (e) {
+      // Silently fail
+    }
+  }
+
   // Default config
   let config = {
     name: 'ZAIA Chat',
@@ -101,27 +147,46 @@
       flex-direction: column;
       overflow: hidden;
     }
-    @media (max-width: 420px) {
+    @media (max-width: 480px) {
       .zaia-chat-window {
-        width: calc(100vw - 24px);
-        height: calc(100vh - 100px);
-        bottom: 70px;
-        right: 12px !important;
-        left: 12px !important;
-        border-radius: 12px;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        width: 100%;
+        height: 100%;
+        max-width: 100%;
+        max-height: 100%;
+        border-radius: 0;
+        z-index: 9999999;
       }
       .zaia-widget.bottom-right, .zaia-widget.bottom-left {
-        bottom: 12px;
-        right: 12px;
+        bottom: 16px;
+        right: 16px;
         left: auto;
       }
       .zaia-toggle {
-        width: 52px;
-        height: 52px;
+        width: 56px;
+        height: 56px;
       }
       .zaia-toggle svg {
-        width: 24px;
-        height: 24px;
+        width: 26px;
+        height: 26px;
+      }
+      .zaia-header {
+        padding: 14px 16px;
+        padding-top: max(14px, env(safe-area-inset-top));
+      }
+      .zaia-input-area {
+        padding: 12px;
+        padding-bottom: max(12px, env(safe-area-inset-bottom));
+      }
+      .zaia-messages {
+        padding: 12px;
+      }
+      .zaia-input {
+        font-size: 16px;
       }
     }
     .zaia-widget.bottom-right .zaia-chat-window {
@@ -266,6 +331,11 @@
       font-size: 16px;
       outline: none;
       transition: border-color 0.2s;
+      color: #374151 !important;
+      background-color: #ffffff !important;
+    }
+    .zaia-input::placeholder {
+      color: #9ca3af !important;
     }
     .zaia-input:focus {
       border-color: #3b82f6;
@@ -533,6 +603,12 @@
       handoffNotice.textContent = agentName ? `You're now chatting with ${agentName}` : 'Connected to an agent';
       handoffNotice.className = 'zaia-handoff-notice active';
       handoffNotice.style.display = 'block';
+    } else if (status === 'timeout_collecting') {
+      statusDot.className = 'zaia-status-dot pending';
+      statusText.textContent = 'AI Assistant';
+      handoffNotice.textContent = 'Our team is unavailable. Please share your contact details.';
+      handoffNotice.className = 'zaia-handoff-notice';
+      handoffNotice.style.display = 'block';
     } else if (status === 'resolved') {
       headerStatus.style.display = 'none';
       handoffNotice.style.display = 'none';
@@ -565,15 +641,26 @@
           if (data.messages && data.messages.length > 0) {
             addDivider('Live Chat Started');
             data.messages.forEach(msg => {
-              const type = msg.sender_type === 'visitor' ? 'user' : 'agent';
+              // Handle visitor, agent, and bot messages
+              let type = 'agent';
+              if (msg.sender_type === 'visitor') type = 'user';
+              else if (msg.sender_type === 'bot') type = 'bot';
               addMessage(msg.content, type, false);
             });
           }
+        } else if (data.type === 'timeout_initiated') {
+          // Timeout triggered - AI taking over
+          updateHandoffStatus('timeout_collecting');
+          if (data.message) {
+            addMessage(data.message.content, 'bot', false);
+          }
         } else if (data.type === 'message') {
           const msg = data.message;
-          // Only show agent messages (our messages are already shown)
+          // Show agent and bot messages (visitor messages are already shown)
           if (msg.sender_type === 'agent') {
             addMessage(msg.content, 'agent', false);
+          } else if (msg.sender_type === 'bot') {
+            addMessage(msg.content, 'bot', false);
           }
         } else if (data.type === 'status_change') {
           updateHandoffStatus(data.status, handoffData?.assigned_to_name);
@@ -648,6 +735,12 @@
     addMessage(message, 'user');
     input.value = '';
     sendBtn.disabled = true;
+
+    // Track first message
+    messageCount++;
+    if (messageCount === 1) {
+      trackMarketingEvent('chat_message_sent', { first_message: true });
+    }
 
     // If in handoff, send via WebSocket
     if (isInHandoff && handoffWs && handoffWs.readyState === WebSocket.OPEN) {
@@ -757,6 +850,11 @@
     chatWindow.classList.toggle('open', isOpen);
     if (isOpen) {
       input.focus();
+      // Track chat opened (only first time)
+      if (!chatOpened) {
+        chatOpened = true;
+        trackMarketingEvent('chat_opened');
+      }
       // Check for existing handoff when opening
       if (sessionId) {
         checkExistingHandoff();
@@ -781,21 +879,74 @@
     requestHandoff();
   });
 
+  // Session timeout configuration (30 minutes default)
+  const SESSION_TIMEOUT_MS = 30 * 60 * 1000;
+
+  function getSessionData() {
+    try {
+      const data = localStorage.getItem(`zaia_session_${botId}`);
+      return data ? JSON.parse(data) : null;
+    } catch {
+      return null;
+    }
+  }
+
+  function saveSessionData() {
+    if (sessionId) {
+      localStorage.setItem(`zaia_session_${botId}`, JSON.stringify({
+        id: sessionId,
+        lastActivity: Date.now()
+      }));
+    }
+  }
+
+  function clearSession() {
+    sessionId = null;
+    messages = [];
+    isInHandoff = false;
+    if (handoffWs) {
+      handoffWs.close();
+      handoffWs = null;
+    }
+    localStorage.removeItem(`zaia_session_${botId}`);
+    // Clear chat UI
+    const messagesContainer = document.querySelector('.zaia-messages');
+    if (messagesContainer) {
+      messagesContainer.innerHTML = '';
+    }
+  }
+
+  function isSessionExpired(sessionData) {
+    if (!sessionData || !sessionData.lastActivity) return true;
+    return (Date.now() - sessionData.lastActivity) > SESSION_TIMEOUT_MS;
+  }
+
   // Initialize
   loadConfig();
 
-  // Try to restore session
-  const savedSession = localStorage.getItem(`zaia_session_${botId}`);
-  if (savedSession) {
-    sessionId = savedSession;
+  // Try to restore session (with timeout check)
+  const savedSessionData = getSessionData();
+  if (savedSessionData && !isSessionExpired(savedSessionData)) {
+    sessionId = savedSessionData.id;
+    // Update activity timestamp
+    saveSessionData();
+  } else if (savedSessionData) {
+    // Session expired - clear it
+    clearSession();
+    console.log('ZAIA Chat: Session expired, starting fresh');
   }
 
   // Save session on message
   const originalSendMessage = sendMessage;
   sendMessage = async function(message) {
     await originalSendMessage(message);
-    if (sessionId) {
-      localStorage.setItem(`zaia_session_${botId}`, sessionId);
-    }
+    saveSessionData();
+  };
+
+  // Update activity on chat open
+  const originalToggle = toggle.onclick;
+  toggle.onclick = function() {
+    if (sessionId) saveSessionData();
+    if (originalToggle) originalToggle.call(this);
   };
 })();

@@ -99,7 +99,7 @@ def send_booking_notification_task(self, booking_id: str, owner_email: str):
                 # Get bot name for email
                 db = get_mongodb()
                 bot = await db.chatbots.find_one({"_id": booking.get("bot_id")})
-                bot_name = bot.get("name", "Aiden") if bot else "Aiden"
+                bot_name = bot.get("name", "Aiden Link") if bot else "Aiden Link"
 
                 # Build booking details for email
                 booking_details = {
@@ -271,3 +271,57 @@ def import_integration_items_task(
     except Exception as exc:
         print(f"Import task error: {exc}")
         raise self.retry(exc=exc, countdown=60)
+
+
+@celery_app.task(bind=True, max_retries=1)
+def check_handoff_timeout_task(self, handoff_id: str, bot_id: str, tenant_id: str):
+    """
+    Celery task to check if handoff has timed out and trigger AI contact collection.
+
+    This task is scheduled when a handoff is created. It fires after the configured
+    timeout period (default 2 minutes). If no agent has responded, it triggers
+    the AI to collect visitor contact information.
+    """
+    try:
+        async def _check():
+            from .services.handoff_timeout import trigger_timeout_collection, get_handoff
+            from .schemas.handoff import HandoffStatus
+
+            await connect_all()
+            try:
+                # Get current handoff state
+                handoff = await get_handoff(handoff_id, tenant_id)
+                if not handoff:
+                    print(f"Handoff {handoff_id} not found")
+                    return {"status": "not_found"}
+
+                # Only trigger timeout if still pending/assigned with NO agent messages
+                current_status = handoff.get("status")
+                if current_status in [HandoffStatus.PENDING.value, HandoffStatus.ASSIGNED.value]:
+                    # Check if any agent has sent a message
+                    agent_messages = [
+                        m for m in handoff.get("messages", [])
+                        if m.get("sender_type") == "agent"
+                    ]
+
+                    if len(agent_messages) == 0:
+                        # No agent has responded - trigger timeout flow
+                        print(f"Handoff {handoff_id} timed out, triggering contact collection")
+                        await trigger_timeout_collection(handoff_id, bot_id, tenant_id)
+                        return {"status": "timeout_triggered"}
+                    else:
+                        print(f"Handoff {handoff_id} has agent response, skipping timeout")
+                        return {"status": "agent_responded"}
+                else:
+                    print(f"Handoff {handoff_id} status is {current_status}, skipping timeout")
+                    return {"status": "already_handled"}
+
+            finally:
+                await close_all()
+
+        return run_async(_check())
+
+    except Exception as exc:
+        print(f"Handoff timeout check error: {exc}")
+        # Don't retry - if timeout check fails, don't spam
+        return {"status": "error", "error": str(exc)}

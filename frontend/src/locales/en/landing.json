@@ -1,0 +1,422 @@
+{
+  "hero": {
+    "badge": "Built for MENA \u2022 Arabic & English Support",
+    "headline": "Your AI Customer Support Team",
+    "headlineHighlight": "That Never Sleeps",
+    "subheadline": "Handle <strong>80% of customer inquiries</strong> automatically. Save <strong class=\"text-green-600\">$24,000/year</strong> per support agent replaced.",
+    "subheadline2": "Setup in 5 minutes. No coding required. Works in Arabic & English.",
+    "cta": "Start Free Trial - No Credit Card",
+    "watchDemo": "Watch Demo",
+    "trustLine": "Trusted by <strong>1,000+ businesses</strong> in UAE, Saudi Arabia, and Egypt",
+    "stats": {
+      "messages": "Messages Handled",
+      "responseTime": "Response Time",
+      "costSavings": "Cost Savings"
+    }
+  },
+  "features": {
+    "title": "Everything You Need to Delight Customers",
+    "subtitle": "Powerful features that set Aiden Link apart from basic chatbots",
+    "items": {
+      "memory": {
+        "title": "Remembers Your Customers",
+        "description": "Unlike ChatGPT, Aiden Link builds persistent profiles across conversations. Know your customers better with every interaction.",
+        "badge": "Cross-session memory"
+      },
+      "bilingual": {
+        "title": "24/7 in Arabic & English",
+        "description": "Native bilingual support. Perfect for MENA businesses. Never miss a customer, day or night.",
+        "badge": "Bilingual AI"
+      },
+      "handoff": {
+        "title": "Seamless Human Handoff",
+        "description": "AI handles routine queries. Complex issues go to your team. Full context preserved - no customer repeats themselves.",
+        "badge": "Smart routing"
+      },
+      "booking": {
+        "title": "Smart Booking System",
+        "description": "Capture appointments, reservations, and bookings automatically. Integrates with your calendar. Sends confirmations.",
+        "badge": "Auto-booking"
+      },
+      "leads": {
+        "title": "Lead Generation Engine",
+        "description": "Qualify leads through conversation. Capture contact info. Export to your CRM. Never lose a prospect.",
+        "badge": "Lead capture"
+      },
+      "security": {
+        "title": "Enterprise Security",
+        "description": "GDPR compliant. SOC 2 ready. Data encrypted at rest. Your customers' data is safe with us.",
+        "badge": "Bank-grade security"
+      }
+    }
+  },
+  "howItWorks": {
+    "title": "Go Live in 3 Simple Steps",
+    "subtitle": "No coding required. Setup takes less than 5 minutes.",
+    "steps": {
+      "upload": {
+        "title": "Upload Your Docs",
+        "description": "Drag and drop PDFs, docs, or paste your website URL. Aiden Link reads and learns everything."
+      },
+      "learn": {
+        "title": "AI Learns Your Business",
+        "description": "Our AI processes your content and becomes an expert on your products, services, and policies."
+      },
+      "live": {
+        "title": "Go Live Instantly",
+        "description": "Copy one line of code to your website. Your AI assistant is ready to chat 24/7."
+      }
+    },
+    "seeAction": "See it in action",
+    "tryDemo": "Try Interactive Demo"
+  },
+  "pricing": {
+    "title": "Simple Pricing. No Surprises.",
+    "subtitle": "Start free, upgrade when you need more",
+    "monthly": "Monthly",
+    "yearly": "Yearly",
+    "savePercent": "Save 20%",
+    "saveAmount": "Save ${{amount}}/year",
+    "custom": "Custom",
+    "forever": "forever",
+    "perMonth": "/month",
+    "tiers": {
+      "free": {
+        "name": "Free",
+        "description": "Perfect for testing",
+        "cta": "Start Free",
+        "features": [
+          "100 messages/month",
+          "1 chatbot",
+          "10 document uploads",
+          "Basic customization",
+          "Email support",
+          "Community access"
+        ]
+      },
+      "pro": {
+        "name": "Pro",
+        "description": "Best for growing businesses",
+        "cta": "Start Free Trial",
+        "badge": "Most Popular",
+        "features": [
+          "Unlimited messages",
+          "5 chatbots",
+          "Unlimited documents",
+          "All integrations",
+          "Custom branding",
+          "Human handoff",
+          "Lead capture",
+          "Booking system",
+          "Priority support"
+        ]
+      },
+      "business": {
+        "name": "Business",
+        "description": "For scaling teams",
+        "cta": "Start Free Trial",
+        "badge": "Best Value",
+        "features": [
+          "Everything in Pro",
+          "20 chatbots",
+          "Advanced analytics",
+          "API access",
+          "Webhook integrations",
+          "Team collaboration",
+          "Dedicated support",
+          "99.9% uptime SLA"
+        ]
+      },
+      "enterprise": {
+        "name": "Enterprise",
+        "description": "For large organizations",
+        "cta": "Contact Sales",
+        "features": [
+          "Everything in Business",
+          "Unlimited chatbots",
+          "Custom integrations",
+          "On-premise option",
+          "Dedicated account manager",
+          "Custom SLA",
+          "Security audit",
+          "Training & onboarding"
+        ]
+      }
+    },
+    "allPlansInclude": "All plans include:",
+    "trustFeatures": "14-day free trial • No credit card required • Cancel anytime",
+    "moneyBack": "30-day money-back guarantee on all paid plans"
+  },
+  "faq": {
+    "title": "Frequently Asked Questions",
+    "subtitle": "Everything you need to know about Aiden Link",
+    "contactCta": "Still have questions?",
+    "contactLink": "Contact our support team \u2192",
+    "items": {
+      "setup": {
+        "question": "How long does setup take?",
+        "answer": "Most customers are live in under 5 minutes. Just upload your documents, customize the appearance, and embed the widget on your site with a single line of code. No technical skills required."
+      },
+      "arabic": {
+        "question": "Does Aiden Link work in Arabic?",
+        "answer": "Yes! Aiden Link has native Arabic and English support, making it perfect for MENA businesses. The AI understands and responds naturally in both languages, and can even switch between them mid-conversation."
+      },
+      "trial": {
+        "question": "Can I try before buying?",
+        "answer": "Absolutely! We offer a 14-day free trial with full access to all features. No credit card required. You can also use our Free plan forever with 100 messages per month."
+      },
+      "handoff": {
+        "question": "How does human handoff work?",
+        "answer": "When Aiden Link detects a complex question or when a customer requests human help, it seamlessly transfers the conversation to your team via email notification or our agent dashboard. All conversation context is preserved."
+      },
+      "security": {
+        "question": "Is my data secure?",
+        "answer": "Enterprise-grade security is our priority. We're GDPR compliant and SOC 2 ready. All data is encrypted at rest (AES-256) and in transit (TLS 1.3). Your data is never used to train AI models."
+      },
+      "unanswered": {
+        "question": "What happens if Aiden Link can't answer a question?",
+        "answer": "Aiden Link will politely let the customer know and offer to connect them with a human agent. It can also collect their contact information for follow-up. You'll see unanswered questions in your dashboard to improve your knowledge base."
+      },
+      "customize": {
+        "question": "Can I customize the chatbot's personality?",
+        "answer": "Yes! You can customize the name, avatar, colors, welcome message, and conversation style. You can make it formal for banking or friendly for retail. It adapts to your brand voice."
+      },
+      "refund": {
+        "question": "Do you offer refunds?",
+        "answer": "Yes, we offer a 30-day money-back guarantee on all paid plans. If you're not satisfied for any reason, contact us for a full refund. No questions asked."
+      }
+    }
+  },
+  "footer": {
+    "tagline": "AI Customer Support for Modern Businesses. Available 24/7 in Arabic & English.",
+    "sections": {
+      "product": {
+        "title": "Product",
+        "features": "Features",
+        "pricing": "Pricing",
+        "integrations": "Integrations",
+        "roiCalculator": "ROI Calculator",
+        "demo": "Demo"
+      },
+      "company": {
+        "title": "Company",
+        "about": "About Us",
+        "careers": "Careers",
+        "contact": "Contact",
+        "blog": "Blog"
+      },
+      "resources": {
+        "title": "Resources",
+        "helpCenter": "Help Center",
+        "apiDocs": "API Docs",
+        "status": "Status",
+        "community": "Community"
+      },
+      "legal": {
+        "title": "Legal",
+        "privacy": "Privacy Policy",
+        "terms": "Terms of Service",
+        "security": "Security",
+        "gdpr": "GDPR"
+      }
+    },
+    "copyright": "\u00a9 {{year}} ZAIA Systems. All rights reserved.",
+    "madeWith": "Made with \u2764 in Dubai"
+  },
+  "testimonials": {
+    "title": "Trusted by Growing Businesses",
+    "subtitle": "See what our customers say about Aiden Link",
+    "stats": {
+      "businesses": "Businesses",
+      "countries": "Countries",
+      "rating": "Rating"
+    },
+    "items": {
+      "hotel": {
+        "quote": "Aiden Link reduced our support tickets by 73% in the first month. Our team now focuses on VIP guests instead of answering the same questions over and over.",
+        "author": "Ahmed Al-Rashid",
+        "role": "Operations Manager",
+        "company": "Luxury Hotel Dubai"
+      },
+      "ecommerce": {
+        "quote": "The Arabic support is incredible. Our customers in Saudi Arabia love that they can chat naturally in their language. Response quality is better than our human agents!",
+        "author": "Sara Hassan",
+        "role": "Customer Success Lead",
+        "company": "E-commerce Platform"
+      },
+      "realestate": {
+        "quote": "We capture 3x more leads now because Aiden Link qualifies prospects 24/7. The ROI paid for itself in the first week. Best investment we made this year.",
+        "author": "Mohamed Khalil",
+        "role": "Sales Director",
+        "company": "Real Estate Agency"
+      }
+    }
+  },
+  "problemSolution": {
+    "title": "Sound Familiar?",
+    "problemTitle": "Your Support Team Is Drowning",
+    "solutionTitle": "There's a Better Way",
+    "problems": [
+      "Customers waiting hours for simple answers",
+      "Support costs eating into your margins",
+      "Missed leads because no one's available at night",
+      "Agents answering the same questions over and over"
+    ],
+    "solutions": [
+      "Instant answers 24/7 in Arabic & English",
+      "90% reduction in support costs",
+      "Every lead captured, even at 3 AM",
+      "Your team focuses on high-value conversations"
+    ]
+  },
+  "trust": {
+    "badge": "Enterprise-Grade Security",
+    "title": "Built for Trust & Compliance",
+    "subtitle": "Enterprise security and compliance standards you can rely on",
+    "ready": "Ready",
+    "certs": {
+      "soc2": {
+        "name": "SOC 2 Ready",
+        "description": "Built with SOC 2 controls"
+      },
+      "gdpr": {
+        "name": "GDPR Ready",
+        "description": "EU data protection compliant"
+      },
+      "hipaa": {
+        "name": "HIPAA Ready",
+        "description": "Healthcare data ready"
+      },
+      "iso": {
+        "name": "ISO 27001",
+        "description": "Information security aligned"
+      }
+    },
+    "features": {
+      "encryption": {
+        "title": "End-to-End Encryption",
+        "description": "AES-256 at rest, TLS 1.3 in transit"
+      },
+      "infrastructure": {
+        "title": "Secure Infrastructure",
+        "description": "AWS with multi-region redundancy, 99.9% uptime"
+      },
+      "access": {
+        "title": "Access Controls",
+        "description": "RBAC, SSO integration, audit logs"
+      },
+      "audits": {
+        "title": "Regular Audits",
+        "description": "Third-party penetration testing"
+      }
+    },
+    "viewPrivacy": "View Privacy Policy",
+    "securityDocs": "Security Documentation",
+    "questions": "Questions about our security?",
+    "contactSecurity": "Contact our security team"
+  },
+  "industries": {
+    "title": "Built for Your Industry",
+    "subtitle": "Industry-specific AI solutions that understand your unique challenges and workflows",
+    "solutions": "{{name}} Solutions",
+    "useCases": "Key Use Cases",
+    "seeDemo": "See {{name}} Demo",
+    "saas": {
+      "name": "SaaS",
+      "metric": "73% ticket reduction",
+      "description": "Automate customer onboarding, technical support, and feature requests with AI that understands your product.",
+      "useCases": ["Automated onboarding and product tours", "Technical troubleshooting and bug triage", "Feature request collection and routing", "Integration support and API guidance"],
+      "testimonial": {
+        "quote": "Our support team went from drowning in tickets to focusing on high-value customer relationships. Response times dropped from hours to seconds.",
+        "author": "Sarah Chen",
+        "role": "Head of Customer Success, CloudFlow"
+      }
+    },
+    "ecommerce": {
+      "name": "E-commerce",
+      "metric": "45% faster resolution",
+      "description": "Handle order inquiries, returns, and product questions instantly while increasing customer satisfaction.",
+      "useCases": ["Order tracking and status updates", "Return and exchange processing", "Product recommendations and inquiries", "Shipping and delivery support"],
+      "testimonial": {
+        "quote": "During Black Friday, Aiden Link handled 10,000+ customer inquiries without breaking a sweat. Our human team focused on complex cases and sales.",
+        "author": "Marcus Rodriguez",
+        "role": "COO, StyleHub"
+      }
+    },
+    "healthcare": {
+      "name": "Healthcare",
+      "metric": "60% admin time saved",
+      "description": "Streamline patient scheduling, insurance verification, and administrative tasks while maintaining HIPAA compliance.",
+      "useCases": ["Appointment scheduling and reminders", "Insurance verification and billing inquiries", "Patient intake and form collection", "Prescription refill requests"],
+      "testimonial": {
+        "quote": "Aiden Link freed up our front desk staff to focus on patient care. Appointment scheduling is now 24/7, and no-shows dropped by 40%.",
+        "author": "Dr. Emily Watson",
+        "role": "Practice Manager, HealthFirst Clinic"
+      }
+    },
+    "education": {
+      "name": "Education",
+      "metric": "2x enrollment conversion",
+      "description": "Support prospective students, answer admissions questions, and guide enrollment processes around the clock.",
+      "useCases": ["Admissions inquiry and program information", "Application status and deadline tracking", "Financial aid and scholarship guidance", "Student onboarding and orientation"],
+      "testimonial": {
+        "quote": "Prospective students get instant answers at 2 AM. Our enrollment rate doubled because we never miss a lead.",
+        "author": "James Mitchell",
+        "role": "Director of Admissions, TechU"
+      }
+    },
+    "legal": {
+      "name": "Legal",
+      "metric": "5x intake efficiency",
+      "description": "Qualify leads, schedule consultations, and collect case information while maintaining client confidentiality.",
+      "useCases": ["Initial case evaluation and qualification", "Consultation scheduling and coordination", "Document collection and intake forms", "Client communication and updates"],
+      "testimonial": {
+        "quote": "We went from manually screening every inquiry to having qualified leads delivered to our attorneys. Intake process is now 5x faster.",
+        "author": "Rachel Thompson",
+        "role": "Managing Partner, Thompson & Associates"
+      }
+    },
+    "finance": {
+      "name": "Finance",
+      "metric": "90% compliance accuracy",
+      "description": "Provide account support, transaction assistance, and financial guidance with bank-level security.",
+      "useCases": ["Account balance and transaction inquiries", "Fraud detection and security alerts", "Loan application and status tracking", "Investment and portfolio guidance"],
+      "testimonial": {
+        "quote": "Aiden Link handles routine inquiries with perfect compliance while our advisors focus on complex financial planning. Security is never compromised.",
+        "author": "David Park",
+        "role": "VP of Operations, SecureBank"
+      }
+    }
+  },
+  "integrations": {
+    "badge": "Everything Connected",
+    "title": "One Hub. All Your Knowledge.",
+    "subtitle": "Connect all your tools to Aiden Link. Your chatbot instantly learns from every source.",
+    "comingSoon": "Integrations Coming Soon",
+    "comingSoonDesc": "We're working hard to bring you seamless connections to all your favorite tools.",
+    "share": {
+      "badge": "New Feature",
+      "title": "Share Your Chatbot Instantly",
+      "description": "Generate a shareable link for your chatbot in one click. Add password protection for private access, or share publicly with anyone.",
+      "features": ["One-click shareable links", "Optional password protection", "Beautiful standalone chat page", "Perfect for teams & clients"],
+      "protected": "Protected Chatbot",
+      "enterPassword": "Enter password to continue",
+      "unlockChat": "Unlock Chat",
+      "secure": "Secure"
+    }
+  },
+  "roi": {
+    "title": "Calculate Your Savings",
+    "subtitle": "See how much time and money you could save with AI-powered customer support",
+    "yourNumbers": "Your Numbers",
+    "teamSize": "Team Size",
+    "ticketsPerMonth": "Tickets per Month",
+    "costPerTicket": "Cost per Ticket",
+    "potentialSavings": "Your Potential Savings",
+    "monthlySavings": "Monthly Savings",
+    "yearlySavings": "Yearly Savings",
+    "hoursSaved": "Hours Saved per Month",
+    "startSaving": "Start Saving Today",
+    "noCreditCard": "No credit card required • 14-day free trial"
+  }
+}

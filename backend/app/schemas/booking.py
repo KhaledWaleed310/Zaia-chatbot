@@ -31,6 +31,7 @@ class BookingCreate(BaseModel):
     booking_type: BookingType = BookingType.OTHER
     guest_name: str
     phone: str
+    email: Optional[str] = None  # Customer email for confirmation
     date: str  # e.g., "tomorrow", "2024-12-16"
     time: str  # e.g., "9 PM", "14:00"
     people_count: Optional[int] = None  # Optional - not needed for all booking types
@@ -57,6 +58,7 @@ class BookingResponse(BaseModel):
     booking_type: BookingType = BookingType.OTHER
     guest_name: str
     phone: str
+    email: Optional[str] = None
     date: str
     time: str
     people_count: Optional[int] = None
@@ -71,9 +73,10 @@ DEFAULT_BOOKING_PROMPT = """When a customer wants to make a booking or reservati
 
 1. Ask for their full name
 2. Ask for their phone/WhatsApp number
-3. Ask for the preferred date and time
-4. Ask how many people will be attending (if applicable)
-5. Ask about any special requests or requirements
+3. Ask for their email address (for booking confirmation)
+4. Ask for the preferred date and time
+5. Ask how many people will be attending (if applicable)
+6. Ask about any special requests or requirements
 
 Once you have collected all the information, confirm the details with the customer and say:
 "I'll send this booking request to the team. They will contact you shortly to confirm."
@@ -81,7 +84,8 @@ Once you have collected all the information, confirm the details with the custom
 Important:
 - Be friendly and helpful throughout the booking process
 - If the customer provides multiple details at once, acknowledge all of them
-- Always confirm the booking details before submitting"""
+- Always confirm the booking details before submitting
+- The email is important for sending booking confirmations"""
 
 
 class BookingConfig(BaseModel):

@@ -1,7 +1,10 @@
+import logging
 from fastapi import APIRouter, HTTPException, Depends, WebSocket, WebSocketDisconnect, Query
 from typing import Optional, Any, Dict
 import json
 from datetime import datetime
+
+logger = logging.getLogger(__name__)
 from ..schemas.handoff import (
     HandoffConfig, HandoffRequest, HandoffCreate, HandoffUpdate,
     HandoffMessage, HandoffResponse, HandoffListResponse, HandoffStats,
@@ -152,12 +155,26 @@ async def update_handoff_config(
         "unanswered_count_threshold": 3,
         "auto_assign": True,
         "notification_email": None,
+        "notification_password": None,
         "working_hours": None,
         "offline_message": "Our team is currently offline. Please leave your contact info and we'll get back to you."
     }
 
     # Merge updates (only update non-None values)
     update_data = config.model_dump(exclude_unset=True, exclude_none=True)
+
+    # Hash password if provided (not already hashed)
+    if "notification_password" in update_data and update_data["notification_password"]:
+        password = update_data["notification_password"]
+        # Only hash if it's not already a bcrypt hash
+        if not password.startswith("$2"):
+            from passlib.hash import bcrypt
+            update_data["notification_password"] = bcrypt.hash(password)
+
+    # Clear password if notification email is cleared or set to owner's email
+    if "notification_email" in update_data and not update_data.get("notification_email"):
+        update_data["notification_password"] = None
+
     merged_config = {**existing_config, **update_data}
 
     await db.chatbots.update_one(
@@ -165,7 +182,12 @@ async def update_handoff_config(
         {"$set": {"handoff_config": merged_config}}
     )
 
-    return merged_config
+    # Don't return the hashed password
+    response_config = {**merged_config}
+    if response_config.get("notification_password"):
+        response_config["notification_password"] = "********"
+
+    return response_config
 
 
 # Public endpoint to get handoff config (no auth required) - MUST be before /{bot_id}/{handoff_id}
@@ -183,6 +205,56 @@ async def get_public_handoff_config(bot_id: str):
     return {
         "enabled": config.get("enabled", False),
         "offline_message": config.get("offline_message", "Our team is currently offline.")
+    }
+
+
+# Public endpoint for direct handoff access from email link
+@router.get("/{bot_id}/direct/{handoff_id}")
+async def get_direct_handoff_access(
+    bot_id: str,
+    handoff_id: str,
+    password: Optional[str] = Query(None, description="Password if custom email is set")
+):
+    """
+    Public endpoint to access handoff directly from email notification.
+    Returns handoff data if password is correct (when required).
+    """
+    db = get_mongodb()
+
+    # Get bot and handoff
+    bot = await db.chatbots.find_one({"_id": bot_id})
+    if not bot:
+        raise HTTPException(status_code=404, detail="Chatbot not found")
+
+    handoff = await db.handoffs.find_one({"_id": handoff_id, "bot_id": bot_id})
+    if not handoff:
+        raise HTTPException(status_code=404, detail="Handoff not found")
+
+    # Check if password is required
+    config = bot.get("handoff_config") or {}
+    notification_email = config.get("notification_email")
+    stored_password = config.get("notification_password")
+
+    # Password is required if custom email is set AND password exists
+    if notification_email and stored_password:
+        if not password:
+            return {
+                "requires_password": True,
+                "handoff_id": handoff_id,
+                "bot_id": bot_id
+            }
+
+        # Verify password
+        from passlib.hash import bcrypt
+        if not bcrypt.verify(password, stored_password):
+            raise HTTPException(status_code=401, detail="Invalid password")
+
+    # Return handoff data for direct access
+    return {
+        "requires_password": False,
+        "handoff": handoff_to_response(handoff),
+        "bot_name": bot.get("name", "Aiden Link"),
+        "direct_access": True
     }
 
 
@@ -328,6 +400,17 @@ async def send_handoff_message(
     if not handoff or handoff["bot_id"] != bot_id:
         raise HTTPException(status_code=404, detail="Handoff not found")
 
+    # Check if agent is taking over from timeout collection
+    if message.sender_type == "agent":
+        from ..services.handoff import agent_takeover
+        status_changed = await agent_takeover(handoff_id, user["tenant_id"])
+        if status_changed:
+            # Broadcast status change so bot stops responding
+            await manager.broadcast(handoff_id, {
+                "type": "status_change",
+                "status": "active"
+            })
+
     msg = await add_handoff_message(
         handoff_id=handoff_id,
         content=message.content,
@@ -365,6 +448,21 @@ async def update_presence(
 async def get_all_agents_status(user: dict = Depends(get_current_user)):
     """Get status of all agents in tenant."""
     return await get_agents_status(user["tenant_id"])
+
+
+# Internal endpoint for broadcasting WebSocket messages (called by Celery)
+@router.post("/internal/broadcast/{handoff_id}")
+async def internal_broadcast(handoff_id: str, payload: dict):
+    """
+    Internal endpoint to broadcast a message to all WebSocket connections for a handoff.
+    Used by Celery tasks to send real-time updates.
+    """
+    try:
+        await manager.broadcast(handoff_id, payload)
+        return {"status": "broadcast_sent", "connections": len(manager.connections.get(handoff_id, []))}
+    except Exception as e:
+        logger.error(f"Failed to broadcast: {e}")
+        return {"status": "error", "message": str(e)}
 
 
 # Public endpoint for visitors to request handoff
@@ -445,6 +543,43 @@ async def send_visitor_message(
         "message": msg
     })
 
+    # Check if handoff is in timeout collection mode
+    if handoff.get("status") == "timeout_collecting":
+        from ..services.handoff_timeout import process_timeout_response
+
+        # Process timeout response and get AI reply
+        result = await process_timeout_response(
+            handoff_id=handoff["_id"],
+            bot_id=bot_id,
+            tenant_id=handoff.get("tenant_id"),
+            visitor_message=message.content
+        )
+
+        if result:
+            # Add AI response
+            ai_msg = await add_handoff_message(
+                handoff_id=handoff["_id"],
+                content=result["response"],
+                sender_type="bot",
+                sender_name="AI Assistant"
+            )
+
+            # Broadcast AI response
+            await manager.broadcast(handoff["_id"], {
+                "type": "message",
+                "message": ai_msg
+            })
+
+            if result.get("complete"):
+                # Broadcast resolution
+                await manager.broadcast(handoff["_id"], {
+                    "type": "status_change",
+                    "status": "resolved"
+                })
+
+            # Return with AI response included
+            return {"visitor_message": msg, "ai_response": ai_msg, "complete": result.get("complete", False)}
+
     return msg
 
 
@@ -475,15 +610,21 @@ class ConnectionManager:
     async def broadcast(self, handoff_id: str, message: dict):
         """Broadcast message to all connections for a handoff."""
         if handoff_id in self.connections:
+            num_connections = len(self.connections[handoff_id])
+            print(f"[HANDOFF WS] Broadcasting message to {num_connections} connections for handoff {handoff_id}", flush=True)
             disconnected = []
             for ws in self.connections[handoff_id]:
                 try:
                     await ws.send_json(message)
-                except:
+                    print(f"[HANDOFF WS] Message sent successfully", flush=True)
+                except Exception as e:
+                    print(f"[HANDOFF WS] Failed to send to connection: {e}", flush=True)
                     disconnected.append(ws)
             # Clean up disconnected
             for ws in disconnected:
                 self.disconnect(ws, handoff_id)
+        else:
+            print(f"[HANDOFF WS] No connections found for handoff {handoff_id}", flush=True)
 
 
 manager = ConnectionManager()
@@ -517,6 +658,7 @@ async def websocket_handoff_chat(
         return
 
     await manager.connect(websocket, handoff_id)
+    print(f"[HANDOFF WS] Agent connected to handoff {handoff_id}. Total connections: {len(manager.connections.get(handoff_id, []))}", flush=True)
 
     try:
         # Send current messages on connect (serialize to handle datetime objects)
@@ -537,11 +679,24 @@ async def websocket_handoff_chat(
                 break
 
             if data.get("type") == "message":
+                sender_type = data.get("sender_type", "agent")
+
+                # Check if agent is taking over from timeout collection
+                if sender_type == "agent":
+                    from ..services.handoff import agent_takeover
+                    status_changed = await agent_takeover(handoff_id, handoff["tenant_id"])
+                    if status_changed:
+                        # Broadcast status change so bot stops responding
+                        await manager.broadcast(handoff_id, {
+                            "type": "status_change",
+                            "status": "active"
+                        })
+
                 # Add message to database
                 msg = await add_handoff_message(
                     handoff_id=handoff_id,
                     content=data.get("content", ""),
-                    sender_type=data.get("sender_type", "agent"),
+                    sender_type=sender_type,
                     sender_id=data.get("sender_id"),
                     sender_name=data.get("sender_name", "Agent")
                 )
@@ -585,6 +740,7 @@ async def websocket_visitor_chat(
 
     handoff_id = handoff["_id"]
     await manager.connect(websocket, handoff_id)
+    print(f"[HANDOFF WS] Visitor connected to handoff {handoff_id}. Total connections: {len(manager.connections.get(handoff_id, []))}", flush=True)
 
     try:
         # Send current state on connect (serialize to handle datetime objects)
@@ -606,18 +762,79 @@ async def websocket_visitor_chat(
                 break
 
             if data.get("type") == "message":
-                # Add visitor message
-                msg = await add_handoff_message(
-                    handoff_id=handoff_id,
-                    content=data.get("content", ""),
-                    sender_type="visitor"
-                )
+                visitor_content = data.get("content", "")
 
-                # Broadcast to all connected clients (including agent)
-                await manager.broadcast(handoff_id, {
-                    "type": "message",
-                    "message": msg
-                })
+                # Check if handoff is in timeout collection mode
+                current_handoff = await db.handoffs.find_one({"_id": handoff_id})
+
+                # Safety check: If agent has sent any messages, don't let bot respond
+                # This handles the case where agent took over but status wasn't updated yet
+                agent_messages = [m for m in current_handoff.get("messages", [])
+                                  if m.get("sender_type") == "agent"]
+                has_agent_takeover = len(agent_messages) > 0
+
+                # Only route to bot if in timeout_collecting AND no agent has taken over
+                if (current_handoff
+                    and current_handoff.get("status") == "timeout_collecting"
+                    and not has_agent_takeover):
+                    # Route to timeout processor
+                    from ..services.handoff_timeout import process_timeout_response
+
+                    # First, add visitor message
+                    msg = await add_handoff_message(
+                        handoff_id=handoff_id,
+                        content=visitor_content,
+                        sender_type="visitor"
+                    )
+
+                    # Broadcast visitor message
+                    await manager.broadcast(handoff_id, {
+                        "type": "message",
+                        "message": msg
+                    })
+
+                    # Process timeout response and get AI reply
+                    result = await process_timeout_response(
+                        handoff_id=handoff_id,
+                        bot_id=bot_id,
+                        tenant_id=current_handoff.get("tenant_id"),
+                        visitor_message=visitor_content
+                    )
+
+                    if result:
+                        # Add AI response
+                        ai_msg = await add_handoff_message(
+                            handoff_id=handoff_id,
+                            content=result["response"],
+                            sender_type="bot",
+                            sender_name="AI Assistant"
+                        )
+
+                        # Broadcast AI response
+                        await manager.broadcast(handoff_id, {
+                            "type": "message",
+                            "message": ai_msg
+                        })
+
+                        if result.get("complete"):
+                            # Broadcast resolution
+                            await manager.broadcast(handoff_id, {
+                                "type": "status_change",
+                                "status": "resolved"
+                            })
+                else:
+                    # Normal handoff mode - just store message
+                    msg = await add_handoff_message(
+                        handoff_id=handoff_id,
+                        content=visitor_content,
+                        sender_type="visitor"
+                    )
+
+                    # Broadcast to all connected clients (including agent)
+                    await manager.broadcast(handoff_id, {
+                        "type": "message",
+                        "message": msg
+                    })
 
             elif data.get("type") == "ping":
                 await websocket.send_json({"type": "pong"})

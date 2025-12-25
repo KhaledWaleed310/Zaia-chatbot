@@ -158,3 +158,109 @@ html {
   outline: 2px solid hsl(var(--ring));
   outline-offset: 2px;
 }
+
+/* ============================================
+   RTL (Right-to-Left) Language Support
+   ============================================ */
+
+/* Arabic font support */
+html[lang="ar"],
+html[lang="ar"] body {
+  font-family: 'Noto Sans Arabic', 'Segoe UI', 'Tahoma', system-ui, -apple-system, sans-serif;
+}
+
+/* RTL direction */
+html[dir="rtl"] {
+  direction: rtl;
+}
+
+/* Ensure proper text alignment in RTL */
+html[dir="rtl"] body {
+  text-align: right;
+}
+
+/* RTL-specific scrollbar positioning */
+html[dir="rtl"] .chat-messages-container {
+  direction: rtl;
+}
+
+/* RTL animation adjustments */
+html[dir="rtl"] .slide-left {
+  animation-direction: reverse;
+}
+
+/* Mirror certain icons for RTL */
+html[dir="rtl"] .rtl-mirror {
+  transform: scaleX(-1);
+}
+
+/* Flip chevron and arrow icons in RTL */
+html[dir="rtl"] .rtl-flip {
+  transform: rotate(180deg);
+}
+
+/* Fix text input alignment in RTL */
+html[dir="rtl"] input[type="text"],
+html[dir="rtl"] input[type="email"],
+html[dir="rtl"] input[type="password"],
+html[dir="rtl"] input[type="search"],
+html[dir="rtl"] input[type="tel"],
+html[dir="rtl"] input[type="url"],
+html[dir="rtl"] textarea {
+  text-align: right;
+}
+
+/* Ensure number inputs stay LTR for easier typing */
+html[dir="rtl"] input[type="number"] {
+  direction: ltr;
+  text-align: left;
+}
+
+/* Fix select dropdown alignment */
+html[dir="rtl"] select {
+  text-align: right;
+  padding-right: 1rem;
+  padding-left: 2.5rem;
+  background-position: left 0.5rem center;
+}
+
+/* Proper list styling in RTL */
+html[dir="rtl"] ul,
+html[dir="rtl"] ol {
+  padding-right: 1.5rem;
+  padding-left: 0;
+}
+
+/* Table alignment in RTL */
+html[dir="rtl"] table {
+  text-align: right;
+}
+
+html[dir="rtl"] th,
+html[dir="rtl"] td {
+  text-align: right;
+}
+
+/* Fix checkbox/radio label alignment */
+html[dir="rtl"] .checkbox-label,
+html[dir="rtl"] .radio-label {
+  flex-direction: row-reverse;
+}
+
+/* Ensure proper badge/tag direction */
+html[dir="rtl"] .badge,
+html[dir="rtl"] .tag {
+  direction: rtl;
+}
+
+/* Loading spinner - no direction change needed */
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+/* Consistent transitions in both directions */
+.transition-transform {
+  transition-property: transform;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 200ms;
+}

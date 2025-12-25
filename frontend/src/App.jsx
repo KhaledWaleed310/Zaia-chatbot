@@ -1,5 +1,6 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { LanguageProvider } from './context/LanguageContext';
 import { Toaster } from 'sonner';
 
 // Pages
@@ -11,18 +12,28 @@ import VerifyEmail from './pages/VerifyEmail';
 import Dashboard from './pages/Dashboard';
 import ChatbotList from './pages/ChatbotList';
 import ChatbotNew from './pages/ChatbotNew';
-import ChatbotDetail from './pages/ChatbotDetail';
 import ChatbotSetup from './pages/ChatbotSetup';
-import ChatbotAnalytics from './pages/ChatbotAnalytics';
-import ChatbotLeads from './pages/ChatbotLeads';
-import ChatbotHandoff from './pages/ChatbotHandoff';
-import ChatbotBookings from './pages/ChatbotBookings';
 import Analytics from './pages/Analytics';
 import Settings from './pages/Settings';
 import Landing from './pages/Landing';
 import TestChatbot from './pages/TestChatbot';
 import SharedChat from './pages/SharedChat';
+import AgentChat from './pages/AgentChat';
+import DirectHandoff from './pages/DirectHandoff';
 import PrivacyPolicy from './pages/PrivacyPolicy';
+import TermsOfService from './pages/TermsOfService';
+
+// Unified Chatbot Dashboard
+import { ChatbotLayout } from './components/chatbot/ChatbotLayout';
+import { SettingsPanel } from './components/chatbot/settings/SettingsPanel';
+import { KnowledgePanel } from './components/chatbot/knowledge/KnowledgePanel';
+import { IntegrationsPanel } from './components/chatbot/integrations/IntegrationsPanel';
+import { AnalyticsPanel } from './components/chatbot/analytics/AnalyticsPanel';
+import { LeadsPanel } from './components/chatbot/leads/LeadsPanel';
+import { LiveChatPanel } from './components/chatbot/livechat/LiveChatPanel';
+import { BookingsPanel } from './components/chatbot/bookings/BookingsPanel';
+import { SharePanel } from './components/chatbot/sharing/SharePanel';
+import { EmbedPanel } from './components/chatbot/sharing/EmbedPanel';
 
 // Components
 import CookieConsent from './components/CookieConsent';
@@ -36,6 +47,8 @@ import AdminSettings from './pages/AdminSettings';
 import AdminAnalytics from './pages/AdminAnalytics';
 import AdminFinance from './pages/AdminFinance';
 import AdminServer from './pages/AdminServer';
+import AdminMarketing from './pages/AdminMarketing';
+import AdminSEO from './pages/AdminSEO';
 
 const ProtectedRoute = ({ children }) => {
   const { user, loading } = useAuth();
@@ -79,7 +92,9 @@ function AppRoutes() {
       {/* Public Routes */}
       <Route path="/" element={<Landing />} />
       <Route path="/privacy" element={<PrivacyPolicy />} />
+      <Route path="/terms" element={<TermsOfService />} />
       <Route path="/chat/:botId" element={<SharedChat />} />
+      <Route path="/handoff/direct/:botId/:handoffId" element={<DirectHandoff />} />
       <Route
         path="/login"
         element={
@@ -146,11 +161,32 @@ function AppRoutes() {
           </ProtectedRoute>
         }
       />
+      {/* Unified Chatbot Dashboard with Nested Routes */}
       <Route
         path="/chatbots/:id"
         element={
           <ProtectedRoute>
-            <ChatbotDetail />
+            <ChatbotLayout />
+          </ProtectedRoute>
+        }
+      >
+        <Route index element={<Navigate to="settings" replace />} />
+        <Route path="settings" element={<SettingsPanel />} />
+        <Route path="knowledge" element={<KnowledgePanel />} />
+        <Route path="integrations" element={<IntegrationsPanel />} />
+        <Route path="analytics" element={<AnalyticsPanel />} />
+        <Route path="leads" element={<LeadsPanel />} />
+        <Route path="livechat" element={<LiveChatPanel />} />
+        <Route path="bookings" element={<BookingsPanel />} />
+        <Route path="share" element={<SharePanel />} />
+        <Route path="embed" element={<EmbedPanel />} />
+      </Route>
+      {/* Agent Chat - Full-screen dedicated chat page for live handoff */}
+      <Route
+        path="/chatbots/:id/chat/:handoffId"
+        element={
+          <ProtectedRoute>
+            <AgentChat />
           </ProtectedRoute>
         }
       />
@@ -162,38 +198,8 @@ function AppRoutes() {
           </ProtectedRoute>
         }
       />
-      <Route
-        path="/chatbots/:id/analytics"
-        element={
-          <ProtectedRoute>
-            <ChatbotAnalytics />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/chatbots/:id/leads"
-        element={
-          <ProtectedRoute>
-            <ChatbotLeads />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/chatbots/:id/handoff"
-        element={
-          <ProtectedRoute>
-            <ChatbotHandoff />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/chatbots/:id/bookings"
-        element={
-          <ProtectedRoute>
-            <ChatbotBookings />
-          </ProtectedRoute>
-        }
-      />
+      {/* Backwards compatibility redirects for old routes */}
+      <Route path="/chatbots/:id/handoff" element={<Navigate to="../livechat" replace />} />
       <Route
         path="/test-chatbot"
         element={
@@ -284,6 +290,22 @@ function AppRoutes() {
           </ProtectedRoute>
         }
       />
+      <Route
+        path="/admin/marketing"
+        element={
+          <ProtectedRoute>
+            <AdminMarketing />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/seo"
+        element={
+          <ProtectedRoute>
+            <AdminSEO />
+          </ProtectedRoute>
+        }
+      />
 
       {/* Fallback */}
       <Route path="*" element={<Navigate to="/" />} />
@@ -293,11 +315,13 @@ function AppRoutes() {
 
 function App() {
   return (
-    <AuthProvider>
-      <AppRoutes />
-      <CookieConsent />
-      <Toaster position="bottom-right" richColors closeButton />
-    </AuthProvider>
+    <LanguageProvider>
+      <AuthProvider>
+        <AppRoutes />
+        <CookieConsent />
+        <Toaster position="bottom-right" richColors closeButton />
+      </AuthProvider>
+    </LanguageProvider>
   );
 }
 

@@ -110,4 +110,30 @@ async def get_current_admin(current_user: dict = Depends(get_current_user)):
 
 def is_admin(user: dict) -> bool:
     """Check if a user is an admin"""
-    return user.get("role") == "admin" or user.get("email") in ADMIN_EMAILS
+    user_role = user.get("role", "user")
+    return user_role in ["admin", "super_admin"] or user.get("email") in ADMIN_EMAILS
+
+
+async def get_current_marketing_user(current_user: dict = Depends(get_current_user)):
+    """
+    Dependency to check if the current user has marketing access.
+    Allows marketing, admin, or super_admin roles.
+    """
+    user_role = current_user.get("role", "user")
+    user_email = current_user.get("email", "")
+
+    # Check if user has marketing access (marketing, admin, or super_admin)
+    # Also check admin emails list for backwards compatibility
+    if user_role not in ["marketing", "admin", "super_admin"] and user_email not in ADMIN_EMAILS:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Marketing access required"
+        )
+
+    return current_user
+
+
+def is_marketing_user(user: dict) -> bool:
+    """Check if a user has marketing access"""
+    user_role = user.get("role", "user")
+    return user_role in ["marketing", "admin", "super_admin"] or user.get("email") in ADMIN_EMAILS

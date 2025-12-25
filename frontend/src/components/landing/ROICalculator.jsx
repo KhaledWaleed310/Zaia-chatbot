@@ -2,8 +2,12 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Calculator, TrendingDown, DollarSign, Users, MessageSquare, ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
+import { useLanguage } from '@/context/LanguageContext';
 
 const ROICalculator = () => {
+  const { t } = useTranslation('landing');
+  const { isRtl } = useLanguage();
   const [teamSize, setTeamSize] = useState(10);
   const [ticketsPerMonth, setTicketsPerMonth] = useState(1000);
   const [costPerTicket, setCostPerTicket] = useState(15);
@@ -27,10 +31,10 @@ const ROICalculator = () => {
               <Calculator className="w-8 h-8 text-blue-600" />
             </div>
             <h2 className="text-4xl font-bold text-gray-900 mb-4">
-              Calculate Your Savings
+              {t('roi.title')}
             </h2>
             <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-              See how much time and money you could save with AI-powered customer support
+              {t('roi.subtitle')}
             </p>
           </motion.div>
         </div>
@@ -44,14 +48,14 @@ const ROICalculator = () => {
             transition={{ duration: 0.5, delay: 0.2 }}
             className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100"
           >
-            <h3 className="text-2xl font-bold text-gray-900 mb-8">Your Numbers</h3>
+            <h3 className="text-2xl font-bold text-gray-900 mb-8">{t('roi.yourNumbers')}</h3>
 
             {/* Team Size Slider */}
             <div className="mb-8">
               <div className="flex items-center justify-between mb-3">
                 <label className="flex items-center text-gray-700 font-medium">
-                  <Users className="w-5 h-5 mr-2 text-blue-600" />
-                  Team Size
+                  <Users className={`w-5 h-5 ${isRtl ? 'ms-2' : 'me-2'} text-blue-600`} />
+                  {t('roi.teamSize')}
                 </label>
                 <span className="text-2xl font-bold text-blue-600">{teamSize}</span>
               </div>
@@ -73,8 +77,8 @@ const ROICalculator = () => {
             <div className="mb-8">
               <div className="flex items-center justify-between mb-3">
                 <label className="flex items-center text-gray-700 font-medium">
-                  <MessageSquare className="w-5 h-5 mr-2 text-blue-600" />
-                  Tickets per Month
+                  <MessageSquare className={`w-5 h-5 ${isRtl ? 'ms-2' : 'me-2'} text-blue-600`} />
+                  {t('roi.ticketsPerMonth')}
                 </label>
                 <span className="text-2xl font-bold text-blue-600">
                   {ticketsPerMonth.toLocaleString()}
@@ -99,8 +103,8 @@ const ROICalculator = () => {
             <div className="mb-6">
               <div className="flex items-center justify-between mb-3">
                 <label className="flex items-center text-gray-700 font-medium">
-                  <DollarSign className="w-5 h-5 mr-2 text-blue-600" />
-                  Cost per Ticket
+                  <DollarSign className={`w-5 h-5 ${isRtl ? 'ms-2' : 'me-2'} text-blue-600`} />
+                  {t('roi.costPerTicket')}
                 </label>
                 <span className="text-2xl font-bold text-blue-600">${costPerTicket}</span>
               </div>
@@ -128,8 +132,8 @@ const ROICalculator = () => {
             className="bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl shadow-2xl p-8 text-white"
           >
             <div className="flex items-center mb-6">
-              <TrendingDown className="w-8 h-8 mr-3" />
-              <h3 className="text-2xl font-bold">Your Potential Savings</h3>
+              <TrendingDown className={`w-8 h-8 ${isRtl ? 'ms-3' : 'me-3'}`} />
+              <h3 className="text-2xl font-bold">{t('roi.potentialSavings')}</h3>
             </div>
 
             <div className="space-y-6 mb-8">
@@ -142,7 +146,7 @@ const ROICalculator = () => {
                 className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20"
               >
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-green-100 font-medium">Monthly Savings</span>
+                  <span className="text-green-100 font-medium">{t('roi.monthlySavings')}</span>
                   <DollarSign className="w-5 h-5 text-green-100" />
                 </div>
                 <div className="text-4xl font-bold">
@@ -159,7 +163,7 @@ const ROICalculator = () => {
                 className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20"
               >
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-green-100 font-medium">Yearly Savings</span>
+                  <span className="text-green-100 font-medium">{t('roi.yearlySavings')}</span>
                   <DollarSign className="w-5 h-5 text-green-100" />
                 </div>
                 <div className="text-4xl font-bold">
@@ -176,7 +180,7 @@ const ROICalculator = () => {
                 className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20"
               >
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-green-100 font-medium">Hours Saved per Month</span>
+                  <span className="text-green-100 font-medium">{t('roi.hoursSaved')}</span>
                   <TrendingDown className="w-5 h-5 text-green-100" />
                 </div>
                 <div className="text-4xl font-bold">
@@ -192,13 +196,13 @@ const ROICalculator = () => {
                 whileTap={{ scale: 0.98 }}
                 className="w-full bg-white text-green-600 font-bold py-4 px-8 rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300 flex items-center justify-center group"
               >
-                Start Saving Today
-                <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform duration-300" />
+                {t('roi.startSaving')}
+                <ArrowRight className={`w-5 h-5 ${isRtl ? 'me-2 rotate-180' : 'ms-2'} group-hover:translate-x-1 transition-transform duration-300`} />
               </motion.button>
             </Link>
 
             <p className="text-center text-green-100 text-sm mt-4">
-              No credit card required • 14-day free trial
+              {t('roi.noCreditCard')}
             </p>
           </motion.div>
         </div>

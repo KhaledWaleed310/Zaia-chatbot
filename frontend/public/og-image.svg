@@ -1,0 +1,57 @@
+<svg width="1200" height="630" viewBox="0 0 1200 630" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background Gradient -->
+  <defs>
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1e3a8a"/>
+      <stop offset="50%" stop-color="#2563eb"/>
+      <stop offset="100%" stop-color="#3b82f6"/>
+    </linearGradient>
+    <linearGradient id="cardGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.1"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0.05"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="630" fill="url(#bgGradient)"/>
+
+  <!-- Decorative circles -->
+  <circle cx="100" cy="100" r="200" fill="#ffffff" fill-opacity="0.03"/>
+  <circle cx="1100" cy="530" r="250" fill="#ffffff" fill-opacity="0.03"/>
+  <circle cx="900" cy="100" r="150" fill="#ffffff" fill-opacity="0.02"/>
+
+  <!-- Logo Icon (Chat bubble) -->
+  <rect x="80" y="250" width="80" height="80" rx="16" fill="#ffffff"/>
+  <path d="M100 270h40c2 0 4 2 4 4v28c0 2-2 4-4 4h-12l-10 10v-10h-18c-2 0-4-2-4-4v-28c0-2 2-4 4-4z" fill="#2563eb"/>
+
+  <!-- Brand Name -->
+  <text x="180" y="310" font-family="system-ui, -apple-system, sans-serif" font-size="64" font-weight="700" fill="#ffffff">Aiden Link</text>
+
+  <!-- Tagline -->
+  <text x="80" y="380" font-family="system-ui, -apple-system, sans-serif" font-size="42" font-weight="600" fill="#ffffff">Your AI Customer Support Team</text>
+  <text x="80" y="440" font-family="system-ui, -apple-system, sans-serif" font-size="42" font-weight="600" fill="#ffffff">That Never Sleeps</text>
+
+  <!-- Feature Pills -->
+  <rect x="80" y="480" width="200" height="44" rx="22" fill="#ffffff" fill-opacity="0.15"/>
+  <text x="115" y="510" font-family="system-ui, -apple-system, sans-serif" font-size="20" font-weight="500" fill="#ffffff">24/7 Available</text>
+
+  <rect x="300" y="480" width="240" height="44" rx="22" fill="#ffffff" fill-opacity="0.15"/>
+  <text x="335" y="510" font-family="system-ui, -apple-system, sans-serif" font-size="20" font-weight="500" fill="#ffffff">Arabic & English</text>
+
+  <rect x="560" y="480" width="220" height="44" rx="22" fill="#ffffff" fill-opacity="0.15"/>
+  <text x="595" y="510" font-family="system-ui, -apple-system, sans-serif" font-size="20" font-weight="500" fill="#ffffff">90% Cost Savings</text>
+
+  <!-- Stats Card -->
+  <rect x="850" y="200" width="280" height="230" rx="20" fill="url(#cardGradient)" stroke="#ffffff" stroke-opacity="0.2" stroke-width="1"/>
+
+  <text x="990" y="260" font-family="system-ui, -apple-system, sans-serif" font-size="20" font-weight="500" fill="#ffffff" fill-opacity="0.8" text-anchor="middle">Trusted by</text>
+  <text x="990" y="310" font-family="system-ui, -apple-system, sans-serif" font-size="48" font-weight="700" fill="#ffffff" text-anchor="middle">1,000+</text>
+  <text x="990" y="350" font-family="system-ui, -apple-system, sans-serif" font-size="20" font-weight="500" fill="#ffffff" fill-opacity="0.8" text-anchor="middle">Businesses in MENA</text>
+
+  <line x1="880" y1="380" x2="1100" y2="380" stroke="#ffffff" stroke-opacity="0.2" stroke-width="1"/>
+
+  <text x="990" y="410" font-family="system-ui, -apple-system, sans-serif" font-size="16" font-weight="500" fill="#10b981" text-anchor="middle">Start Free Trial</text>
+
+  <!-- Company -->
+  <text x="80" y="590" font-family="system-ui, -apple-system, sans-serif" font-size="18" font-weight="400" fill="#ffffff" fill-opacity="0.6">aidenlink.cloud • by ZAIA Systems</text>
+</svg>

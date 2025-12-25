@@ -1,6 +1,8 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { MessageSquare, Sparkles, Link2, ArrowRight, Clock, Share2, Check, Lock } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import { useLanguage } from '@/context/LanguageContext';
 
 // Logo components
 const GmailLogo = () => (
@@ -70,6 +72,9 @@ const itemVariants = {
 };
 
 const IntegrationsHub = () => {
+  const { t } = useTranslation('landing');
+  const { isRtl } = useLanguage();
+
   return (
     <section className="py-16 md:py-24 bg-gradient-to-b from-gray-50 to-white overflow-hidden" id="integrations">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -81,15 +86,15 @@ const IntegrationsHub = () => {
           viewport={{ once: true }}
           transition={{ duration: 0.6 }}
         >
-          <div className="inline-flex items-center space-x-2 bg-blue-100 text-blue-700 px-4 py-2 rounded-full mb-6">
+          <div className="inline-flex items-center gap-2 bg-blue-100 text-blue-700 px-4 py-2 rounded-full mb-6">
             <Link2 className="w-4 h-4" />
-            <span className="text-sm font-semibold">Everything Connected</span>
+            <span className="text-sm font-semibold">{t('integrations.badge')}</span>
           </div>
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-900 mb-4">
-            One Hub. All Your Knowledge.
+            {t('integrations.title')}
           </h2>
           <p className="text-lg md:text-xl text-gray-600 max-w-2xl mx-auto">
-            Connect all your tools to Aiden. Your chatbot instantly learns from every source.
+            {t('integrations.subtitle')}
           </p>
         </motion.div>
 
@@ -131,7 +136,7 @@ const IntegrationsHub = () => {
                 transition={{ type: "spring", stiffness: 300 }}
               >
                 <MessageSquare className="w-14 h-14 text-white mb-1" />
-                <span className="text-white font-bold text-xl">Aiden</span>
+                <span className="text-white font-bold text-xl">Aiden Link</span>
                 <span className="text-blue-200 text-xs">AI Hub</span>
               </motion.div>
             </motion.div>
@@ -235,7 +240,7 @@ const IntegrationsHub = () => {
                   whileTap={{ scale: 0.95 }}
                 >
                   <MessageSquare className="w-10 h-10 text-white mb-1" />
-                  <span className="text-white font-bold">Aiden</span>
+                  <span className="text-white font-bold">Aiden Link</span>
                 </motion.div>
               </div>
             </motion.div>
@@ -337,10 +342,10 @@ const IntegrationsHub = () => {
             whileTap={{ scale: 0.98 }}
           >
             <Clock className="w-5 h-5" />
-            <span>Integrations Coming Soon</span>
+            <span>{t('integrations.comingSoon')}</span>
           </motion.div>
           <p className="text-gray-500 mt-3 text-sm max-w-md mx-auto">
-            We're working hard to bring you seamless connections to all your favorite tools.
+            {t('integrations.comingSoonDesc')}
           </p>
         </motion.div>
 
@@ -364,27 +369,22 @@ const IntegrationsHub = () => {
               viewport={{ once: true }}
               transition={{ duration: 0.6, delay: 0.2 }}
             >
-              <div className="inline-flex items-center space-x-2 bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full mb-6">
+              <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full mb-6">
                 <Share2 className="w-4 h-4" />
-                <span className="text-sm font-semibold">New Feature</span>
+                <span className="text-sm font-semibold">{t('integrations.share.badge')}</span>
               </div>
               <h3 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-4">
-                Share Your Chatbot Instantly
+                {t('integrations.share.title')}
               </h3>
               <p className="text-blue-100 text-base sm:text-lg mb-6">
-                Generate a shareable link for your chatbot in one click. Add password protection for private access, or share publicly with anyone.
+                {t('integrations.share.description')}
               </p>
               <ul className="space-y-3">
-                {[
-                  'One-click shareable links',
-                  'Optional password protection',
-                  'Beautiful standalone chat page',
-                  'Perfect for teams & clients'
-                ].map((feature, i) => (
+                {t('integrations.share.features', { returnObjects: true }).map((feature, i) => (
                   <motion.li
                     key={i}
-                    className="flex items-center space-x-3"
-                    initial={{ opacity: 0, x: -10 }}
+                    className="flex items-center gap-3"
+                    initial={{ opacity: 0, x: isRtl ? 10 : -10 }}
                     whileInView={{ opacity: 1, x: 0 }}
                     viewport={{ once: true }}
                     transition={{ duration: 0.4, delay: 0.3 + i * 0.1 }}
@@ -413,8 +413,8 @@ const IntegrationsHub = () => {
                     <Lock className="w-5 h-5 text-white" />
                   </div>
                   <div>
-                    <div className="font-semibold text-gray-900">Protected Chatbot</div>
-                    <div className="text-sm text-gray-500">Enter password to continue</div>
+                    <div className="font-semibold text-gray-900">{t('integrations.share.protected')}</div>
+                    <div className="text-sm text-gray-500">{t('integrations.share.enterPassword')}</div>
                   </div>
                 </div>
                 <div className="bg-gray-100 rounded-xl p-4 mb-4">
@@ -426,7 +426,7 @@ const IntegrationsHub = () => {
                   />
                 </div>
                 <button className="w-full py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl font-semibold text-sm sm:text-base">
-                  Unlock Chat
+                  {t('integrations.share.unlockChat')}
                 </button>
               </div>
               {/* Floating badge */}
@@ -437,7 +437,7 @@ const IntegrationsHub = () => {
                 viewport={{ once: true }}
                 transition={{ type: "spring", stiffness: 400, delay: 0.6 }}
               >
-                Secure
+                {t('integrations.share.secure')}
               </motion.div>
             </motion.div>
           </div>

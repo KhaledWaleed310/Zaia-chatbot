@@ -1,5 +1,5 @@
 """
-Enhanced Retrieval Pipeline for Aiden RAG System.
+Enhanced Retrieval Pipeline for Aiden Link RAG System.
 
 This is the world-class retrieval system that combines:
 - Triple-database hybrid search (Qdrant + MongoDB + Neo4j)

@@ -95,13 +95,18 @@ class Settings(BaseSettings):
     HUBSPOT_CLIENT_ID: Optional[str] = None
     HUBSPOT_CLIENT_SECRET: Optional[str] = None
 
+    # OAuth - Facebook Messenger
+    FACEBOOK_APP_ID: Optional[str] = None
+    FACEBOOK_APP_SECRET: Optional[str] = None
+    FACEBOOK_VERIFY_TOKEN: str = "aiden_messenger_verify_token"  # For webhook verification
+
     # OAuth Settings
     OAUTH_REDIRECT_BASE: str = "http://localhost:8000"
     ENCRYPTION_KEY: Optional[str] = None  # 32-byte base64 encoded key for Fernet
 
     # Email (Resend)
     RESEND_API_KEY: Optional[str] = None
-    EMAIL_FROM: str = "Aiden <noreply@aidenlink.cloud>"
+    EMAIL_FROM: str = "Aiden Link <noreply@aidenlink.cloud>"
     FRONTEND_URL: str = "https://chatbot.zaiasystems.com"
 
     class Config:

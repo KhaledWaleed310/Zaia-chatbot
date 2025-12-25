@@ -204,6 +204,35 @@ const SharedChat = () => {
     scrollToBottom();
   }, [messages]);
 
+  // Check for existing handoff on page load (handles refresh, timeout, etc.)
+  useEffect(() => {
+    const checkExistingHandoff = async () => {
+      if (!sessionId || !botId) return;
+
+      try {
+        const res = await publicApi.getHandoffStatus(botId, sessionId);
+        if (res.data.active && res.data.handoff) {
+          setHandoffActive(true);
+          setHandoffStatus(res.data.handoff);
+
+          // Add any existing handoff messages to the chat
+          const handoffMsgs = res.data.handoff.messages || [];
+          handoffMsgs.forEach(msg => {
+            if (msg.sender_type === 'agent') {
+              setMessages(prev => [...prev, { role: 'agent', content: msg.content, agentName: msg.sender_name }]);
+            } else if (msg.sender_type === 'bot') {
+              setMessages(prev => [...prev, { role: 'assistant', content: msg.content }]);
+            }
+          });
+        }
+      } catch (e) {
+        // No existing handoff or error - continue normally
+      }
+    };
+
+    checkExistingHandoff();
+  }, [sessionId, botId]);
+
   // Poll for handoff status when active
   useEffect(() => {
     if (handoffActive && sessionId) {
@@ -216,8 +245,12 @@ const SharedChat = () => {
             if (res.data.handoff.messages?.length > (handoffStatus?.messages?.length || 0)) {
               const newMsgs = res.data.handoff.messages.slice(handoffStatus?.messages?.length || 0);
               newMsgs.forEach(msg => {
+                // Show messages from agents and bot (timeout collector)
                 if (msg.sender_type === 'agent') {
                   setMessages(prev => [...prev, { role: 'agent', content: msg.content, agentName: msg.sender_name }]);
+                } else if (msg.sender_type === 'bot') {
+                  // Bot messages during timeout collection (AI collecting contact info)
+                  setMessages(prev => [...prev, { role: 'assistant', content: msg.content }]);
                 }
               });
             }
@@ -826,9 +859,12 @@ const SharedChat = () => {
               </h1>
               <div className="flex items-center gap-2 mt-0.5">
                 {handoffActive ? (
-                  <span className="inline-flex items-center gap-1 text-[10px] sm:text-xs bg-green-500 text-white px-2 py-0.5 rounded-full font-medium">
+                  <span className={`inline-flex items-center gap-1 text-[10px] sm:text-xs ${
+                    handoffStatus?.status === 'pending' ? 'bg-yellow-500' : 'bg-green-500'
+                  } text-white px-2 py-0.5 rounded-full font-medium`}>
                     <span className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" />
-                    Live Chat
+                    {handoffStatus?.status === 'pending' ? 'Waiting for agent...' :
+                     handoffStatus?.status === 'timeout_collecting' ? 'AI Assistant' : 'Live Chat'}
                   </span>
                 ) : (
                   <span className="text-[11px] sm:text-xs opacity-80" style={{ color: config?.text_color || '#FFFFFF' }}>
@@ -1169,7 +1205,7 @@ const SharedChat = () => {
           <div className="max-w-3xl mx-auto flex items-center justify-center gap-1.5 text-[11px] sm:text-xs text-gray-400">
             <Sparkles className="w-3 h-3" />
             <span>Powered by</span>
-            <span className="font-semibold text-gray-500">Aiden</span>
+            <span className="font-semibold text-gray-500">Aiden Link</span>
           </div>
         </div>
       </div>

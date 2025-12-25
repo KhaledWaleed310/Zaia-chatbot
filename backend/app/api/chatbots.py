@@ -145,7 +145,10 @@ async def list_chatbots(current_user: dict = Depends(get_current_user)):
 
     chatbots = []
     async for bot in db.chatbots.aggregate(pipeline):
-        chatbots.append(build_chatbot_response(bot, bot.get("document_count", 0), bot.get("message_count", 0)))
+        # Extract counts from aggregation result and pass to response builder
+        doc_count = bot.get("document_count", 0)
+        msg_count = bot.get("message_count", 0)
+        chatbots.append(build_chatbot_response(bot, doc_count, msg_count))
 
     return chatbots
 

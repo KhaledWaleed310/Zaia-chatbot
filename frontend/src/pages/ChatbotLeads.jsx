@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import Layout from '../components/Layout';
 import { leads, chatbots } from '../utils/api';
+import { useLanguage } from '@/context/LanguageContext';
 import {
   ArrowLeft,
   Users,
@@ -36,6 +38,8 @@ const STATUS_COLORS = {
 const STATUS_OPTIONS = ['new', 'contacted', 'qualified', 'converted', 'lost'];
 
 const ChatbotLeads = () => {
+  const { t } = useTranslation('dashboard');
+  const { isRtl } = useLanguage();
   const { id } = useParams();
   const [bot, setBot] = useState(null);
   const [leadsData, setLeadsData] = useState({ items: [], total: 0, pages: 0 });
@@ -106,7 +110,7 @@ const ChatbotLeads = () => {
   };
 
   const handleDeleteLead = async (leadId) => {
-    if (!confirm('Delete this lead?')) return;
+    if (!confirm(t('leads.confirmDelete'))) return;
     try {
       await leads.delete(id, leadId);
       loadData();
@@ -148,9 +152,9 @@ const ChatbotLeads = () => {
             </Link>
             <div>
               <h1 className="text-2xl font-bold text-gray-900">
-                {bot?.name} - Leads
+                {bot?.name} - {t('leads.title')}
               </h1>
-              <p className="text-gray-500">Manage captured leads</p>
+              <p className="text-gray-500">{t('leads.subtitle')}</p>
             </div>
           </div>
           <div className="flex gap-2">
@@ -158,26 +162,26 @@ const ChatbotLeads = () => {
               onClick={() => setShowFormConfig(true)}
               className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-sm"
             >
-              Lead Form Settings
+              {t('leads.formSettings')}
             </button>
             <div className="relative group">
               <button className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 flex items-center gap-2 text-sm">
                 <Download className="w-4 h-4" />
-                Export
+                {t('leads.export')}
                 <ChevronDown className="w-4 h-4" />
               </button>
-              <div className="absolute right-0 mt-1 w-32 bg-white border rounded-lg shadow-lg hidden group-hover:block z-10">
+              <div className={`absolute ${isRtl ? 'left-0' : 'right-0'} mt-1 w-32 bg-white border rounded-lg shadow-lg hidden group-hover:block z-10`}>
                 <button
                   onClick={() => handleExport('csv')}
-                  className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50"
+                  className="w-full px-4 py-2 text-start text-sm hover:bg-gray-50"
                 >
-                  Export CSV
+                  {t('leads.exportCsv')}
                 </button>
                 <button
                   onClick={() => handleExport('json')}
-                  className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50"
+                  className="w-full px-4 py-2 text-start text-sm hover:bg-gray-50"
                 >
-                  Export JSON
+                  {t('leads.exportJson')}
                 </button>
               </div>
             </div>
@@ -190,7 +194,7 @@ const ChatbotLeads = () => {
             <div className="bg-white rounded-xl p-4 shadow-sm">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-500">Total Leads</p>
+                  <p className="text-sm text-gray-500">{t('leads.stats.total')}</p>
                   <p className="text-2xl font-bold text-gray-900">{stats.total_leads}</p>
                 </div>
                 <div className="p-3 bg-blue-100 rounded-lg">
@@ -202,7 +206,7 @@ const ChatbotLeads = () => {
             <div className="bg-white rounded-xl p-4 shadow-sm">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-500">New (30 days)</p>
+                  <p className="text-sm text-gray-500">{t('leads.stats.newThisMonth')}</p>
                   <p className="text-2xl font-bold text-gray-900">{stats.new_leads}</p>
                 </div>
                 <div className="p-3 bg-green-100 rounded-lg">
@@ -214,7 +218,7 @@ const ChatbotLeads = () => {
             <div className="bg-white rounded-xl p-4 shadow-sm">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-500">Conversion Rate</p>
+                  <p className="text-sm text-gray-500">{t('leads.stats.conversionRate')}</p>
                   <p className="text-2xl font-bold text-gray-900">{stats.conversion_rate}%</p>
                 </div>
                 <div className="p-3 bg-purple-100 rounded-lg">
@@ -226,7 +230,7 @@ const ChatbotLeads = () => {
             <div className="bg-white rounded-xl p-4 shadow-sm">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-500">Qualified</p>
+                  <p className="text-sm text-gray-500">{t('leads.stats.qualified')}</p>
                   <p className="text-2xl font-bold text-gray-900">
                     {stats.by_status?.qualified || 0}
                   </p>
@@ -243,13 +247,13 @@ const ChatbotLeads = () => {
         <div className="bg-white rounded-xl p-4 shadow-sm">
           <div className="flex flex-col sm:flex-row gap-4">
             <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <Search className={`absolute ${isRtl ? 'right-3' : 'left-3'} top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400`} />
               <input
                 type="text"
-                placeholder="Search leads..."
+                placeholder={t('leads.searchPlaceholder')}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border rounded-lg"
+                className={`w-full ${isRtl ? 'pr-10 pl-4' : 'pl-10 pr-4'} py-2 border rounded-lg`}
               />
             </div>
             <select
@@ -257,10 +261,10 @@ const ChatbotLeads = () => {
               onChange={(e) => setStatusFilter(e.target.value)}
               className="px-4 py-2 border rounded-lg bg-white"
             >
-              <option value="">All Status</option>
+              <option value="">{t('leads.allStatus')}</option>
               {STATUS_OPTIONS.map((status) => (
                 <option key={status} value={status}>
-                  {status.charAt(0).toUpperCase() + status.slice(1)}
+                  {t(`leads.status.${status}`)}
                 </option>
               ))}
             </select>
@@ -276,9 +280,9 @@ const ChatbotLeads = () => {
           ) : leadsData.items.length === 0 ? (
             <div className="text-center py-12">
               <Users className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-              <p className="text-gray-500">No leads yet</p>
+              <p className="text-gray-500">{t('leads.noLeads')}</p>
               <p className="text-sm text-gray-400 mt-1">
-                Enable lead capture in form settings
+                {t('leads.enableLeadCapture')}
               </p>
             </div>
           ) : (
@@ -286,23 +290,23 @@ const ChatbotLeads = () => {
               <table className="w-full">
                 <thead className="bg-gray-50 border-b">
                   <tr>
-                    <th className="text-left px-4 py-3 text-sm font-medium text-gray-500">
-                      Contact
+                    <th className="text-start px-4 py-3 text-sm font-medium text-gray-500">
+                      {t('leads.table.contact')}
                     </th>
-                    <th className="text-left px-4 py-3 text-sm font-medium text-gray-500">
-                      Company
+                    <th className="text-start px-4 py-3 text-sm font-medium text-gray-500">
+                      {t('leads.table.company')}
                     </th>
-                    <th className="text-left px-4 py-3 text-sm font-medium text-gray-500">
-                      Status
+                    <th className="text-start px-4 py-3 text-sm font-medium text-gray-500">
+                      {t('leads.table.status')}
                     </th>
-                    <th className="text-left px-4 py-3 text-sm font-medium text-gray-500">
-                      Source
+                    <th className="text-start px-4 py-3 text-sm font-medium text-gray-500">
+                      {t('leads.table.source')}
                     </th>
-                    <th className="text-left px-4 py-3 text-sm font-medium text-gray-500">
-                      Created
+                    <th className="text-start px-4 py-3 text-sm font-medium text-gray-500">
+                      {t('leads.table.created')}
                     </th>
-                    <th className="text-right px-4 py-3 text-sm font-medium text-gray-500">
-                      Actions
+                    <th className="text-end px-4 py-3 text-sm font-medium text-gray-500">
+                      {t('leads.table.actions')}
                     </th>
                   </tr>
                 </thead>
@@ -346,7 +350,7 @@ const ChatbotLeads = () => {
                         >
                           {STATUS_OPTIONS.map((status) => (
                             <option key={status} value={status}>
-                              {status.charAt(0).toUpperCase() + status.slice(1)}
+                              {t(`leads.status.${status}`)}
                             </option>
                           ))}
                         </select>
@@ -363,7 +367,7 @@ const ChatbotLeads = () => {
                             <button
                               onClick={() => setSelectedLead(lead)}
                               className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded"
-                              title="View conversation"
+                              title={t('leads.modal.viewConversation')}
                             >
                               <MessageSquare className="w-4 h-4" />
                             </button>
@@ -387,7 +391,7 @@ const ChatbotLeads = () => {
           {leadsData.pages > 1 && (
             <div className="flex items-center justify-between px-4 py-3 border-t">
               <p className="text-sm text-gray-500">
-                Showing page {page} of {leadsData.pages}
+                {t('leads.pagination.showing')} {page} {t('leads.pagination.of')} {leadsData.pages}
               </p>
               <div className="flex gap-2">
                 <button
@@ -395,14 +399,14 @@ const ChatbotLeads = () => {
                   disabled={page === 1}
                   className="px-3 py-1 border rounded hover:bg-gray-50 disabled:opacity-50"
                 >
-                  Previous
+                  {t('leads.pagination.previous')}
                 </button>
                 <button
                   onClick={() => setPage(page + 1)}
                   disabled={page === leadsData.pages}
                   className="px-3 py-1 border rounded hover:bg-gray-50 disabled:opacity-50"
                 >
-                  Next
+                  {t('leads.pagination.next')}
                 </button>
               </div>
             </div>
@@ -414,7 +418,7 @@ const ChatbotLeads = () => {
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
             <div className="bg-white rounded-xl max-w-2xl w-full mx-4 max-h-[80vh] overflow-auto">
               <div className="p-6 border-b flex items-center justify-between">
-                <h3 className="text-lg font-semibold">Lead Details</h3>
+                <h3 className="text-lg font-semibold">{t('leads.modal.title')}</h3>
                 <button
                   onClick={() => setSelectedLead(null)}
                   className="p-2 hover:bg-gray-100 rounded"
@@ -425,25 +429,25 @@ const ChatbotLeads = () => {
               <div className="p-6 space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="text-sm text-gray-500">Name</label>
+                    <label className="text-sm text-gray-500">{t('leads.modal.name')}</label>
                     <p className="font-medium">{selectedLead.name || '-'}</p>
                   </div>
                   <div>
-                    <label className="text-sm text-gray-500">Email</label>
+                    <label className="text-sm text-gray-500">{t('leads.modal.email')}</label>
                     <p className="font-medium">{selectedLead.email || '-'}</p>
                   </div>
                   <div>
-                    <label className="text-sm text-gray-500">Phone</label>
+                    <label className="text-sm text-gray-500">{t('leads.modal.phone')}</label>
                     <p className="font-medium">{selectedLead.phone || '-'}</p>
                   </div>
                   <div>
-                    <label className="text-sm text-gray-500">Company</label>
+                    <label className="text-sm text-gray-500">{t('leads.modal.company')}</label>
                     <p className="font-medium">{selectedLead.company || '-'}</p>
                   </div>
                 </div>
                 {selectedLead.conversation_summary && (
                   <div>
-                    <label className="text-sm text-gray-500">Conversation Summary</label>
+                    <label className="text-sm text-gray-500">{t('leads.modal.conversationSummary')}</label>
                     <p className="mt-1 p-3 bg-gray-50 rounded text-sm">
                       {selectedLead.conversation_summary}
                     </p>
@@ -451,7 +455,7 @@ const ChatbotLeads = () => {
                 )}
                 {Object.keys(selectedLead.custom_fields || {}).length > 0 && (
                   <div>
-                    <label className="text-sm text-gray-500">Custom Fields</label>
+                    <label className="text-sm text-gray-500">{t('leads.modal.customFields')}</label>
                     <div className="mt-1 p-3 bg-gray-50 rounded">
                       {Object.entries(selectedLead.custom_fields).map(([key, value]) => (
                         <div key={key} className="flex justify-between text-sm py-1">
@@ -472,7 +476,7 @@ const ChatbotLeads = () => {
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
             <div className="bg-white rounded-xl max-w-lg w-full mx-4 max-h-[80vh] overflow-auto">
               <div className="p-6 border-b flex items-center justify-between">
-                <h3 className="text-lg font-semibold">Lead Form Settings</h3>
+                <h3 className="text-lg font-semibold">{t('leads.formConfig.title')}</h3>
                 <button
                   onClick={() => setShowFormConfig(false)}
                   className="p-2 hover:bg-gray-100 rounded"
@@ -483,8 +487,8 @@ const ChatbotLeads = () => {
               <div className="p-6 space-y-4">
                 <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                   <div>
-                    <p className="font-medium">Enable Lead Form</p>
-                    <p className="text-sm text-gray-500">Show lead capture form in chat</p>
+                    <p className="font-medium">{t('leads.formConfig.enableForm')}</p>
+                    <p className="text-sm text-gray-500">{t('leads.formConfig.enableFormDesc')}</p>
                   </div>
                   <button
                     onClick={() => setFormConfig({ ...formConfig, enabled: !formConfig.enabled })}
@@ -502,7 +506,7 @@ const ChatbotLeads = () => {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Form Title
+                    {t('leads.formConfig.formTitle')}
                   </label>
                   <input
                     type="text"
@@ -514,7 +518,7 @@ const ChatbotLeads = () => {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Description
+                    {t('leads.formConfig.description')}
                   </label>
                   <textarea
                     value={formConfig.description || ''}
@@ -526,23 +530,23 @@ const ChatbotLeads = () => {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Show Form
+                    {t('leads.formConfig.showForm')}
                   </label>
                   <select
                     value={formConfig.trigger}
                     onChange={(e) => setFormConfig({ ...formConfig, trigger: e.target.value })}
                     className="w-full px-3 py-2 border rounded-lg"
                   >
-                    <option value="manual">Manual button</option>
-                    <option value="after_messages">After X messages</option>
-                    <option value="on_exit">On exit intent</option>
+                    <option value="manual">{t('leads.formConfig.triggers.manual')}</option>
+                    <option value="after_messages">{t('leads.formConfig.triggers.afterMessages')}</option>
+                    <option value="on_exit">{t('leads.formConfig.triggers.onExit')}</option>
                   </select>
                 </div>
 
                 {formConfig.trigger === 'after_messages' && (
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      After how many messages?
+                      {t('leads.formConfig.afterHowMany')}
                     </label>
                     <input
                       type="number"
@@ -559,7 +563,7 @@ const ChatbotLeads = () => {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Success Message
+                    {t('leads.formConfig.successMessage')}
                   </label>
                   <input
                     type="text"
@@ -574,7 +578,7 @@ const ChatbotLeads = () => {
                     onClick={handleSaveFormConfig}
                     className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
                   >
-                    Save Settings
+                    {t('leads.formConfig.save')}
                   </button>
                 </div>
               </div>

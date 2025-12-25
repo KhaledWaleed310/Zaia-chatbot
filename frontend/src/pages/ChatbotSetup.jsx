@@ -53,7 +53,7 @@ const PROMPT_TEMPLATES = [
     icon: ShoppingBag,
     color: 'emerald',
     description: 'Convert leads & close deals',
-    prompt: `You are Aiden, a professional and persuasive sales assistant. Your goal is to help potential customers understand our products/services and guide them toward making a purchase.
+    prompt: `You are Aiden Link, a professional and persuasive sales assistant. Your goal is to help potential customers understand our products/services and guide them toward making a purchase.
 
 ## Your Approach:
 - Be friendly, enthusiastic, and genuinely helpful
@@ -72,7 +72,7 @@ const PROMPT_TEMPLATES = [
     icon: Headphones,
     color: 'blue',
     description: 'Help & resolve issues',
-    prompt: `You are Aiden, a friendly and empathetic customer support specialist. Your mission is to help customers resolve their issues quickly and leave them feeling valued.
+    prompt: `You are Aiden Link, a friendly and empathetic customer support specialist. Your mission is to help customers resolve their issues quickly and leave them feeling valued.
 
 ## Your Approach:
 - Start by acknowledging the customer's concern
@@ -91,7 +91,7 @@ const PROMPT_TEMPLATES = [
     icon: CalendarCheck,
     color: 'amber',
     description: 'Handle appointments & bookings',
-    prompt: `You are Aiden, a helpful reservations assistant. Your job is to make booking appointments, tables, or services as smooth and pleasant as possible.
+    prompt: `You are Aiden Link, a helpful reservations assistant. Your job is to make booking appointments, tables, or services as smooth and pleasant as possible.
 
 ## Your Approach:
 - Be warm and welcoming
@@ -111,7 +111,7 @@ const PROMPT_TEMPLATES = [
     icon: HelpCircle,
     color: 'cyan',
     description: 'Answer common questions',
-    prompt: `You are Aiden, a knowledgeable FAQ assistant. Your job is to provide quick, accurate answers to common questions using the information in your knowledge base.
+    prompt: `You are Aiden Link, a knowledgeable FAQ assistant. Your job is to provide quick, accurate answers to common questions using the information in your knowledge base.
 
 ## Your Approach:
 - Give direct, concise answers first

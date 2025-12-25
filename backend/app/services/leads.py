@@ -251,7 +251,20 @@ async def get_lead_stats(bot_id: str, tenant_id: str, days: int = 30) -> Dict[st
         date = f"{doc['_id']['year']}-{doc['_id']['month']:02d}-{doc['_id']['day']:02d}"
         daily_leads.append({"date": date, "count": doc["count"]})
 
+    # Calculate this week's leads
+    week_start = datetime.utcnow() - timedelta(days=7)
+    this_week_count = await db.leads.count_documents({
+        **query,
+        "created_at": {"$gte": week_start}
+    })
+
     return {
+        # Fields expected by frontend
+        "total": total_leads,
+        "this_week": this_week_count,
+        "qualified": status_counts.get("qualified", 0),
+        "converted": status_counts.get("converted", 0),
+        # Additional stats
         "total_leads": total_leads,
         "new_leads": new_leads,
         "conversion_rate": round(conversion_rate, 1),

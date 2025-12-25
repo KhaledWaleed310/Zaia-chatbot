@@ -470,4 +470,84 @@ export const bookings = {
   cancel: (botId, bookingId) => api.delete(`/bookings/${botId}/${bookingId}`),
 };
 
+// Messenger Integration API
+export const messenger = {
+  // Get OAuth authorization URL
+  getAuthUrl: (botId) => api.get(`/messenger/auth-url?bot_id=${botId}`),
+
+  // Get messenger configuration status
+  getConfig: (botId) => api.get(`/messenger/${botId}/config`),
+
+  // Get available Facebook Pages after OAuth
+  getPages: (botId, sessionId) => api.get(`/messenger/${botId}/pages?session=${sessionId}`),
+
+  // Connect a Facebook Page to the bot
+  connectPage: (botId, pageId, sessionId) =>
+    api.post(`/messenger/${botId}/connect?session=${sessionId}`, { page_id: pageId }),
+
+  // Disconnect Messenger from the bot
+  disconnect: (botId) => api.delete(`/messenger/${botId}/disconnect`),
+
+  // Toggle Messenger enabled/disabled
+  toggle: (botId, enabled) => api.patch(`/messenger/${botId}/toggle?enabled=${enabled}`),
+};
+
+// Marketing API
+export const marketing = {
+  // Dashboard
+  getDashboard: (days = 30) => api.get(`/marketing/dashboard?days=${days}`),
+
+  // Campaigns
+  listCampaigns: (params = {}) => {
+    const query = buildQueryString(params);
+    return api.get(`/marketing/campaigns${query ? '?' + query : ''}`);
+  },
+  getCampaign: (campaignId) => api.get(`/marketing/campaigns/${campaignId}`),
+
+  // Pixel Configuration
+  getPixelConfig: () => api.get('/marketing/pixel-config'),
+  updatePixelConfig: (config) => api.put('/marketing/pixel-config', config),
+
+  // Embed codes (public - for injecting into pages)
+  getEmbedCodes: () => axios.get(`${API_BASE}/marketing/embed-codes`),
+
+  // Conversions
+  getConversions: (days = 30) => api.get(`/marketing/conversions?days=${days}`),
+
+  // Audience
+  getAudienceInsights: () => api.get('/marketing/audience-insights'),
+
+  // Track conversion (public endpoint)
+  trackConversion: (data) => api.post('/marketing/track-conversion', null, { params: data }),
+};
+
+// SEO API
+export const seo = {
+  // Page SEO
+  listPages: () => api.get('/seo/pages'),
+  getPage: (pageId) => api.get(`/seo/pages/${pageId}`),
+  updatePage: (pageId, data) => api.put(`/seo/pages/${pageId}`, data),
+
+  // Keywords
+  listKeywords: () => api.get('/seo/keywords'),
+  createKeyword: (data) => api.post('/seo/keywords', data),
+  updateKeyword: (keywordId, data) => api.put(`/seo/keywords/${keywordId}`, data),
+  deleteKeyword: (keywordId) => api.delete(`/seo/keywords/${keywordId}`),
+
+  // SEO Audit
+  runAudit: () => api.get('/seo/audit'),
+  getAuditHistory: (limit = 10) => api.get(`/seo/audit/history?limit=${limit}`),
+
+  // Sitemap
+  getSitemap: () => api.get('/seo/sitemap'),
+  updateSitemap: (entries) => api.put('/seo/sitemap', { entries }),
+
+  // Robots.txt
+  getRobots: () => api.get('/seo/robots'),
+  updateRobots: (config) => api.put('/seo/robots', config),
+
+  // File generation
+  generateFiles: () => api.post('/seo/generate-files'),
+};
+
 export default api;

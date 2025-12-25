@@ -7,9 +7,12 @@ Endpoints for:
 - Availability checking
 - Updating booking status
 """
+import logging
 from fastapi import APIRouter, Depends, HTTPException, Query
 from typing import Optional
 from datetime import datetime
+
+logger = logging.getLogger(__name__)
 
 from ..core.security import get_current_user
 from ..core.database import get_mongodb
@@ -31,6 +34,7 @@ def booking_to_response(booking: dict) -> dict:
         "booking_type": booking.get("booking_type", "other"),
         "guest_name": booking.get("guest_name", ""),
         "phone": booking.get("phone", ""),
+        "email": booking.get("email"),
         "date": booking.get("date", ""),
         "time": booking.get("time", ""),
         "people_count": booking.get("people_count"),
@@ -208,6 +212,25 @@ async def update_status(
 
     # Get updated booking
     updated_booking = await get_booking(booking_id)
+
+    # Send confirmation email if status changed to "confirmed" and customer email exists
+    customer_email = booking.get("email")
+    logger.info(f"[BOOKING CONFIRM] Status={status}, Customer email={customer_email}")
+
+    if status == "confirmed" and customer_email:
+        from ..services.email import send_booking_confirmation_to_customer
+        try:
+            logger.info(f"[BOOKING CONFIRM] Sending confirmation email to {customer_email}")
+            await send_booking_confirmation_to_customer(
+                to_email=customer_email,
+                booking_details=booking,
+                bot_name=bot.get("name", "Our Team")
+            )
+            logger.info(f"[BOOKING CONFIRM] Confirmation email sent successfully to {customer_email}")
+        except Exception as e:
+            logger.error(f"[BOOKING CONFIRM] Failed to send booking confirmation: {e}", exc_info=True)
+    elif status == "confirmed" and not customer_email:
+        logger.warning(f"[BOOKING CONFIRM] No customer email in booking {booking_id}, skipping confirmation email")
 
     return {
         "success": True,

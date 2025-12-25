@@ -95,7 +95,7 @@ class DatabaseStats(BaseModel):
 # Settings Schemas
 class SystemSettings(BaseModel):
     # General
-    app_name: str = "Aiden"
+    app_name: str = "Aiden Link"
     app_description: str = "AI-powered chatbot platform"
     support_email: str = "info@zaiasystems.com"
 

@@ -166,6 +166,19 @@ const AdminUsers = () => {
     );
   };
 
+  const getRoleBadge = (role) => {
+    const styles = {
+      user: 'bg-gray-100 text-gray-700',
+      marketing: 'bg-purple-100 text-purple-700',
+      admin: 'bg-blue-100 text-blue-700',
+    };
+    return (
+      <span className={`px-2 py-1 rounded-full text-xs font-medium ${styles[role] || styles.user}`}>
+        {role || 'user'}
+      </span>
+    );
+  };
+
   return (
     <Layout>
       <div className="space-y-6">
@@ -250,6 +263,7 @@ const AdminUsers = () => {
                 <thead className="bg-gray-50">
                   <tr>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">User</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Role</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Plan</th>
                     <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Chatbots</th>
@@ -281,6 +295,7 @@ const AdminUsers = () => {
                           </div>
                         </div>
                       </td>
+                      <td className="px-6 py-4">{getRoleBadge(u.role)}</td>
                       <td className="px-6 py-4">{getStatusBadge(u.status)}</td>
                       <td className="px-6 py-4">{getTierBadge(u.subscription_tier)}</td>
                       <td className="px-6 py-4 text-center text-gray-600">{u.chatbots_count}</td>
@@ -450,6 +465,7 @@ const CreateUserModal = ({ onClose, onSubmit, loading }) => {
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
             >
               <option value="user">User</option>
+              <option value="marketing">Marketing</option>
               <option value="admin">Admin</option>
             </select>
           </div>
@@ -537,6 +553,7 @@ const EditUserModal = ({ user, onClose, onSubmit, loading }) => {
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
             >
               <option value="user">User</option>
+              <option value="marketing">Marketing</option>
               <option value="admin">Admin</option>
             </select>
           </div>

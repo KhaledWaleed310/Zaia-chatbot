@@ -10,6 +10,7 @@ class HandoffStatus(str, Enum):
     ACTIVE = "active"
     RESOLVED = "resolved"
     ABANDONED = "abandoned"
+    TIMEOUT_COLLECTING = "timeout_collecting"  # AI collecting contact info after timeout
 
 
 class HandoffPriority(str, Enum):
@@ -34,9 +35,13 @@ class HandoffConfig(BaseModel):
     sentiment_threshold: Optional[float] = None  # Trigger on negative sentiment
     unanswered_count_threshold: Optional[int] = None  # After X unanswered questions
     auto_assign: Optional[bool] = None  # Auto-assign to available agents
-    notification_email: Optional[str] = None
+    notification_email: Optional[str] = None  # Custom notification email
+    notification_password: Optional[str] = None  # Password for direct chat access (hashed)
     working_hours: Optional[Dict[str, Any]] = None  # {start: "09:00", end: "17:00", timezone: "UTC"}
     offline_message: Optional[str] = None
+    # Timeout settings - AI takes over if agent doesn't respond
+    timeout_enabled: Optional[bool] = True  # Enable timeout feature
+    timeout_minutes: Optional[int] = 2  # Minutes before timeout (1-10)
 
 
 class HandoffRequest(BaseModel):

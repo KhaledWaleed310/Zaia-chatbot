@@ -1,10 +1,15 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import Layout from '../components/Layout';
 import { useAuth } from '../context/AuthContext';
 import { User, Mail, Building, Crown, Zap, Check, Lock, MessageSquare, FileText, Bot, Key, Copy, Eye, EyeOff, Trash2, Plus, Loader2, Download, AlertTriangle } from 'lucide-react';
 import { apiKeys, gdpr } from '../utils/api';
+import { useLanguage } from '@/context/LanguageContext';
 
 const Settings = () => {
+  const { t } = useTranslation('dashboard');
+  const { t: tc } = useTranslation('common');
+  const { isRtl } = useLanguage();
   const { user, refreshUser } = useAuth();
   const [saved, setSaved] = useState(false);
   const [usage, setUsage] = useState({
@@ -38,12 +43,12 @@ const Settings = () => {
   // Get the user's subscription tier
   const subscriptionTier = user?.subscription_tier || 'free';
 
-  // Plan display info
-  const planInfo = {
-    free: { name: 'Free Plan', color: 'bg-gray-100 text-gray-800' },
-    pro: { name: 'Pro Plan', color: 'bg-blue-100 text-blue-800' },
-    enterprise: { name: 'Enterprise Plan', color: 'bg-purple-100 text-purple-800' }
-  };
+  // Plan display info - using translations
+  const getPlanInfo = () => ({
+    free: { name: t('settings.plans.free'), color: 'bg-gray-100 text-gray-800' },
+    pro: { name: t('settings.plans.pro'), color: 'bg-blue-100 text-blue-800' },
+    enterprise: { name: t('settings.plans.enterprise'), color: 'bg-purple-100 text-purple-800' }
+  });
 
   useEffect(() => {
     // Refresh user data to get latest subscription info
@@ -108,7 +113,7 @@ const Settings = () => {
   };
 
   const handleDeleteKey = async (keyId) => {
-    if (!confirm('Are you sure you want to delete this API key? This action cannot be undone.')) return;
+    if (!confirm(t('settings.api.confirmDelete'))) return;
     try {
       await apiKeys.delete(keyId);
       setKeys(keys.filter(k => k.id !== keyId));
@@ -118,7 +123,7 @@ const Settings = () => {
   };
 
   const handleRevokeKey = async (keyId) => {
-    if (!confirm('Are you sure you want to revoke this API key?')) return;
+    if (!confirm(t('settings.api.confirmRevoke'))) return;
     try {
       await apiKeys.revoke(keyId);
       fetchApiKeys();
@@ -177,7 +182,7 @@ const Settings = () => {
 
   const handleDeleteAccount = async () => {
     if (deleteConfirmText !== 'DELETE') {
-      alert('Please type DELETE to confirm account deletion');
+      alert(t('settings.data.deleteConfirm'));
       return;
     }
 
@@ -196,23 +201,25 @@ const Settings = () => {
     }
   };
 
+  const planInfo = getPlanInfo();
+
   return (
     <Layout>
       <div className="space-y-8 max-w-3xl">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Settings</h1>
-          <p className="text-gray-500 mt-1">Manage your account settings and subscription</p>
+          <h1 className="text-2xl font-bold text-gray-900">{t('settings.title')}</h1>
+          <p className="text-gray-500 mt-1">{t('settings.subtitle')}</p>
         </div>
 
         {/* Profile Section */}
         <div className="bg-white rounded-xl shadow-sm p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-6">Profile</h2>
+          <h2 className="text-lg font-semibold text-gray-900 mb-6">{t('settings.profile.title')}</h2>
 
           <div className="space-y-6">
             <div>
               <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
-                <Mail className="w-4 h-4 mr-2" />
-                Email
+                <Mail className="w-4 h-4 me-2" />
+                {t('settings.profile.email')}
               </label>
               <input
                 type="email"
@@ -224,8 +231,8 @@ const Settings = () => {
 
             <div>
               <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
-                <Building className="w-4 h-4 mr-2" />
-                Company Name
+                <Building className="w-4 h-4 me-2" />
+                {t('settings.profile.companyName')}
               </label>
               <input
                 type="text"
@@ -240,7 +247,7 @@ const Settings = () => {
               onClick={handleSave}
               className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
             >
-              {saved ? 'Saved!' : 'Save Changes'}
+              {saved ? t('settings.profile.saved') : t('settings.profile.save')}
             </button>
           </div>
         </div>
@@ -248,9 +255,9 @@ const Settings = () => {
         {/* Current Plan & Usage */}
         <div className="bg-white rounded-xl shadow-sm p-6">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-lg font-semibold text-gray-900">Your Plan</h2>
+            <h2 className="text-lg font-semibold text-gray-900">{t('settings.plan.title')}</h2>
             <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${planInfo[subscriptionTier]?.color || 'bg-gray-100 text-gray-800'}`}>
-              {planInfo[subscriptionTier]?.name || 'Free Plan'}
+              {planInfo[subscriptionTier]?.name || t('settings.plans.free')}
             </span>
           </div>
 
@@ -260,7 +267,7 @@ const Settings = () => {
               <div className="flex items-center justify-between mb-1">
                 <span className="text-sm text-gray-600 flex items-center gap-2">
                   <Bot className="w-4 h-4" />
-                  Chatbots
+                  {t('settings.plan.chatbots')}
                 </span>
                 <span className="text-sm font-medium text-gray-900">
                   {usage.chatbots} / {limits.max_chatbots === -1 ? '∞' : limits.max_chatbots}
@@ -278,7 +285,7 @@ const Settings = () => {
               <div className="flex items-center justify-between mb-1">
                 <span className="text-sm text-gray-600 flex items-center gap-2">
                   <FileText className="w-4 h-4" />
-                  Documents (per chatbot)
+                  {t('settings.plan.documentsPerChatbot')}
                 </span>
                 <span className="text-sm font-medium text-gray-900">
                   {usage.documents} / {limits.max_documents_per_chatbot === -1 ? '∞' : limits.max_documents_per_chatbot}
@@ -296,7 +303,7 @@ const Settings = () => {
               <div className="flex items-center justify-between mb-1">
                 <span className="text-sm text-gray-600 flex items-center gap-2">
                   <MessageSquare className="w-4 h-4" />
-                  Messages Today
+                  {t('settings.plan.messagesPerDay')}
                 </span>
                 <span className="text-sm font-medium text-gray-900">
                   {usage.messages_today} / {limits.max_messages_per_day === -1 ? '∞' : limits.max_messages_per_day}
@@ -313,24 +320,24 @@ const Settings = () => {
 
           <div className="bg-gray-50 rounded-lg p-4">
             <p className="text-sm text-gray-600">
-              <strong>{planInfo[subscriptionTier]?.name || 'Your Plan'} Includes:</strong>
+              <strong>{planInfo[subscriptionTier]?.name || t('settings.plans.free')} {t('settings.plan.includes')}:</strong>
             </p>
             <ul className="mt-2 space-y-1 text-sm text-gray-600">
               <li className="flex items-center gap-2">
                 <Check className="w-4 h-4 text-green-500" />
-                {limits.max_chatbots === -1 ? 'Unlimited' : limits.max_chatbots} Chatbot{limits.max_chatbots !== 1 ? 's' : ''}
+                {limits.max_chatbots === -1 ? t('settings.plan.unlimited') : limits.max_chatbots} {t('settings.plan.chatbots')}{limits.max_chatbots !== 1 ? '' : ''}
               </li>
               <li className="flex items-center gap-2">
                 <Check className="w-4 h-4 text-green-500" />
-                {limits.max_documents_per_chatbot === -1 ? 'Unlimited' : limits.max_documents_per_chatbot} Documents per chatbot
+                {limits.max_documents_per_chatbot === -1 ? t('settings.plan.unlimited') : limits.max_documents_per_chatbot} {t('settings.plan.documentsPerBot')}
               </li>
               <li className="flex items-center gap-2">
                 <Check className="w-4 h-4 text-green-500" />
-                {limits.max_messages_per_day === -1 ? 'Unlimited' : limits.max_messages_per_day} Messages per day
+                {limits.max_messages_per_day === -1 ? t('settings.plan.unlimited') : limits.max_messages_per_day} {t('settings.plan.messagesDay')}
               </li>
               <li className="flex items-center gap-2">
                 <Check className="w-4 h-4 text-green-500" />
-                {limits.max_file_size_mb}MB max file size
+                {limits.max_file_size_mb}MB {t('settings.plan.maxFileSize')}
               </li>
             </ul>
           </div>
@@ -344,47 +351,47 @@ const Settings = () => {
               <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
                 <Crown className="w-8 h-8 text-blue-600" />
               </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-2">Subscriptions Coming Soon</h3>
+              <h3 className="text-xl font-bold text-gray-900 mb-2">{t('settings.plan.subscriptionsComingSoon')}</h3>
               <p className="text-gray-600 max-w-sm">
-                We're working on premium plans with more features. Stay tuned!
+                {t('settings.plan.subscriptionsDescription')}
               </p>
             </div>
           </div>
 
-          <h2 className="text-lg font-semibold text-gray-900 mb-6">Upgrade Your Plan</h2>
+          <h2 className="text-lg font-semibold text-gray-900 mb-6">{t('settings.plan.upgrade')}</h2>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Pro Plan */}
             <div className="border-2 border-gray-200 rounded-xl p-6">
               <div className="flex items-center gap-2 mb-2">
                 <Zap className="w-5 h-5 text-blue-600" />
-                <h3 className="font-semibold text-gray-900">Pro</h3>
+                <h3 className="font-semibold text-gray-900">{t('settings.plan.pro')}</h3>
               </div>
               <p className="text-3xl font-bold text-gray-900 mb-4">$29<span className="text-sm font-normal text-gray-500">/month</span></p>
               <ul className="space-y-2 text-sm text-gray-600 mb-6">
                 <li className="flex items-center gap-2">
                   <Check className="w-4 h-4 text-green-500" />
-                  10 Chatbots
+                  10 {t('settings.plan.chatbots')}
                 </li>
                 <li className="flex items-center gap-2">
                   <Check className="w-4 h-4 text-green-500" />
-                  50 Documents per chatbot
+                  50 {t('settings.plan.documentsPerBot')}
                 </li>
                 <li className="flex items-center gap-2">
                   <Check className="w-4 h-4 text-green-500" />
-                  1,000 Messages per day
+                  1,000 {t('settings.plan.messagesDay')}
                 </li>
                 <li className="flex items-center gap-2">
                   <Check className="w-4 h-4 text-green-500" />
-                  25MB max file size
+                  25MB {t('settings.plan.maxFileSize')}
                 </li>
                 <li className="flex items-center gap-2">
                   <Check className="w-4 h-4 text-green-500" />
-                  Priority support
+                  {t('settings.plan.prioritySupport')}
                 </li>
               </ul>
               <button disabled className="w-full py-2 bg-gray-100 text-gray-400 rounded-lg cursor-not-allowed">
-                Coming Soon
+                {t('settings.plan.comingSoon')}
               </button>
             </div>
 
@@ -392,37 +399,37 @@ const Settings = () => {
             <div className="border-2 border-purple-200 bg-purple-50 rounded-xl p-6">
               <div className="flex items-center gap-2 mb-2">
                 <Crown className="w-5 h-5 text-purple-600" />
-                <h3 className="font-semibold text-gray-900">Enterprise</h3>
+                <h3 className="font-semibold text-gray-900">{t('settings.plan.enterprise')}</h3>
               </div>
               <p className="text-3xl font-bold text-gray-900 mb-4">$99<span className="text-sm font-normal text-gray-500">/month</span></p>
               <ul className="space-y-2 text-sm text-gray-600 mb-6">
                 <li className="flex items-center gap-2">
                   <Check className="w-4 h-4 text-green-500" />
-                  Unlimited Chatbots
+                  {t('settings.plan.unlimited')} {t('settings.plan.chatbots')}
                 </li>
                 <li className="flex items-center gap-2">
                   <Check className="w-4 h-4 text-green-500" />
-                  Unlimited Documents
+                  {t('settings.plan.unlimited')} {t('settings.plan.documentsPerBot')}
                 </li>
                 <li className="flex items-center gap-2">
                   <Check className="w-4 h-4 text-green-500" />
-                  Unlimited Messages
+                  {t('settings.plan.unlimited')} {t('settings.plan.messagesDay')}
                 </li>
                 <li className="flex items-center gap-2">
                   <Check className="w-4 h-4 text-green-500" />
-                  100MB max file size
+                  100MB {t('settings.plan.maxFileSize')}
                 </li>
                 <li className="flex items-center gap-2">
                   <Check className="w-4 h-4 text-green-500" />
-                  Dedicated support
+                  {t('settings.plan.dedicatedSupport')}
                 </li>
                 <li className="flex items-center gap-2">
                   <Check className="w-4 h-4 text-green-500" />
-                  Custom integrations
+                  {t('settings.plan.customIntegrations')}
                 </li>
               </ul>
               <button disabled className="w-full py-2 bg-gray-100 text-gray-400 rounded-lg cursor-not-allowed">
-                Coming Soon
+                {t('settings.plan.comingSoon')}
               </button>
             </div>
           </div>
@@ -432,15 +439,15 @@ const Settings = () => {
         <div className="bg-white rounded-xl shadow-sm p-6">
           <div className="flex items-center justify-between mb-6">
             <div>
-              <h2 className="text-lg font-semibold text-gray-900">API Keys</h2>
-              <p className="text-sm text-gray-500 mt-1">Manage your API keys for programmatic access</p>
+              <h2 className="text-lg font-semibold text-gray-900">{t('settings.api.title')}</h2>
+              <p className="text-sm text-gray-500 mt-1">{t('settings.api.subtitle')}</p>
             </div>
             <button
               onClick={() => setShowCreateModal(true)}
               className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
             >
               <Plus className="w-4 h-4" />
-              Create Key
+              {t('settings.api.create')}
             </button>
           </div>
 
@@ -451,8 +458,8 @@ const Settings = () => {
           ) : keys.length === 0 ? (
             <div className="text-center py-8 border-2 border-dashed border-gray-200 rounded-lg">
               <Key className="w-10 h-10 text-gray-300 mx-auto mb-3" />
-              <p className="text-gray-500">No API keys yet</p>
-              <p className="text-sm text-gray-400 mt-1">Create your first API key to get started</p>
+              <p className="text-gray-500">{t('settings.api.noKeys')}</p>
+              <p className="text-sm text-gray-400 mt-1">{t('settings.api.noKeysDescription')}</p>
             </div>
           ) : (
             <div className="space-y-3">
@@ -487,9 +494,9 @@ const Settings = () => {
                         </button>
                       </div>
                       <div className="flex items-center gap-4 mt-2 text-xs text-gray-500">
-                        <span>Scopes: {key.scopes?.join(', ')}</span>
-                        <span>Created: {new Date(key.created_at).toLocaleDateString()}</span>
-                        {key.last_used_at && <span>Last used: {new Date(key.last_used_at).toLocaleDateString()}</span>}
+                        <span>{t('settings.api.scopes.title')}: {key.scopes?.join(', ')}</span>
+                        <span>{t('settings.api.created')}: {new Date(key.created_at).toLocaleDateString()}</span>
+                        {key.last_used_at && <span>{t('settings.api.lastUsed')}: {new Date(key.last_used_at).toLocaleDateString()}</span>}
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
@@ -498,7 +505,7 @@ const Settings = () => {
                           onClick={() => handleRevokeKey(key.id)}
                           className="px-3 py-1.5 text-sm text-yellow-600 hover:bg-yellow-50 rounded"
                         >
-                          Revoke
+                          {t('settings.api.revoke')}
                         </button>
                       )}
                       <button
@@ -515,13 +522,13 @@ const Settings = () => {
           )}
 
           <div className="mt-6 pt-6 border-t">
-            <h3 className="text-sm font-medium text-gray-900 mb-3">API Endpoints</h3>
+            <h3 className="text-sm font-medium text-gray-900 mb-3">{t('settings.api.endpoints')}</h3>
             <div className="bg-gray-50 rounded-lg p-4 space-y-2">
               <p className="text-sm font-mono text-gray-700">
                 POST /api/v1/chat/&#123;bot_id&#125;/message
               </p>
               <p className="text-xs text-gray-500">
-                Include your API key in the Authorization header: Bearer YOUR_API_KEY
+                {t('settings.api.endpointsInfo')}
               </p>
             </div>
           </div>
@@ -531,13 +538,13 @@ const Settings = () => {
         {showCreateModal && (
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
             <div className="bg-white rounded-2xl max-w-md w-full p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Create API Key</h3>
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">{t('settings.api.createTitle')}</h3>
 
               {createdKey ? (
                 <div>
                   <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
                     <p className="text-sm text-green-800 mb-2">
-                      Your API key has been created. Copy it now - you won't be able to see it again!
+                      {t('settings.api.keyCreated')}
                     </p>
                     <div className="flex items-center gap-2">
                       <code className="flex-1 text-sm bg-white px-3 py-2 rounded border break-all">
@@ -555,24 +562,24 @@ const Settings = () => {
                     onClick={() => { setShowCreateModal(false); setCreatedKey(null); }}
                     className="w-full py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800"
                   >
-                    Done
+                    {t('settings.api.done')}
                   </button>
                 </div>
               ) : (
                 <>
                   <div className="space-y-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">{t('settings.api.name')}</label>
                       <input
                         type="text"
                         value={newKeyName}
                         onChange={(e) => setNewKeyName(e.target.value)}
-                        placeholder="e.g., Production Key"
+                        placeholder={t('settings.api.namePlaceholder')}
                         className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Scopes</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">{t('settings.api.scopes.title')}</label>
                       <div className="space-y-2">
                         {['read', 'write', 'admin'].map((scope) => (
                           <label key={scope} className="flex items-center gap-2">
@@ -588,11 +595,9 @@ const Settings = () => {
                               }}
                               className="rounded border-gray-300 text-blue-600"
                             />
-                            <span className="text-sm text-gray-700 capitalize">{scope}</span>
+                            <span className="text-sm text-gray-700 capitalize">{t(`settings.api.scopes.${scope}`)}</span>
                             <span className="text-xs text-gray-500">
-                              {scope === 'read' && '- Read chatbot data and messages'}
-                              {scope === 'write' && '- Send messages and update data'}
-                              {scope === 'admin' && '- Full access including delete'}
+                              {t(`settings.api.scopes.${scope}Desc`)}
                             </span>
                           </label>
                         ))}
@@ -604,7 +609,7 @@ const Settings = () => {
                       onClick={() => setShowCreateModal(false)}
                       className="flex-1 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
                     >
-                      Cancel
+                      {t('settings.api.cancel')}
                     </button>
                     <button
                       onClick={handleCreateKey}
@@ -612,7 +617,7 @@ const Settings = () => {
                       className="flex-1 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center justify-center gap-2"
                     >
                       {creating && <Loader2 className="w-4 h-4 animate-spin" />}
-                      Create Key
+                      {t('settings.api.create')}
                     </button>
                   </div>
                 </>
@@ -623,15 +628,15 @@ const Settings = () => {
 
         {/* Data & Privacy */}
         <div className="bg-white rounded-xl shadow-sm p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-6">Data & Privacy</h2>
+          <h2 className="text-lg font-semibold text-gray-900 mb-6">{t('settings.data.title')}</h2>
 
           <div className="space-y-4">
             {/* Export Data */}
             <div className="flex items-center justify-between py-4 border-b">
               <div className="flex-1">
-                <h3 className="font-medium text-gray-900 mb-1">Export Your Data</h3>
+                <h3 className="font-medium text-gray-900 mb-1">{t('settings.data.exportTitle')}</h3>
                 <p className="text-sm text-gray-500">
-                  Download a copy of all your data in JSON format
+                  {t('settings.data.exportDescription')}
                 </p>
               </div>
               <button
@@ -642,12 +647,12 @@ const Settings = () => {
                 {exportingData ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin" />
-                    Exporting...
+                    {t('settings.data.exporting')}
                   </>
                 ) : (
                   <>
                     <Download className="w-4 h-4" />
-                    Export Data
+                    {t('settings.data.export')}
                   </>
                 )}
               </button>
@@ -658,17 +663,17 @@ const Settings = () => {
               <div className="mb-4">
                 <h3 className="font-medium text-gray-900 mb-1 flex items-center gap-2">
                   <AlertTriangle className="w-5 h-5 text-red-500" />
-                  Delete Account
+                  {t('settings.data.deleteTitle')}
                 </h3>
                 <p className="text-sm text-gray-500">
-                  Permanently delete your account and all associated data. This action cannot be undone.
+                  {t('settings.data.deleteDescription')}
                 </p>
               </div>
               <button
                 onClick={() => setShowDeleteModal(true)}
                 className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm font-medium"
               >
-                Delete Account
+                {t('settings.data.delete')}
               </button>
             </div>
           </div>
@@ -676,21 +681,21 @@ const Settings = () => {
 
         {/* Account Info */}
         <div className="bg-white rounded-xl shadow-sm p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Account</h2>
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">{t('settings.account.title')}</h2>
           <div className="flex items-center justify-between py-3 border-b">
-            <span className="text-gray-600">Account ID</span>
+            <span className="text-gray-600">{t('settings.account.accountId')}</span>
             <span className="font-mono text-sm text-gray-900">{user?.id}</span>
           </div>
           <div className="flex items-center justify-between py-3 border-b">
-            <span className="text-gray-600">Member since</span>
+            <span className="text-gray-600">{t('settings.account.memberSince')}</span>
             <span className="text-gray-900">
               {user?.created_at ? new Date(user.created_at).toLocaleDateString() : 'N/A'}
             </span>
           </div>
           <div className="flex items-center justify-between py-3">
-            <span className="text-gray-600">Plan</span>
+            <span className="text-gray-600">{t('settings.account.plan')}</span>
             <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${planInfo[subscriptionTier]?.color || 'bg-gray-100 text-gray-800'}`}>
-              {planInfo[subscriptionTier]?.name?.replace(' Plan', '') || 'Free'}
+              {planInfo[subscriptionTier]?.name?.replace(' Plan', '').replace(' الباقة', '') || 'Free'}
             </span>
           </div>
         </div>
@@ -703,26 +708,26 @@ const Settings = () => {
                 <div className="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center">
                   <AlertTriangle className="w-6 h-6 text-red-600" />
                 </div>
-                <h3 className="text-lg font-semibold text-gray-900">Delete Account</h3>
+                <h3 className="text-lg font-semibold text-gray-900">{t('settings.data.deleteTitle')}</h3>
               </div>
 
               <div className="mb-6">
                 <p className="text-sm text-gray-700 mb-4">
-                  This will permanently delete your account and all associated data including:
+                  {t('settings.data.deleteWarning')}
                 </p>
                 <ul className="text-sm text-gray-600 space-y-1 list-disc list-inside mb-4">
-                  <li>All chatbots and their configurations</li>
-                  <li>All uploaded documents and training data</li>
-                  <li>All conversation history</li>
-                  <li>All analytics and leads</li>
+                  <li>{t('settings.data.deleteItems.chatbots')}</li>
+                  <li>{t('settings.data.deleteItems.documents')}</li>
+                  <li>{t('settings.data.deleteItems.conversations')}</li>
+                  <li>{t('settings.data.deleteItems.analytics')}</li>
                 </ul>
                 <p className="text-sm font-semibold text-red-600 mb-4">
-                  This action cannot be undone!
+                  {t('settings.data.cannotUndo')}
                 </p>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Type <span className="font-mono font-bold">DELETE</span> to confirm:
+                    {t('settings.data.deleteConfirm')}:
                   </label>
                   <input
                     type="text"
@@ -743,7 +748,7 @@ const Settings = () => {
                   className="flex-1 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
                   disabled={deletingAccount}
                 >
-                  Cancel
+                  {t('settings.api.cancel')}
                 </button>
                 <button
                   onClick={handleDeleteAccount}
@@ -753,10 +758,10 @@ const Settings = () => {
                   {deletingAccount ? (
                     <>
                       <Loader2 className="w-4 h-4 animate-spin" />
-                      Deleting...
+                      {t('settings.data.deleting')}
                     </>
                   ) : (
-                    'Delete Account'
+                    t('settings.data.delete')
                   )}
                 </button>
               </div>

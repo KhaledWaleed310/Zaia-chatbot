@@ -1,5 +1,5 @@
 """
-Contextual Compression Service for Aiden RAG System.
+Contextual Compression Service for Aiden Link RAG System.
 
 This module provides intelligent compression of retrieved context:
 - Extract only relevant sentences from chunks

@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import Layout from '../components/Layout';
@@ -59,6 +60,7 @@ const TextWithCitations = ({ children }) => {
 const formatSourceCitations = (text) => normalizeCitations(text);
 
 const TestChatbot = () => {
+  const [searchParams] = useSearchParams();
   const [botList, setBotList] = useState([]);
   const [selectedBot, setSelectedBot] = useState(null);
   const [messages, setMessages] = useState([]);
@@ -85,11 +87,26 @@ const TestChatbot = () => {
     try {
       const response = await chatbots.list();
       setBotList(response.data);
-      if (response.data.length > 0) {
-        setSelectedBot(response.data[0]);
+
+      // Check if botId is provided in URL query params
+      const botIdFromUrl = searchParams.get('botId');
+      let botToSelect = null;
+
+      if (botIdFromUrl) {
+        // Try to find the bot with the specified ID
+        botToSelect = response.data.find(bot => bot.id === botIdFromUrl);
+      }
+
+      // Fall back to first bot if not found or not specified
+      if (!botToSelect && response.data.length > 0) {
+        botToSelect = response.data[0];
+      }
+
+      if (botToSelect) {
+        setSelectedBot(botToSelect);
         setMessages([{
           role: 'assistant',
-          content: response.data[0].welcome_message || 'Hello! How can I help you today?'
+          content: botToSelect.welcome_message || 'Hello! How can I help you today?'
         }]);
       }
     } catch (error) {

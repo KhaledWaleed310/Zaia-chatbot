@@ -1,0 +1,41 @@
+# Robots.txt for Aiden Link by ZAIA Systems
+# https://aidenlink.cloud
+
+# Allow all search engines
+User-agent: *
+
+# Allow crawling of public pages
+Allow: /
+Allow: /privacy
+Allow: /register
+
+# Block private/authenticated routes
+Disallow: /dashboard
+Disallow: /dashboard/*
+Disallow: /chatbots
+Disallow: /chatbots/*
+Disallow: /analytics
+Disallow: /settings
+Disallow: /settings/*
+Disallow: /admin
+Disallow: /admin/*
+
+# Block authentication pages (login should not be indexed)
+Disallow: /login
+Disallow: /forgot-password
+Disallow: /reset-password
+Disallow: /verify-email
+
+# Block user-specific chat pages
+Disallow: /chat/*
+Disallow: /handoff/*
+
+# Block API routes
+Disallow: /api/
+Disallow: /api/*
+
+# Sitemap location
+Sitemap: https://aidenlink.cloud/sitemap.xml
+
+# Crawl delay (be nice to server)
+Crawl-delay: 1

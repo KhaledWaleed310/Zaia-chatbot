@@ -1,11 +1,13 @@
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from contextlib import asynccontextmanager
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
+import os
 from .core.database import connect_all, close_all
 from .core.config import settings
-from .api import auth, chatbots, chat, integrations, admin, users, analytics, leads, handoff, translation, feedback, api_keys, greeting, gdpr, booking
+from .api import auth, chatbots, chat, integrations, admin, users, analytics, leads, handoff, translation, feedback, api_keys, greeting, gdpr, booking, messenger, messenger_webhook, marketing, seo
 
 
 @asynccontextmanager
@@ -28,24 +30,13 @@ app = FastAPI(
 app.state.limiter = auth.limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
-# CORS - Environment-dependent origins
-cors_origins = [
-    "https://chatbot.zaiasystems.com",
-    "https://app.zaiasystems.com",
-    "https://aidenlink.cloud"
-]
-
-# Add localhost origins only in development/staging
-if settings.ENVIRONMENT in ["development", "staging"]:
-    cors_origins.extend([
-        "http://localhost:5173",
-        "http://localhost:3000"
-    ])
-
+# CORS - Allow all origins for embeddable widget support
+# The widget can be embedded on any customer website
+# Authenticated endpoints are protected by JWT tokens
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=cors_origins,
-    allow_credentials=True,
+    allow_origins=["*"],
+    allow_credentials=False,  # Must be False when using allow_origins=["*"]
     allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allow_headers=["Content-Type", "Authorization", "X-Requested-With"],
     max_age=3600,
@@ -99,6 +90,15 @@ app.include_router(api_keys.router, prefix="/api/v1")
 app.include_router(greeting.router, prefix="/api/v1")
 app.include_router(gdpr.router, prefix="/api/v1")
 app.include_router(booking.router, prefix="/api/v1")
+app.include_router(messenger.router, prefix="/api/v1")
+app.include_router(messenger_webhook.router, prefix="/api/v1")
+app.include_router(marketing.router, prefix="/api/v1")
+app.include_router(seo.router, prefix="/api/v1")
+
+# Serve widget static files
+widget_path = "/app/widget"
+if os.path.exists(widget_path):
+    app.mount("/widget", StaticFiles(directory=widget_path), name="widget")
 
 
 @app.get("/")

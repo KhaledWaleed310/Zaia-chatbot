@@ -1,5 +1,5 @@
 """
-Query Enhancement Service for Aiden RAG System.
+Query Enhancement Service for Aiden Link RAG System.
 
 This module provides advanced query processing including:
 - Query analysis and intent detection

@@ -91,6 +91,26 @@ async def send_message(
         # Get or create session
         session_id = message.session_id or str(uuid.uuid4())
 
+        # Check if session has an active handoff where agent has taken over
+        # If so, skip bot response to avoid confusing the customer
+        if message.session_id:
+            active_handoff = await db.handoffs.find_one({
+                "session_id": session_id,
+                "status": {"$in": ["pending", "assigned", "active", "timeout_collecting"]}
+            })
+            if active_handoff:
+                # Check if agent has sent any messages (agent took over)
+                agent_messages = [m for m in active_handoff.get("messages", [])
+                                  if m.get("sender_type") == "agent"]
+                if len(agent_messages) > 0:
+                    # Agent has taken over - don't let bot respond
+                    logger.info(f"Skipping bot response - agent has taken over handoff {active_handoff['_id']}")
+                    return ChatResponse(
+                        response="",
+                        session_id=session_id,
+                        sources=[]
+                    )
+
         # Check if bot is in personal mode
         is_personal = bot.get("is_personal", False)
 
@@ -458,6 +478,33 @@ async def send_message_stream(
     await check_message_limit(tenant_id)
 
     session_id = message.session_id or str(uuid.uuid4())
+
+    # Check if session has an active handoff where agent has taken over
+    # If so, skip bot response to avoid confusing the customer
+    if message.session_id:
+        active_handoff = await db.handoffs.find_one({
+            "session_id": session_id,
+            "status": {"$in": ["pending", "assigned", "active", "timeout_collecting"]}
+        })
+        if active_handoff:
+            # Check if agent has sent any messages (agent took over)
+            agent_messages = [m for m in active_handoff.get("messages", [])
+                              if m.get("sender_type") == "agent"]
+            if len(agent_messages) > 0:
+                # Agent has taken over - return empty stream
+                logger.info(f"Skipping bot stream response - agent has taken over handoff {active_handoff['_id']}")
+                async def empty_stream():
+                    yield f"data: {json.dumps({'session_id': session_id})}\n\n"
+                    yield "data: [DONE]\n\n"
+                return StreamingResponse(
+                    empty_stream(),
+                    media_type="text/event-stream",
+                    headers={
+                        "Cache-Control": "no-cache",
+                        "Connection": "keep-alive",
+                        "X-Accel-Buffering": "no"
+                    }
+                )
 
     # Check if bot is in personal mode
     is_personal = bot.get("is_personal", False)

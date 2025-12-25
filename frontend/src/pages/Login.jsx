@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { auth } from '../utils/api';
 import { MessageSquare, Mail, CheckCircle } from 'lucide-react';
+import { trackEvent, EVENTS } from '../utils/tracking';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -25,6 +26,8 @@ const Login = () => {
 
     try {
       await login(email, password);
+      // Track successful login
+      trackEvent(EVENTS.LOGIN);
       navigate('/dashboard');
     } catch (err) {
       const status = err.response?.status;
@@ -62,7 +65,7 @@ const Login = () => {
               <MessageSquare className="w-7 h-7 sm:w-8 sm:h-8 text-blue-600" />
             </div>
             <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Welcome back</h2>
-            <p className="text-sm sm:text-base text-gray-500 mt-2">Sign in to your Aiden account</p>
+            <p className="text-sm sm:text-base text-gray-500 mt-2">Sign in to your Aiden Link account</p>
           </div>
 
           {error && (

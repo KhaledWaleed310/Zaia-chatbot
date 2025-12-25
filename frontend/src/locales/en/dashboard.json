@@ -1,0 +1,420 @@
+{
+  "nav": {
+    "settings": "Settings",
+    "knowledge": "Knowledge Base",
+    "integrations": "Integrations",
+    "analytics": "Analytics",
+    "leads": "Leads",
+    "livechat": "Live Chat",
+    "bookings": "Bookings",
+    "share": "Share",
+    "embed": "Embed",
+    "configuration": "Configuration",
+    "engagement": "Engagement",
+    "distribution": "Distribution"
+  },
+  "sidebar": {
+    "dashboard": "Dashboard",
+    "chatbots": "Chatbots",
+    "testChatbot": "Test Chatbot",
+    "analytics": "Analytics",
+    "insights": "Insights",
+    "leads": "Leads",
+    "settings": "Settings",
+    "account": "Account",
+    "admin": "Admin",
+    "administration": "Administration",
+    "adminDashboard": "Admin Dashboard",
+    "businessAnalytics": "Business Analytics",
+    "financeAnalysis": "Finance Analysis",
+    "serverMonitor": "Server Monitor",
+    "manageUsers": "Manage Users",
+    "manageChatbots": "Manage Chatbots",
+    "databases": "Databases",
+    "systemSettings": "System Settings",
+    "collapse": "Collapse sidebar",
+    "expand": "Expand sidebar"
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "welcome": "Welcome back",
+    "stats": {
+      "totalChatbots": "Total Chatbots",
+      "totalMessages": "Total Messages",
+      "documents": "Documents",
+      "avgPerBot": "Avg/Bot"
+    },
+    "noChatbots": {
+      "title": "No chatbots yet",
+      "description": "Create your first AI chatbot to embed on your website",
+      "cta": "Create Your First Chatbot"
+    }
+  },
+  "chatbots": {
+    "title": "Chatbots",
+    "subtitle": "Manage your AI chatbots",
+    "newChatbot": "New Chatbot",
+    "configure": "Configure",
+    "delete": "Delete",
+    "status": {
+      "active": "Active",
+      "inactive": "Inactive"
+    },
+    "card": {
+      "messages": "messages",
+      "documents": "documents",
+      "created": "Created"
+    }
+  },
+  "chatbotDetail": {
+    "configure": "Configure",
+    "testChatbot": "Test Chatbot",
+    "openChat": "Open Chat",
+    "saving": "Saving...",
+    "saveChanges": "Save Changes",
+    "tabs": {
+      "settings": "Settings",
+      "documents": "Documents",
+      "integrations": "Integrations",
+      "share": "Share",
+      "embed": "Embed"
+    },
+    "settings": {
+      "title": "Settings",
+      "basicInfo": "Basic Information",
+      "basicInfoDesc": "Configure your chatbot's name and welcome message",
+      "name": "Chatbot Name",
+      "nameDesc": "This name will be displayed to your visitors",
+      "namePlaceholder": "e.g., Support Assistant",
+      "welcomeMessage": "Welcome Message",
+      "welcomeMessageDesc": "The first message visitors see when they open the chat",
+      "welcomeMessagePlaceholder": "Hi! How can I help you today?",
+      "aiPersonality": "AI Personality & Behavior",
+      "aiPersonalityDesc": "Define how your chatbot should respond and behave",
+      "systemPrompt": "System Instructions",
+      "systemPromptDesc": "Tell the AI who it is, how it should respond, and any specific guidelines. This shapes the chatbot's personality and expertise.",
+      "systemPromptPlaceholder": "You are a helpful customer support assistant...",
+      "tip": "Tip",
+      "tipText": "Be specific about your chatbot's role, tone, and limitations. Customize the template above or write your own instructions.",
+      "promptTemplate": "Quick Start with a Template",
+      "customPrompt": "Custom Prompt",
+      "appearance": "Widget Appearance",
+      "appearanceDesc": "Customize how the chat widget looks on your website",
+      "brandColor": "Brand Color",
+      "brandColorDesc": "Used for the chat bubble and header",
+      "widgetPosition": "Widget Position",
+      "widgetPositionDesc": "Where the chat bubble appears on your site",
+      "positions": {
+        "bottomRight": "Bottom Right (Recommended)",
+        "bottomLeft": "Bottom Left"
+      },
+      "preview": "Preview",
+      "previewText": "This is how your chat bubble will look",
+      "features": "Features & Capabilities",
+      "featuresDesc": "Enable advanced features for your chatbot",
+      "featuresNote": "Configure detailed settings in the Leads or Live Chat tabs above",
+      "smartLeadCapture": "Smart Lead Capture",
+      "smartLeadCaptureDesc": "Automatically collect visitor information",
+      "humanHandoff": "Human Handoff",
+      "humanHandoffDesc": "Transfer to live agents when needed",
+      "bookingSystem": "Booking System",
+      "bookingSystemDesc": "Allow customers to schedule appointments",
+      "bookingInstructions": "Booking Instructions",
+      "bookingInstructionsDesc": "Tell the AI how to handle booking requests",
+      "bookingPlaceholder": "e.g., When a customer wants to book, collect their name, phone number, preferred date and time, and number of guests.",
+      "saveInstructions": "Save Instructions",
+      "multiLanguage": "Multi-Language Support",
+      "multiLanguageDesc": "Automatically detect and respond in user's language",
+      "personalMode": "Personal Assistant Mode",
+      "personalModeDesc": "Full-page chat with conversation history",
+      "personalModeActive": "Personal Mode is active. Your chatbot now has a full-page interface with conversation history. Lead capture, handoff, and booking features are disabled in this mode."
+    },
+    "documents": {
+      "title": "Knowledge Base",
+      "subtitle": "Upload documents to train your chatbot",
+      "upload": "Upload Document",
+      "uploading": "Uploading...",
+      "dragDrop": "Drag and drop files here, or click to browse",
+      "supported": "Supported: PDF, DOC, DOCX, TXT",
+      "supportedFormats": "Supports PDF, DOCX, and TXT files",
+      "maxSize": "Max size: 10MB per file",
+      "noDocuments": "No documents uploaded yet",
+      "processing": "Processing",
+      "ready": "Ready",
+      "failed": "Failed",
+      "chunks": "chunks"
+    },
+    "integrations": {
+      "title": "Integrations",
+      "subtitle": "Connect external data sources",
+      "connected": "Connected",
+      "connect": "Connect",
+      "disconnect": "Disconnect",
+      "browse": "Browse Files",
+      "importSuccess": "Successfully imported",
+      "files": "files"
+    },
+    "embed": {
+      "title": "Embed Code",
+      "subtitle": "Add this code to your website",
+      "instructions": "Instructions",
+      "step1": "Copy the embed code above",
+      "step2": "Paste it before the closing </body> tag on your website",
+      "step3": "The chat widget will appear automatically",
+      "copyCode": "Copy Code",
+      "copied": "Copied!"
+    },
+    "share": {
+      "title": "Share Your Chatbot",
+      "publicAccess": "Public Sharing",
+      "publicDescription": "Share your chatbot with a public link",
+      "publicAccessEnabled": "Anyone with the link can access",
+      "publicAccessDisabled": "Only accessible via embed code",
+      "shareLink": "Share Link",
+      "openInNewTab": "Open",
+      "passwordProtection": "Password Protection",
+      "passwordProtected": "Active",
+      "passwordDescription": "This chatbot is password protected. Users need to enter the password to access it.",
+      "addPassword": "Add a password to restrict access. Only people with the password can use the chatbot.",
+      "setPassword": "Set a password (optional)",
+      "enterNewPassword": "Enter new password to change",
+      "removePassword": "Remove",
+      "saveShareSettings": "Save Share Settings"
+    }
+  },
+  "leads": {
+    "title": "Leads",
+    "subtitle": "Manage captured leads",
+    "export": "Export",
+    "exportCsv": "Export CSV",
+    "exportJson": "Export JSON",
+    "formSettings": "Lead Form Settings",
+    "searchPlaceholder": "Search by name, email, or company...",
+    "allStatus": "All Status",
+    "noLeads": "No leads yet",
+    "enableLeadCapture": "Enable lead capture to start collecting visitor information",
+    "stats": {
+      "total": "Total Leads",
+      "newThisMonth": "New (30 days)",
+      "conversionRate": "Conversion Rate",
+      "qualified": "Qualified"
+    },
+    "table": {
+      "contact": "Contact",
+      "company": "Company",
+      "status": "Status",
+      "source": "Source",
+      "created": "Created",
+      "actions": "Actions"
+    },
+    "status": {
+      "new": "New",
+      "contacted": "Contacted",
+      "qualified": "Qualified",
+      "converted": "Converted",
+      "lost": "Lost"
+    },
+    "pagination": {
+      "showing": "Showing page",
+      "of": "of",
+      "previous": "Previous",
+      "next": "Next"
+    },
+    "modal": {
+      "title": "Lead Details",
+      "name": "Name",
+      "email": "Email",
+      "phone": "Phone",
+      "company": "Company",
+      "conversationSummary": "Conversation Summary",
+      "customFields": "Custom Fields",
+      "viewConversation": "View conversation"
+    },
+    "formConfig": {
+      "title": "Lead Form Settings",
+      "enableForm": "Enable Lead Form",
+      "enableFormDesc": "Show lead capture form in chat",
+      "formTitle": "Form Title",
+      "description": "Description",
+      "showForm": "Show Form",
+      "triggers": {
+        "manual": "Manual button",
+        "afterMessages": "After X messages",
+        "onExit": "On exit intent"
+      },
+      "afterHowMany": "After how many messages?",
+      "successMessage": "Success Message",
+      "save": "Save Settings"
+    },
+    "confirmDelete": "Delete this lead?"
+  },
+  "analytics": {
+    "title": "Analytics",
+    "subtitle": "Monitor your chatbot performance",
+    "tabs": {
+      "overview": "Overview",
+      "unanswered": "Unanswered",
+      "sentiment": "Sentiment",
+      "quality": "Quality",
+      "usage": "Usage"
+    },
+    "metrics": {
+      "activeSessions": "Active Sessions",
+      "messagesPerHour": "Msgs/Hour",
+      "unanswered": "Unanswered",
+      "quality": "Quality"
+    },
+    "sentiment": {
+      "positive": "Positive",
+      "neutral": "Neutral",
+      "negative": "Negative",
+      "trend": "Trend"
+    },
+    "stats": {
+      "totalChatbots": "Total Chatbots",
+      "totalMessages": "Total Messages",
+      "documents": "Documents",
+      "avgPerBot": "Avg/Bot"
+    },
+    "table": {
+      "title": "Chatbot Performance",
+      "chatbot": "Chatbot",
+      "documents": "Documents",
+      "messages": "Messages",
+      "status": "Status"
+    },
+    "status": {
+      "active": "Active"
+    },
+    "empty": "No chatbots to analyze"
+  },
+  "settings": {
+    "title": "Settings",
+    "subtitle": "Manage your account settings and subscription",
+    "profile": {
+      "title": "Profile",
+      "email": "Email",
+      "companyName": "Company Name",
+      "save": "Save Changes",
+      "saved": "Saved!"
+    },
+    "plan": {
+      "title": "Your Plan",
+      "current": "Current Plan",
+      "usage": "Usage",
+      "upgrade": "Upgrade Your Plan",
+      "chatbots": "Chatbots",
+      "documentsPerChatbot": "Documents (per chatbot)",
+      "messagesPerDay": "Messages Today",
+      "unlimited": "Unlimited",
+      "includes": "Includes",
+      "documentsPerBot": "Documents per chatbot",
+      "messagesDay": "Messages per day",
+      "maxFileSize": "max file size",
+      "comingSoon": "Coming Soon",
+      "subscriptionsComingSoon": "Subscriptions Coming Soon",
+      "subscriptionsDescription": "We're working on premium plans with more features. Stay tuned!",
+      "pro": "Pro",
+      "enterprise": "Enterprise",
+      "prioritySupport": "Priority support",
+      "dedicatedSupport": "Dedicated support",
+      "customIntegrations": "Custom integrations"
+    },
+    "api": {
+      "title": "API Keys",
+      "subtitle": "Manage your API keys for programmatic access",
+      "create": "Create Key",
+      "createTitle": "Create API Key",
+      "revoke": "Revoke",
+      "delete": "Delete",
+      "endpoints": "API Endpoints",
+      "endpointsInfo": "Include your API key in the Authorization header: Bearer YOUR_API_KEY",
+      "noKeys": "No API keys yet",
+      "noKeysDescription": "Create your first API key to get started",
+      "name": "Name",
+      "namePlaceholder": "e.g., Production Key",
+      "scopes": {
+        "title": "Scopes",
+        "read": "Read",
+        "readDesc": "- Read chatbot data and messages",
+        "write": "Write",
+        "writeDesc": "- Send messages and update data",
+        "admin": "Admin",
+        "adminDesc": "- Full access including delete"
+      },
+      "created": "Created",
+      "lastUsed": "Last used",
+      "keyCreated": "Your API key has been created. Copy it now - you won't be able to see it again!",
+      "done": "Done",
+      "cancel": "Cancel",
+      "confirmDelete": "Are you sure you want to delete this API key? This action cannot be undone.",
+      "confirmRevoke": "Are you sure you want to revoke this API key?"
+    },
+    "data": {
+      "title": "Data & Privacy",
+      "export": "Export Data",
+      "exportTitle": "Export Your Data",
+      "exportDescription": "Download a copy of all your data in JSON format",
+      "exporting": "Exporting...",
+      "delete": "Delete Account",
+      "deleteTitle": "Delete Account",
+      "deleteDescription": "Permanently delete your account and all associated data. This action cannot be undone.",
+      "deleteConfirm": "Type DELETE to confirm account deletion",
+      "deleteWarning": "This will permanently delete your account and all associated data including:",
+      "deleteItems": {
+        "chatbots": "All chatbots and their configurations",
+        "documents": "All uploaded documents and training data",
+        "conversations": "All conversation history",
+        "analytics": "All analytics and leads"
+      },
+      "cannotUndo": "This action cannot be undone!",
+      "deleting": "Deleting..."
+    },
+    "account": {
+      "title": "Account",
+      "accountId": "Account ID",
+      "memberSince": "Member since",
+      "plan": "Plan"
+    },
+    "plans": {
+      "free": "Free Plan",
+      "pro": "Pro Plan",
+      "enterprise": "Enterprise Plan"
+    }
+  },
+  "promptTemplates": {
+    "title": "Prompt Templates",
+    "sales": {
+      "name": "Sales Assistant",
+      "description": "Focused on converting visitors into customers"
+    },
+    "support": {
+      "name": "Customer Support",
+      "description": "Helpful and empathetic support agent"
+    },
+    "booking": {
+      "name": "Booking Assistant",
+      "description": "Helps schedule appointments and reservations"
+    },
+    "leadGen": {
+      "name": "Lead Generation",
+      "description": "Qualifies and captures lead information"
+    },
+    "faq": {
+      "name": "FAQ Bot",
+      "description": "Answers common questions from knowledge base"
+    },
+    "technical": {
+      "name": "Technical Support",
+      "description": "Helps with technical issues and troubleshooting"
+    },
+    "realEstate": {
+      "name": "Real Estate Agent",
+      "description": "Property inquiries and scheduling viewings"
+    },
+    "education": {
+      "name": "Education Advisor",
+      "description": "Course information and enrollment assistance"
+    }
+  }
+}

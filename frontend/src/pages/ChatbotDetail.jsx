@@ -1,10 +1,12 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import Layout from '../components/Layout';
 import IntegrationCard from '../components/IntegrationCard';
 import FileBrowser from '../components/FileBrowser';
 import { chatbots, integrations, leads, handoff, translation } from '../utils/api';
 import { useAuth } from '../context/AuthContext';
+import { useLanguage } from '@/context/LanguageContext';
 import {
   MessageSquare,
   Upload,
@@ -46,7 +48,7 @@ const PROMPT_TEMPLATES = [
     icon: ShoppingBag,
     color: 'emerald',
     description: 'Convert leads & close deals',
-    prompt: `You are Aiden, a professional and persuasive sales assistant. Your goal is to help potential customers understand our products/services and guide them toward making a purchase.
+    prompt: `You are Aiden Link, a professional and persuasive sales assistant. Your goal is to help potential customers understand our products/services and guide them toward making a purchase.
 
 ## Your Approach:
 - Be friendly, enthusiastic, and genuinely helpful
@@ -71,7 +73,7 @@ Ask for: Full name, phone/WhatsApp number, preferred date and time, and what the
     icon: Headphones,
     color: 'blue',
     description: 'Help & resolve issues',
-    prompt: `You are Aiden, a friendly and empathetic customer support specialist. Your mission is to help customers resolve their issues quickly and leave them feeling valued.
+    prompt: `You are Aiden Link, a friendly and empathetic customer support specialist. Your mission is to help customers resolve their issues quickly and leave them feeling valued.
 
 ## Your Approach:
 - Start by acknowledging the customer's concern
@@ -99,7 +101,7 @@ Ask for: Full name, phone/WhatsApp number, preferred date and time, and what the
     icon: CalendarCheck,
     color: 'amber',
     description: 'Handle appointments & bookings',
-    prompt: `You are Aiden, a helpful reservations assistant. Your job is to make booking appointments, tables, or services as smooth and pleasant as possible.
+    prompt: `You are Aiden Link, a helpful reservations assistant. Your job is to make booking appointments, tables, or services as smooth and pleasant as possible.
 
 ## Your Approach:
 - Be warm and welcoming
@@ -128,7 +130,7 @@ Ask for: Full name, phone/WhatsApp number, preferred date and time, and what the
     icon: UserPlus,
     color: 'violet',
     description: 'Qualify & capture leads',
-    prompt: `You are Aiden, a conversational lead qualification specialist. Your goal is to engage website visitors, understand their needs, and collect their information for follow-up.
+    prompt: `You are Aiden Link, a conversational lead qualification specialist. Your goal is to engage website visitors, understand their needs, and collect their information for follow-up.
 
 ## Your Approach:
 - Start with a friendly, open-ended question about what they're looking for
@@ -161,7 +163,7 @@ Ask for: Full name, phone/WhatsApp number, preferred date and time, and what the
     icon: HelpCircle,
     color: 'cyan',
     description: 'Answer common questions',
-    prompt: `You are Aiden, a knowledgeable FAQ assistant. Your job is to provide quick, accurate answers to common questions using the information in your knowledge base.
+    prompt: `You are Aiden Link, a knowledgeable FAQ assistant. Your job is to provide quick, accurate answers to common questions using the information in your knowledge base.
 
 ## Your Approach:
 - Give direct, concise answers first
@@ -188,7 +190,7 @@ Ask for: Full name, phone/WhatsApp number, preferred date and time, and what the
     icon: Wrench,
     color: 'orange',
     description: 'Troubleshoot tech issues',
-    prompt: `You are Aiden, a patient and knowledgeable technical support specialist. Your goal is to help users resolve technical issues through clear, step-by-step guidance.
+    prompt: `You are Aiden Link, a patient and knowledgeable technical support specialist. Your goal is to help users resolve technical issues through clear, step-by-step guidance.
 
 ## Your Approach:
 - Start by understanding the exact problem and when it started
@@ -223,7 +225,7 @@ Ask for: Full name, phone/WhatsApp number, preferred date and time, and what the
     icon: Home,
     color: 'rose',
     description: 'Property inquiries & viewings',
-    prompt: `You are Aiden, a helpful real estate assistant. Your job is to answer property inquiries and schedule viewings for interested buyers or renters.
+    prompt: `You are Aiden Link, a helpful real estate assistant. Your job is to answer property inquiries and schedule viewings for interested buyers or renters.
 
 ## Your Approach:
 - Be enthusiastic about properties without overselling
@@ -256,7 +258,7 @@ Collect: Full name, phone number, preferred date/time, which property they want 
     icon: GraduationCap,
     color: 'indigo',
     description: 'Course info & enrollment',
-    prompt: `You are Aiden, an educational advisor assistant. Your role is to help prospective students learn about courses, programs, and guide them through enrollment.
+    prompt: `You are Aiden Link, an educational advisor assistant. Your role is to help prospective students learn about courses, programs, and guide them through enrollment.
 
 ## Your Approach:
 - Understand their educational goals and background
@@ -366,7 +368,7 @@ const TemplateSelector = ({ templates, onSelect, getColorClasses }) => {
                 <button
                   key={template.id}
                   onClick={() => handleSelect(template)}
-                  className={`w-full flex items-center gap-3 px-4 py-3 text-left transition-all ${
+                  className={`w-full flex items-center gap-3 px-4 py-3 text-start transition-all ${
                     isSelected ? colors.selectedBg : 'hover:bg-gray-50'
                   }`}
                 >
@@ -400,6 +402,9 @@ const PROVIDER_NAMES = {
 };
 
 const ChatbotDetail = () => {
+  const { t } = useTranslation('dashboard');
+  const { t: tc } = useTranslation('common');
+  const { isRtl } = useLanguage();
   const { id } = useParams();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -770,25 +775,37 @@ const ChatbotDetail = () => {
   return (
     <Layout>
       <div className="space-y-4 sm:space-y-6">
-        <div className="flex items-center justify-between">
-          <div className="min-w-0 flex-1 pr-4">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+          <div className="min-w-0 flex-1">
             <h1 className="text-xl sm:text-2xl font-bold text-gray-900 truncate">{bot?.name}</h1>
-            <p className="text-sm sm:text-base text-gray-500 mt-1">Configure and manage your chatbot</p>
+            <p className="text-sm sm:text-base text-gray-500 mt-1">{t('chatbotDetail.configure')}</p>
           </div>
-          <button
-            onClick={() => {
-              if (isPersonal) {
-                window.open(`/chat/${id}`, '_blank');
-              } else {
-                // For non-personal mode, navigate to test page
-                navigate(`/test-chatbot?botId=${id}`);
-              }
-            }}
-            className="flex items-center px-4 py-3 sm:py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors min-h-[44px] text-sm sm:text-base whitespace-nowrap"
-          >
-            <MessageSquare className="w-5 h-5 mr-2 flex-shrink-0" />
-            {isPersonal ? 'Open Chat' : 'Test Chatbot'}
-          </button>
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            {/* Share Button */}
+            <button
+              onClick={() => setActiveTab('share')}
+              className="flex items-center justify-center px-4 py-3 sm:py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors min-h-[44px] text-sm sm:text-base whitespace-nowrap flex-1 sm:flex-none"
+              title="Share chatbot"
+            >
+              <Share2 className="w-5 h-5 me-2 flex-shrink-0" />
+              Share
+            </button>
+            {/* Preview/Test Button */}
+            <button
+              onClick={() => {
+                if (isPersonal) {
+                  window.open(`/chat/${id}`, '_blank');
+                } else {
+                  // For non-personal mode, navigate to test page
+                  navigate(`/test-chatbot?botId=${id}`);
+                }
+              }}
+              className="flex items-center justify-center px-4 py-3 sm:py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors min-h-[44px] text-sm sm:text-base whitespace-nowrap flex-1 sm:flex-none"
+            >
+              <MessageSquare className="w-5 h-5 me-2 flex-shrink-0" />
+              {isPersonal ? t('chatbotDetail.openChat') : t('chatbotDetail.testChatbot')}
+            </button>
+          </div>
         </div>
 
         {/* Tabs */}
@@ -798,13 +815,13 @@ const ChatbotDetail = () => {
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
-                className={`py-3 sm:py-4 px-1 border-b-2 font-medium text-sm sm:text-base capitalize whitespace-nowrap min-h-[44px] ${
+                className={`py-3 sm:py-4 px-1 border-b-2 font-medium text-sm sm:text-base whitespace-nowrap min-h-[44px] ${
                   activeTab === tab
                     ? 'border-blue-500 text-blue-600'
                     : 'border-transparent text-gray-500 hover:text-gray-700'
                 }`}
               >
-                {tab}
+                {t(`chatbotDetail.tabs.${tab}`)}
               </button>
             ))}
             {!isPersonal && (
@@ -814,19 +831,19 @@ const ChatbotDetail = () => {
                   className="py-3 sm:py-4 px-1 border-b-2 border-transparent font-medium text-sm sm:text-base whitespace-nowrap min-h-[44px] text-gray-500 hover:text-gray-700 flex items-center gap-1"
                 >
                   <BarChart3 className="w-4 h-4" />
-                  Analytics
+                  {t('sidebar.analytics')}
                 </button>
                 <button
                   onClick={() => navigate(`/chatbots/${id}/leads`)}
                   className="py-3 sm:py-4 px-1 border-b-2 border-transparent font-medium text-sm sm:text-base whitespace-nowrap min-h-[44px] text-gray-500 hover:text-gray-700 flex items-center gap-1"
                 >
-                  Leads
+                  {t('sidebar.leads')}
                 </button>
                 <button
                   onClick={() => navigate(`/chatbots/${id}/handoff`)}
                   className="py-3 sm:py-4 px-1 border-b-2 border-transparent font-medium text-sm sm:text-base whitespace-nowrap min-h-[44px] text-gray-500 hover:text-gray-700 flex items-center gap-1"
                 >
-                  Live Chat
+                  {t('chatbotDetail.settings.humanHandoff')}
                 </button>
                 {bookingEnabled && (
                   <button
@@ -834,7 +851,7 @@ const ChatbotDetail = () => {
                     className="py-3 sm:py-4 px-1 border-b-2 border-transparent font-medium text-sm sm:text-base whitespace-nowrap min-h-[44px] text-gray-500 hover:text-gray-700 flex items-center gap-1"
                   >
                     <Calendar className="w-4 h-4" />
-                    Bookings
+                    {t('chatbotDetail.settings.bookingSystem')}
                   </button>
                 )}
               </>
@@ -852,32 +869,32 @@ const ChatbotDetail = () => {
                   <MessageSquare className="w-5 h-5 text-blue-600" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900">Basic Information</h3>
-                  <p className="text-sm text-gray-500">Configure your chatbot's identity and greeting</p>
+                  <h3 className="text-lg font-semibold text-gray-900">{t('chatbotDetail.settings.basicInfo')}</h3>
+                  <p className="text-sm text-gray-500">{t('chatbotDetail.settings.basicInfoDesc')}</p>
                 </div>
               </div>
 
               <div className="space-y-5">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Chatbot Name</label>
-                  <p className="text-xs text-gray-500 mb-2">This name will be displayed to your visitors</p>
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">{t('chatbotDetail.settings.name')}</label>
+                  <p className="text-xs text-gray-500 mb-2">{t('chatbotDetail.settings.nameDesc')}</p>
                   <input
                     type="text"
                     value={formData.name}
                     onChange={(e) => setFormData((prev) => ({ ...prev, name: e.target.value }))}
-                    placeholder="e.g., Support Assistant, Sales Bot"
+                    placeholder={t('chatbotDetail.settings.namePlaceholder')}
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Welcome Message</label>
-                  <p className="text-xs text-gray-500 mb-2">The first message visitors see when they open the chat</p>
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">{t('chatbotDetail.settings.welcomeMessage')}</label>
+                  <p className="text-xs text-gray-500 mb-2">{t('chatbotDetail.settings.welcomeMessageDesc')}</p>
                   <input
                     type="text"
                     value={formData.welcome_message}
                     onChange={(e) => setFormData((prev) => ({ ...prev, welcome_message: e.target.value }))}
-                    placeholder="e.g., Hi! How can I help you today?"
+                    placeholder={t('chatbotDetail.settings.welcomeMessagePlaceholder')}
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
                   />
                 </div>
@@ -891,8 +908,8 @@ const ChatbotDetail = () => {
                   <FileText className="w-5 h-5 text-purple-600" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900">AI Personality & Behavior</h3>
-                  <p className="text-sm text-gray-500">Define how your chatbot should respond and behave</p>
+                  <h3 className="text-lg font-semibold text-gray-900">{t('chatbotDetail.settings.aiPersonality')}</h3>
+                  <p className="text-sm text-gray-500">{t('chatbotDetail.settings.aiPersonalityDesc')}</p>
                 </div>
               </div>
 
@@ -900,7 +917,7 @@ const ChatbotDetail = () => {
               <div className="mb-6">
                 <div className="flex items-center gap-2 mb-2">
                   <Sparkles className="w-4 h-4 text-purple-500" />
-                  <label className="text-sm font-medium text-gray-700">Quick Start with a Template</label>
+                  <label className="text-sm font-medium text-gray-700">{t('chatbotDetail.settings.promptTemplate')}</label>
                 </div>
 
                 <TemplateSelector
@@ -911,20 +928,20 @@ const ChatbotDetail = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">System Instructions</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">{t('chatbotDetail.settings.systemPrompt')}</label>
                 <p className="text-xs text-gray-500 mb-2">
-                  Tell the AI who it is, how it should respond, and any specific guidelines. This shapes the chatbot's personality and expertise.
+                  {t('chatbotDetail.settings.systemPromptDesc')}
                 </p>
                 <textarea
                   value={formData.system_prompt}
                   onChange={(e) => setFormData((prev) => ({ ...prev, system_prompt: e.target.value }))}
                   rows={10}
-                  placeholder="e.g., You are a friendly customer support agent for [Company Name]. Be helpful, professional, and concise. If you don't know something, suggest contacting support@company.com"
+                  placeholder={t('chatbotDetail.settings.systemPromptPlaceholder')}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm font-mono"
                 />
                 <div className="mt-2 p-3 bg-blue-50 rounded-lg">
                   <p className="text-xs text-blue-700">
-                    <strong>Tip:</strong> Be specific about your chatbot's role, tone, and limitations. Customize the template above or write your own instructions.
+                    <strong>{t('chatbotDetail.settings.tip')}:</strong> {t('chatbotDetail.settings.tipText')}
                   </p>
                 </div>
               </div>
@@ -937,15 +954,15 @@ const ChatbotDetail = () => {
                   <Eye className="w-5 h-5 text-green-600" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900">Widget Appearance</h3>
-                  <p className="text-sm text-gray-500">Customize how the chat widget looks on your website</p>
+                  <h3 className="text-lg font-semibold text-gray-900">{t('chatbotDetail.settings.appearance')}</h3>
+                  <p className="text-sm text-gray-500">{t('chatbotDetail.settings.appearanceDesc')}</p>
                 </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Brand Color</label>
-                  <p className="text-xs text-gray-500 mb-2">Used for the chat bubble and header</p>
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">{t('chatbotDetail.settings.brandColor')}</label>
+                  <p className="text-xs text-gray-500 mb-2">{t('chatbotDetail.settings.brandColorDesc')}</p>
                   <div className="flex items-center space-x-3">
                     <input
                       type="color"
@@ -962,22 +979,22 @@ const ChatbotDetail = () => {
                   </div>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Widget Position</label>
-                  <p className="text-xs text-gray-500 mb-2">Where the chat bubble appears on your site</p>
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">{t('chatbotDetail.settings.widgetPosition')}</label>
+                  <p className="text-xs text-gray-500 mb-2">{t('chatbotDetail.settings.widgetPositionDesc')}</p>
                   <select
                     value={formData.position}
                     onChange={(e) => setFormData((prev) => ({ ...prev, position: e.target.value }))}
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
                   >
-                    <option value="bottom-right">Bottom Right (Recommended)</option>
-                    <option value="bottom-left">Bottom Left</option>
+                    <option value="bottom-right">{t('chatbotDetail.settings.positions.bottomRight')}</option>
+                    <option value="bottom-left">{t('chatbotDetail.settings.positions.bottomLeft')}</option>
                   </select>
                 </div>
               </div>
 
               {/* Preview */}
               <div className="mt-6 p-4 bg-gray-100 rounded-lg">
-                <p className="text-xs text-gray-500 mb-3">Preview</p>
+                <p className="text-xs text-gray-500 mb-3">{t('chatbotDetail.settings.preview')}</p>
                 <div className="flex items-center gap-3">
                   <div
                     className="w-14 h-14 rounded-full flex items-center justify-center shadow-lg"
@@ -986,7 +1003,7 @@ const ChatbotDetail = () => {
                     <MessageSquare className="w-6 h-6 text-white" />
                   </div>
                   <div className="text-sm text-gray-600">
-                    This is how your chat bubble will look
+                    {t('chatbotDetail.settings.previewText')}
                   </div>
                 </div>
               </div>
@@ -1002,12 +1019,12 @@ const ChatbotDetail = () => {
                 {saving ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin" />
-                    Saving...
+                    {t('chatbotDetail.saving')}
                   </>
                 ) : (
                   <>
                     <Check className="w-4 h-4" />
-                    Save Changes
+                    {t('chatbotDetail.saveChanges')}
                   </>
                 )}
               </button>
@@ -1020,8 +1037,8 @@ const ChatbotDetail = () => {
                   <BarChart3 className="w-5 h-5 text-indigo-600" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900">Features & Capabilities</h3>
-                  <p className="text-sm text-gray-500">Enable advanced features for your chatbot</p>
+                  <h3 className="text-lg font-semibold text-gray-900">{t('chatbotDetail.settings.features')}</h3>
+                  <p className="text-sm text-gray-500">{t('chatbotDetail.settings.featuresDesc')}</p>
                 </div>
               </div>
 
@@ -1035,8 +1052,8 @@ const ChatbotDetail = () => {
                           <Users className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" />
                         </div>
                         <div className="min-w-0">
-                          <p className="font-medium text-gray-900 text-sm sm:text-base">Smart Lead Capture</p>
-                          <p className="text-xs sm:text-sm text-gray-500 mt-0.5">AI asks for contact info when interested</p>
+                          <p className="font-medium text-gray-900 text-sm sm:text-base">{t('chatbotDetail.settings.smartLeadCapture')}</p>
+                          <p className="text-xs sm:text-sm text-gray-500 mt-0.5">{t('chatbotDetail.settings.smartLeadCaptureDesc')}</p>
                         </div>
                       </div>
                       <button
@@ -1065,8 +1082,8 @@ const ChatbotDetail = () => {
                           <Phone className="w-4 h-4 sm:w-5 sm:h-5 text-green-600" />
                         </div>
                         <div className="min-w-0">
-                          <p className="font-medium text-gray-900 text-sm sm:text-base">Human Handoff</p>
-                          <p className="text-xs sm:text-sm text-gray-500 mt-0.5">Let visitors request live support</p>
+                          <p className="font-medium text-gray-900 text-sm sm:text-base">{t('chatbotDetail.settings.humanHandoff')}</p>
+                          <p className="text-xs sm:text-sm text-gray-500 mt-0.5">{t('chatbotDetail.settings.humanHandoffDesc')}</p>
                         </div>
                       </div>
                       <button
@@ -1095,8 +1112,8 @@ const ChatbotDetail = () => {
                           <Calendar className="w-4 h-4 sm:w-5 sm:h-5 text-amber-600" />
                         </div>
                         <div className="min-w-0">
-                          <p className="font-medium text-gray-900 text-sm sm:text-base">Booking System</p>
-                          <p className="text-xs sm:text-sm text-gray-500 mt-0.5">Accept reservations via chat</p>
+                          <p className="font-medium text-gray-900 text-sm sm:text-base">{t('chatbotDetail.settings.bookingSystem')}</p>
+                          <p className="text-xs sm:text-sm text-gray-500 mt-0.5">{t('chatbotDetail.settings.bookingSystemDesc')}</p>
                         </div>
                       </div>
                       <button
@@ -1118,14 +1135,14 @@ const ChatbotDetail = () => {
 
                 {/* Booking Prompt - Shows when booking is enabled */}
                 {!isPersonal && bookingEnabled && (
-                  <div className="ml-4 p-5 bg-amber-50 border border-amber-200 rounded-xl space-y-4">
+                  <div className="ms-4 p-5 bg-amber-50 border border-amber-200 rounded-xl space-y-4">
                     <div>
                       <div className="flex items-center gap-2 mb-1">
                         <Calendar className="w-4 h-4 text-amber-700" />
-                        <label className="text-sm font-semibold text-amber-900">Booking Instructions</label>
+                        <label className="text-sm font-semibold text-amber-900">{t('chatbotDetail.settings.bookingInstructions')}</label>
                       </div>
                       <p className="text-xs text-amber-700">
-                        Tell the AI how to handle booking requests. These instructions guide what information to collect and how to confirm reservations.
+                        {t('chatbotDetail.settings.bookingInstructionsDesc')}
                       </p>
                     </div>
                     <textarea
@@ -1133,7 +1150,7 @@ const ChatbotDetail = () => {
                       onChange={(e) => setBookingPrompt(e.target.value)}
                       rows={6}
                       className="w-full px-4 py-3 text-sm border border-amber-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 bg-white"
-                      placeholder="e.g., When a customer wants to book, collect their name, phone number, preferred date and time, and number of guests. Confirm the details before submitting."
+                      placeholder={t('chatbotDetail.settings.bookingPlaceholder')}
                     />
                     <button
                       onClick={handleSaveBookingPrompt}
@@ -1143,10 +1160,10 @@ const ChatbotDetail = () => {
                       {savingBookingPrompt ? (
                         <>
                           <Loader2 className="w-4 h-4 animate-spin" />
-                          Saving...
+                          {t('chatbotDetail.saving')}
                         </>
                       ) : (
-                        'Save Instructions'
+                        t('chatbotDetail.settings.saveInstructions')
                       )}
                     </button>
                   </div>
@@ -1160,8 +1177,8 @@ const ChatbotDetail = () => {
                         <Globe className="w-4 h-4 sm:w-5 sm:h-5 text-purple-600" />
                       </div>
                       <div className="min-w-0">
-                        <p className="font-medium text-gray-900 text-sm sm:text-base">Multi-Language Support</p>
-                        <p className="text-xs sm:text-sm text-gray-500 mt-0.5">Language selector in widget</p>
+                        <p className="font-medium text-gray-900 text-sm sm:text-base">{t('chatbotDetail.settings.multiLanguage')}</p>
+                        <p className="text-xs sm:text-sm text-gray-500 mt-0.5">{t('chatbotDetail.settings.multiLanguageDesc')}</p>
                       </div>
                     </div>
                     <button
@@ -1188,8 +1205,8 @@ const ChatbotDetail = () => {
                         <MessageSquare className="w-4 h-4 sm:w-5 sm:h-5 text-indigo-600" />
                       </div>
                       <div className="min-w-0">
-                        <p className="font-medium text-gray-900 text-sm sm:text-base">Personal Assistant Mode</p>
-                        <p className="text-xs sm:text-sm text-gray-500 mt-0.5">Full-page chat with history</p>
+                        <p className="font-medium text-gray-900 text-sm sm:text-base">{t('chatbotDetail.settings.personalMode')}</p>
+                        <p className="text-xs sm:text-sm text-gray-500 mt-0.5">{t('chatbotDetail.settings.personalModeDesc')}</p>
                       </div>
                     </div>
                     <button
@@ -1209,10 +1226,9 @@ const ChatbotDetail = () => {
                 </div>
 
                 {isPersonal && (
-                  <div className="ml-4 p-4 bg-indigo-50 border border-indigo-200 rounded-xl">
+                  <div className="ms-4 p-4 bg-indigo-50 border border-indigo-200 rounded-xl">
                     <p className="text-sm text-indigo-700">
-                      <strong>Personal Mode is active.</strong> Your chatbot now has a full-page interface with conversation history.
-                      Lead capture, handoff, and booking features are disabled in this mode.
+                      {t('chatbotDetail.settings.personalModeActive')}
                     </p>
                   </div>
                 )}
@@ -1221,7 +1237,7 @@ const ChatbotDetail = () => {
               {!isPersonal && (
                 <p className="text-xs text-gray-400 mt-6 flex items-center gap-1">
                   <AlertCircle className="w-3 h-3" />
-                  Configure detailed settings in the Leads or Live Chat tabs above
+                  {t('chatbotDetail.settings.featuresNote')}
                 </p>
               )}
             </div>
@@ -1234,12 +1250,12 @@ const ChatbotDetail = () => {
             <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
                 <div className="min-w-0 flex-1">
-                  <h3 className="text-base sm:text-lg font-semibold text-gray-900">Knowledge Base</h3>
-                  <p className="text-xs sm:text-sm text-gray-500">Upload documents to train your chatbot</p>
+                  <h3 className="text-base sm:text-lg font-semibold text-gray-900">{t('chatbotDetail.documents.title')}</h3>
+                  <p className="text-xs sm:text-sm text-gray-500">{t('chatbotDetail.documents.subtitle')}</p>
                 </div>
                 <label className="flex items-center justify-center px-4 py-3 sm:py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 cursor-pointer min-h-[44px] text-sm sm:text-base whitespace-nowrap">
-                  <Upload className="w-5 h-5 mr-2 flex-shrink-0" />
-                  {uploading ? 'Uploading...' : 'Upload Document'}
+                  <Upload className="w-5 h-5 me-2 flex-shrink-0" />
+                  {uploading ? t('chatbotDetail.documents.uploading') : t('chatbotDetail.documents.upload')}
                   <input
                     ref={fileInputRef}
                     type="file"
@@ -1254,8 +1270,8 @@ const ChatbotDetail = () => {
               {documents.length === 0 ? (
                 <div className="text-center py-8 sm:py-12 border-2 border-dashed rounded-lg">
                   <FileText className="w-10 h-10 sm:w-12 sm:h-12 text-gray-300 mx-auto mb-4" />
-                  <p className="text-sm sm:text-base text-gray-500">No documents uploaded yet</p>
-                  <p className="text-xs sm:text-sm text-gray-400 mt-1">Supports PDF, DOCX, and TXT files</p>
+                  <p className="text-sm sm:text-base text-gray-500">{t('chatbotDetail.documents.noDocuments')}</p>
+                  <p className="text-xs sm:text-sm text-gray-400 mt-1">{t('chatbotDetail.documents.supportedFormats')}</p>
                 </div>
               ) : (
                 <div className="divide-y">
@@ -1263,12 +1279,12 @@ const ChatbotDetail = () => {
                     <div key={doc.id} className="py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
                       <div className="flex items-center min-w-0 flex-1">
                         <FileText className="w-6 h-6 sm:w-8 sm:h-8 text-gray-400 flex-shrink-0" />
-                        <div className="ml-3 sm:ml-4 min-w-0 flex-1">
+                        <div className="ms-3 sm:ms-4 min-w-0 flex-1">
                           <p className="font-medium text-sm sm:text-base text-gray-900 truncate">{doc.filename}</p>
                           <p className="text-xs sm:text-sm text-gray-500">
                             {doc.chunks_count || 0} chunks • {(doc.size / 1024).toFixed(1)} KB
                             {doc.source_type && doc.source_type !== 'upload' && (
-                              <span className="ml-2 text-blue-600">• {PROVIDER_NAMES[doc.source_type] || doc.source_type}</span>
+                              <span className="ms-2 text-blue-600">• {PROVIDER_NAMES[doc.source_type] || doc.source_type}</span>
                             )}
                           </p>
                         </div>
@@ -1276,18 +1292,18 @@ const ChatbotDetail = () => {
                       <div className="flex items-center justify-between sm:justify-end space-x-4 pl-9 sm:pl-0">
                         {doc.status === 'processing' ? (
                           <span className="flex items-center text-yellow-600 text-xs sm:text-sm">
-                            <Loader2 className="w-4 h-4 mr-1 animate-spin flex-shrink-0" />
-                            Processing
+                            <Loader2 className="w-4 h-4 me-1 animate-spin flex-shrink-0" />
+                            {t('chatbotDetail.documents.processing')}
                           </span>
                         ) : doc.status === 'completed' ? (
                           <span className="flex items-center text-green-600 text-xs sm:text-sm">
-                            <Check className="w-4 h-4 mr-1 flex-shrink-0" />
-                            Ready
+                            <Check className="w-4 h-4 me-1 flex-shrink-0" />
+                            {t('chatbotDetail.documents.ready')}
                           </span>
                         ) : (
                           <span className="flex items-center text-red-600 text-xs sm:text-sm">
-                            <AlertCircle className="w-4 h-4 mr-1 flex-shrink-0" />
-                            Failed
+                            <AlertCircle className="w-4 h-4 me-1 flex-shrink-0" />
+                            {t('chatbotDetail.documents.failed')}
                           </span>
                         )}
                         <button
@@ -1319,8 +1335,8 @@ const ChatbotDetail = () => {
             <div className="flex items-center gap-3 mb-2">
               <Link2 className="w-5 h-5 text-gray-400" />
               <div>
-                <h3 className="text-base sm:text-lg font-semibold text-gray-900">Data Sources</h3>
-                <p className="text-xs sm:text-sm text-gray-500">Connect external services to import documents</p>
+                <h3 className="text-base sm:text-lg font-semibold text-gray-900">{t('chatbotDetail.integrations.title')}</h3>
+                <p className="text-xs sm:text-sm text-gray-500">{t('chatbotDetail.integrations.subtitle')}</p>
               </div>
             </div>
 
@@ -1353,8 +1369,8 @@ const ChatbotDetail = () => {
             <div className="flex items-center gap-3">
               <Share2 className="w-5 h-5 text-gray-400" />
               <div>
-                <h3 className="text-base sm:text-lg font-semibold text-gray-900">Share Settings</h3>
-                <p className="text-xs sm:text-sm text-gray-500">Share your chatbot with a public link</p>
+                <h3 className="text-base sm:text-lg font-semibold text-gray-900">{t('chatbotDetail.share.title')}</h3>
+                <p className="text-xs sm:text-sm text-gray-500">{t('chatbotDetail.share.publicDescription')}</p>
               </div>
             </div>
 
@@ -1367,9 +1383,9 @@ const ChatbotDetail = () => {
                   <Lock className="w-5 h-5 text-gray-400" />
                 )}
                 <div>
-                  <p className="font-medium text-gray-900">Public Sharing</p>
+                  <p className="font-medium text-gray-900">{t('chatbotDetail.share.publicAccess')}</p>
                   <p className="text-sm text-gray-500">
-                    {isPublic ? 'Anyone with the link can access' : 'Only accessible via embed code'}
+                    {isPublic ? t('chatbotDetail.share.publicAccessEnabled') : t('chatbotDetail.share.publicAccessDisabled')}
                   </p>
                 </div>
               </div>
@@ -1391,7 +1407,7 @@ const ChatbotDetail = () => {
             {isPublic && (
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Share Link</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">{t('chatbotDetail.share.shareLink')}</label>
                   <div className="flex flex-col sm:flex-row gap-2">
                     <input
                       type="text"
@@ -1407,12 +1423,12 @@ const ChatbotDetail = () => {
                         {shareCopied ? (
                           <>
                             <Check className="w-4 h-4 text-green-500" />
-                            <span>Copied</span>
+                            <span>{t('chatbotDetail.embed.copied')}</span>
                           </>
                         ) : (
                           <>
                             <Copy className="w-4 h-4" />
-                            <span>Copy</span>
+                            <span>{tc('buttons.copy')}</span>
                           </>
                         )}
                       </button>
@@ -1423,7 +1439,7 @@ const ChatbotDetail = () => {
                         className="flex-1 sm:flex-none px-3 sm:px-4 py-2.5 sm:py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-1.5 sm:gap-2 text-sm min-h-[42px]"
                       >
                         <ExternalLink className="w-4 h-4" />
-                        <span>Open</span>
+                        <span>{t('chatbotDetail.share.openInNewTab')}</span>
                       </a>
                     </div>
                   </div>
@@ -1433,16 +1449,16 @@ const ChatbotDetail = () => {
                 <div className="border-t pt-4">
                   <div className="flex items-center gap-2 mb-3">
                     <Lock className="w-4 h-4 text-gray-500" />
-                    <span className="text-sm font-medium text-gray-700">Password Protection</span>
+                    <span className="text-sm font-medium text-gray-700">{t('chatbotDetail.share.passwordProtection')}</span>
                     {bot?.has_password && (
-                      <span className="px-2 py-0.5 bg-green-100 text-green-700 text-xs rounded-full">Active</span>
+                      <span className="px-2 py-0.5 bg-green-100 text-green-700 text-xs rounded-full">{t('chatbotDetail.share.passwordProtected')}</span>
                     )}
                   </div>
 
                   {bot?.has_password ? (
                     <div className="space-y-3">
                       <p className="text-sm text-gray-600">
-                        This chatbot is password protected. Users need to enter the password to access it.
+                        {t('chatbotDetail.share.passwordDescription')}
                       </p>
                       <div className="flex gap-2">
                         <div className="flex-1 relative">
@@ -1450,13 +1466,13 @@ const ChatbotDetail = () => {
                             type={showPassword ? 'text' : 'password'}
                             value={sharePassword}
                             onChange={(e) => setSharePassword(e.target.value)}
-                            placeholder="Enter new password to change"
-                            className="w-full px-4 py-3 pr-10 border border-gray-300 rounded-lg text-sm"
+                            placeholder={t('chatbotDetail.share.enterNewPassword')}
+                            className="w-full px-4 py-3 pe-10 border border-gray-300 rounded-lg text-sm"
                           />
                           <button
                             type="button"
                             onClick={() => setShowPassword(!showPassword)}
-                            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                            className="absolute end-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
                           >
                             {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                           </button>
@@ -1465,27 +1481,27 @@ const ChatbotDetail = () => {
                           onClick={handleRemovePassword}
                           className="px-4 py-3 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors text-sm"
                         >
-                          Remove
+                          {t('chatbotDetail.share.removePassword')}
                         </button>
                       </div>
                     </div>
                   ) : (
                     <div className="space-y-3">
                       <p className="text-sm text-gray-600">
-                        Add a password to restrict access. Only people with the password can use the chatbot.
+                        {t('chatbotDetail.share.addPassword')}
                       </p>
                       <div className="relative">
                         <input
                           type={showPassword ? 'text' : 'password'}
                           value={sharePassword}
                           onChange={(e) => setSharePassword(e.target.value)}
-                          placeholder="Set a password (optional)"
-                          className="w-full px-4 py-3 pr-10 border border-gray-300 rounded-lg text-sm"
+                          placeholder={t('chatbotDetail.share.setPassword')}
+                          className="w-full px-4 py-3 pe-10 border border-gray-300 rounded-lg text-sm"
                         />
                         <button
                           type="button"
                           onClick={() => setShowPassword(!showPassword)}
-                          className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                          className="absolute end-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
                         >
                           {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                         </button>
@@ -1506,10 +1522,10 @@ const ChatbotDetail = () => {
                 {savingShare ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin" />
-                    Saving...
+                    {t('chatbotDetail.saving')}
                   </>
                 ) : (
-                  'Save Share Settings'
+                  t('chatbotDetail.share.saveShareSettings')
                 )}
               </button>
             </div>
@@ -1521,8 +1537,8 @@ const ChatbotDetail = () => {
           <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6 max-w-2xl">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
               <div className="min-w-0 flex-1">
-                <h3 className="text-base sm:text-lg font-semibold text-gray-900">Embed Code</h3>
-                <p className="text-xs sm:text-sm text-gray-500">Add this code to your website</p>
+                <h3 className="text-base sm:text-lg font-semibold text-gray-900">{t('chatbotDetail.embed.title')}</h3>
+                <p className="text-xs sm:text-sm text-gray-500">{t('chatbotDetail.embed.subtitle')}</p>
               </div>
               <button
                 onClick={copyEmbedCode}
@@ -1530,13 +1546,13 @@ const ChatbotDetail = () => {
               >
                 {copied ? (
                   <>
-                    <Check className="w-5 h-5 mr-2 text-green-500 flex-shrink-0" />
-                    Copied!
+                    <Check className="w-5 h-5 me-2 text-green-500 flex-shrink-0" />
+                    {t('chatbotDetail.embed.copied')}
                   </>
                 ) : (
                   <>
-                    <Code className="w-5 h-5 mr-2 flex-shrink-0" />
-                    Copy Code
+                    <Code className="w-5 h-5 me-2 flex-shrink-0" />
+                    {t('chatbotDetail.embed.copyCode')}
                   </>
                 )}
               </button>
@@ -1549,11 +1565,11 @@ const ChatbotDetail = () => {
             </div>
 
             <div className="mt-4 sm:mt-6 p-3 sm:p-4 bg-blue-50 rounded-lg">
-              <h4 className="font-medium text-sm sm:text-base text-blue-900 mb-2">Instructions</h4>
+              <h4 className="font-medium text-sm sm:text-base text-blue-900 mb-2">{t('chatbotDetail.embed.instructions')}</h4>
               <ol className="list-decimal list-inside text-xs sm:text-sm text-blue-800 space-y-1">
-                <li>Copy the embed code above</li>
-                <li>Paste it before the closing &lt;/body&gt; tag on your website</li>
-                <li>The chat widget will appear automatically</li>
+                <li>{t('chatbotDetail.embed.step1')}</li>
+                <li>{t('chatbotDetail.embed.step2')}</li>
+                <li>{t('chatbotDetail.embed.step3')}</li>
               </ol>
             </div>
           </div>

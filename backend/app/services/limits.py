@@ -1,5 +1,5 @@
 """
-Subscription limits service for the Aiden platform.
+Subscription limits service for the Aiden Link platform.
 Reads limits from system_settings in database, with fallback to defaults.
 """
 from datetime import datetime, timedelta

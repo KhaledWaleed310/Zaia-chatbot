@@ -17,6 +17,7 @@ class LeadSource(str, Enum):
     MANUAL = "manual"
     IMPORT = "import"
     API = "api"
+    HANDOFF_TIMEOUT = "handoff_timeout"  # Lead collected after handoff timeout
 
 
 class LeadFormFieldType(str, Enum):

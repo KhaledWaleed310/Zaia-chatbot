@@ -1,0 +1,420 @@
+{
+  "nav": {
+    "settings": "الإعدادات",
+    "knowledge": "قاعدة المعرفة",
+    "integrations": "التكاملات",
+    "analytics": "التحليلات",
+    "leads": "العملاء المحتملين",
+    "livechat": "المحادثة المباشرة",
+    "bookings": "الحجوزات",
+    "share": "مشاركة",
+    "embed": "تضمين",
+    "configuration": "الإعدادات",
+    "engagement": "التفاعل",
+    "distribution": "التوزيع"
+  },
+  "sidebar": {
+    "dashboard": "لوحة التحكم",
+    "chatbots": "روبوتات المحادثة",
+    "testChatbot": "اختبار الروبوت",
+    "analytics": "التحليلات",
+    "insights": "الرؤى",
+    "leads": "العملاء المحتملين",
+    "settings": "الإعدادات",
+    "account": "الحساب",
+    "admin": "الإدارة",
+    "administration": "الإدارة",
+    "adminDashboard": "لوحة تحكم الإدارة",
+    "businessAnalytics": "تحليلات الأعمال",
+    "financeAnalysis": "التحليل المالي",
+    "serverMonitor": "مراقبة الخادم",
+    "manageUsers": "إدارة المستخدمين",
+    "manageChatbots": "إدارة الروبوتات",
+    "databases": "قواعد البيانات",
+    "systemSettings": "إعدادات النظام",
+    "collapse": "طي الشريط الجانبي",
+    "expand": "توسيع الشريط الجانبي"
+  },
+  "dashboard": {
+    "title": "لوحة التحكم",
+    "welcome": "مرحباً بعودتك",
+    "stats": {
+      "totalChatbots": "إجمالي الروبوتات",
+      "totalMessages": "إجمالي الرسائل",
+      "documents": "المستندات",
+      "avgPerBot": "المتوسط/روبوت"
+    },
+    "noChatbots": {
+      "title": "لا توجد روبوتات بعد",
+      "description": "أنشئ أول روبوت محادثة ذكي لإضافته إلى موقعك",
+      "cta": "أنشئ روبوتك الأول"
+    }
+  },
+  "chatbots": {
+    "title": "روبوتات المحادثة",
+    "subtitle": "إدارة روبوتات المحادثة الذكية",
+    "newChatbot": "روبوت جديد",
+    "configure": "إعداد",
+    "delete": "حذف",
+    "status": {
+      "active": "نشط",
+      "inactive": "غير نشط"
+    },
+    "card": {
+      "messages": "رسائل",
+      "documents": "مستندات",
+      "created": "تم الإنشاء"
+    }
+  },
+  "chatbotDetail": {
+    "configure": "إعداد",
+    "testChatbot": "اختبار الروبوت",
+    "openChat": "فتح المحادثة",
+    "saving": "جاري الحفظ...",
+    "saveChanges": "حفظ التغييرات",
+    "tabs": {
+      "settings": "الإعدادات",
+      "documents": "المستندات",
+      "integrations": "التكاملات",
+      "share": "مشاركة",
+      "embed": "تضمين"
+    },
+    "settings": {
+      "title": "الإعدادات",
+      "basicInfo": "المعلومات الأساسية",
+      "basicInfoDesc": "إعداد اسم روبوت المحادثة ورسالة الترحيب",
+      "name": "اسم الروبوت",
+      "nameDesc": "سيتم عرض هذا الاسم للزوار",
+      "namePlaceholder": "مثال: مساعد الدعم",
+      "welcomeMessage": "رسالة الترحيب",
+      "welcomeMessageDesc": "أول رسالة يراها الزوار عند فتح المحادثة",
+      "welcomeMessagePlaceholder": "مرحباً! كيف يمكنني مساعدتك اليوم؟",
+      "aiPersonality": "شخصية وسلوك الذكاء الاصطناعي",
+      "aiPersonalityDesc": "حدد كيف يجب أن يستجيب روبوت المحادثة ويتصرف",
+      "systemPrompt": "تعليمات النظام",
+      "systemPromptDesc": "أخبر الذكاء الاصطناعي من هو وكيف يجب أن يستجيب وأي إرشادات محددة. هذا يشكل شخصية وخبرة الروبوت.",
+      "systemPromptPlaceholder": "أنت مساعد دعم عملاء مفيد...",
+      "tip": "نصيحة",
+      "tipText": "كن محدداً حول دور روبوتك ونبرته وحدوده. خصص القالب أعلاه أو اكتب تعليماتك الخاصة.",
+      "promptTemplate": "ابدأ سريعاً بقالب",
+      "customPrompt": "تعليمات مخصصة",
+      "appearance": "مظهر الأداة",
+      "appearanceDesc": "خصص كيف تبدو أداة المحادثة على موقعك",
+      "brandColor": "لون العلامة التجارية",
+      "brandColorDesc": "يستخدم لفقاعة المحادثة والرأس",
+      "widgetPosition": "موضع الأداة",
+      "widgetPositionDesc": "أين تظهر فقاعة المحادثة على موقعك",
+      "positions": {
+        "bottomRight": "أسفل اليمين (موصى به)",
+        "bottomLeft": "أسفل اليسار"
+      },
+      "preview": "معاينة",
+      "previewText": "هكذا ستبدو فقاعة المحادثة الخاصة بك",
+      "features": "الميزات والقدرات",
+      "featuresDesc": "تفعيل الميزات المتقدمة لروبوت المحادثة",
+      "featuresNote": "إعداد التفاصيل في علامات تبويب العملاء المحتملين أو المحادثة المباشرة",
+      "smartLeadCapture": "التقاط العملاء المحتملين الذكي",
+      "smartLeadCaptureDesc": "جمع معلومات الزوار تلقائياً",
+      "humanHandoff": "التحويل للبشر",
+      "humanHandoffDesc": "التحويل للوكلاء المباشرين عند الحاجة",
+      "bookingSystem": "نظام الحجز",
+      "bookingSystemDesc": "السماح للعملاء بجدولة المواعيد",
+      "bookingInstructions": "تعليمات الحجز",
+      "bookingInstructionsDesc": "أخبر الذكاء الاصطناعي كيفية التعامل مع طلبات الحجز",
+      "bookingPlaceholder": "مثال: عندما يريد العميل الحجز، اجمع اسمه ورقم هاتفه والتاريخ والوقت المفضلين وعدد الضيوف.",
+      "saveInstructions": "حفظ التعليمات",
+      "multiLanguage": "دعم متعدد اللغات",
+      "multiLanguageDesc": "الكشف التلقائي والرد بلغة المستخدم",
+      "personalMode": "وضع المساعد الشخصي",
+      "personalModeDesc": "محادثة بصفحة كاملة مع سجل المحادثات",
+      "personalModeActive": "الوضع الشخصي مفعّل. روبوتك الآن لديه واجهة صفحة كاملة مع سجل المحادثات. ميزات التقاط العملاء والتحويل والحجز معطلة في هذا الوضع."
+    },
+    "documents": {
+      "title": "قاعدة المعرفة",
+      "subtitle": "رفع المستندات لتدريب الروبوت",
+      "upload": "رفع مستند",
+      "uploading": "جاري الرفع...",
+      "dragDrop": "اسحب وأفلت الملفات هنا، أو انقر للتصفح",
+      "supported": "مدعوم: PDF، DOC، DOCX، TXT",
+      "supportedFormats": "يدعم ملفات PDF و DOCX و TXT",
+      "maxSize": "الحد الأقصى: 10 ميجابايت لكل ملف",
+      "noDocuments": "لم يتم رفع مستندات بعد",
+      "processing": "جاري المعالجة",
+      "ready": "جاهز",
+      "failed": "فشل",
+      "chunks": "أجزاء"
+    },
+    "integrations": {
+      "title": "التكاملات",
+      "subtitle": "ربط مصادر البيانات الخارجية",
+      "connected": "متصل",
+      "connect": "اتصال",
+      "disconnect": "قطع الاتصال",
+      "browse": "تصفح الملفات",
+      "importSuccess": "تم استيراد بنجاح",
+      "files": "ملفات"
+    },
+    "embed": {
+      "title": "كود التضمين",
+      "subtitle": "أضف هذا الكود إلى موقعك",
+      "instructions": "التعليمات",
+      "step1": "انسخ كود التضمين أعلاه",
+      "step2": "الصقه قبل وسم </body> في موقعك",
+      "step3": "ستظهر أداة المحادثة تلقائياً",
+      "copyCode": "نسخ الكود",
+      "copied": "تم النسخ!"
+    },
+    "share": {
+      "title": "مشاركة روبوت المحادثة",
+      "publicAccess": "المشاركة العامة",
+      "publicDescription": "شارك روبوت المحادثة برابط عام",
+      "publicAccessEnabled": "أي شخص لديه الرابط يمكنه الوصول",
+      "publicAccessDisabled": "يمكن الوصول فقط عبر كود التضمين",
+      "shareLink": "رابط المشاركة",
+      "openInNewTab": "فتح",
+      "passwordProtection": "حماية بكلمة مرور",
+      "passwordProtected": "مفعّل",
+      "passwordDescription": "هذا الروبوت محمي بكلمة مرور. يحتاج المستخدمون لإدخال كلمة المرور للوصول إليه.",
+      "addPassword": "أضف كلمة مرور لتقييد الوصول. فقط الأشخاص الذين لديهم كلمة المرور يمكنهم استخدام الروبوت.",
+      "setPassword": "تعيين كلمة مرور (اختياري)",
+      "enterNewPassword": "أدخل كلمة مرور جديدة للتغيير",
+      "removePassword": "إزالة",
+      "saveShareSettings": "حفظ إعدادات المشاركة"
+    }
+  },
+  "leads": {
+    "title": "العملاء المحتملين",
+    "subtitle": "إدارة العملاء المحتملين المسجلين",
+    "export": "تصدير",
+    "exportCsv": "تصدير CSV",
+    "exportJson": "تصدير JSON",
+    "formSettings": "إعدادات نموذج العملاء المحتملين",
+    "searchPlaceholder": "البحث بالاسم أو البريد الإلكتروني أو الشركة...",
+    "allStatus": "جميع الحالات",
+    "noLeads": "لا يوجد عملاء محتملين بعد",
+    "enableLeadCapture": "فعّل التقاط العملاء المحتملين لبدء جمع معلومات الزوار",
+    "stats": {
+      "total": "إجمالي العملاء المحتملين",
+      "newThisMonth": "جديد (30 يوم)",
+      "conversionRate": "معدل التحويل",
+      "qualified": "مؤهل"
+    },
+    "table": {
+      "contact": "جهة الاتصال",
+      "company": "الشركة",
+      "status": "الحالة",
+      "source": "المصدر",
+      "created": "تاريخ الإنشاء",
+      "actions": "الإجراءات"
+    },
+    "status": {
+      "new": "جديد",
+      "contacted": "تم التواصل",
+      "qualified": "مؤهل",
+      "converted": "تم التحويل",
+      "lost": "مفقود"
+    },
+    "pagination": {
+      "showing": "عرض صفحة",
+      "of": "من",
+      "previous": "السابق",
+      "next": "التالي"
+    },
+    "modal": {
+      "title": "تفاصيل العميل المحتمل",
+      "name": "الاسم",
+      "email": "البريد الإلكتروني",
+      "phone": "الهاتف",
+      "company": "الشركة",
+      "conversationSummary": "ملخص المحادثة",
+      "customFields": "الحقول المخصصة",
+      "viewConversation": "عرض المحادثة"
+    },
+    "formConfig": {
+      "title": "إعدادات نموذج العملاء المحتملين",
+      "enableForm": "تفعيل نموذج العملاء المحتملين",
+      "enableFormDesc": "عرض نموذج التقاط العملاء المحتملين في المحادثة",
+      "formTitle": "عنوان النموذج",
+      "description": "الوصف",
+      "showForm": "عرض النموذج",
+      "triggers": {
+        "manual": "زر يدوي",
+        "afterMessages": "بعد عدد من الرسائل",
+        "onExit": "عند نية الخروج"
+      },
+      "afterHowMany": "بعد كم رسالة؟",
+      "successMessage": "رسالة النجاح",
+      "save": "حفظ الإعدادات"
+    },
+    "confirmDelete": "حذف هذا العميل المحتمل؟"
+  },
+  "analytics": {
+    "title": "التحليلات",
+    "subtitle": "مراقبة أداء روبوت المحادثة",
+    "tabs": {
+      "overview": "نظرة عامة",
+      "unanswered": "غير مجاب",
+      "sentiment": "المشاعر",
+      "quality": "الجودة",
+      "usage": "الاستخدام"
+    },
+    "metrics": {
+      "activeSessions": "الجلسات النشطة",
+      "messagesPerHour": "رسائل/ساعة",
+      "unanswered": "غير مجاب",
+      "quality": "الجودة"
+    },
+    "sentiment": {
+      "positive": "إيجابي",
+      "neutral": "محايد",
+      "negative": "سلبي",
+      "trend": "الاتجاه"
+    },
+    "stats": {
+      "totalChatbots": "إجمالي الروبوتات",
+      "totalMessages": "إجمالي الرسائل",
+      "documents": "المستندات",
+      "avgPerBot": "المتوسط/روبوت"
+    },
+    "table": {
+      "title": "أداء الروبوتات",
+      "chatbot": "الروبوت",
+      "documents": "المستندات",
+      "messages": "الرسائل",
+      "status": "الحالة"
+    },
+    "status": {
+      "active": "نشط"
+    },
+    "empty": "لا توجد روبوتات للتحليل"
+  },
+  "settings": {
+    "title": "الإعدادات",
+    "subtitle": "إدارة إعدادات حسابك واشتراكك",
+    "profile": {
+      "title": "الملف الشخصي",
+      "email": "البريد الإلكتروني",
+      "companyName": "اسم الشركة",
+      "save": "حفظ التغييرات",
+      "saved": "تم الحفظ!"
+    },
+    "plan": {
+      "title": "باقتك",
+      "current": "الباقة الحالية",
+      "usage": "الاستخدام",
+      "upgrade": "ترقية باقتك",
+      "chatbots": "الروبوتات",
+      "documentsPerChatbot": "المستندات (لكل روبوت)",
+      "messagesPerDay": "الرسائل اليوم",
+      "unlimited": "غير محدود",
+      "includes": "تشمل",
+      "documentsPerBot": "مستندات لكل روبوت",
+      "messagesDay": "رسائل في اليوم",
+      "maxFileSize": "الحد الأقصى لحجم الملف",
+      "comingSoon": "قريباً",
+      "subscriptionsComingSoon": "الاشتراكات قريباً",
+      "subscriptionsDescription": "نحن نعمل على خطط متميزة بمزايا أكثر. ترقبوا!",
+      "pro": "احترافي",
+      "enterprise": "مؤسسي",
+      "prioritySupport": "دعم ذو أولوية",
+      "dedicatedSupport": "دعم مخصص",
+      "customIntegrations": "تكاملات مخصصة"
+    },
+    "api": {
+      "title": "مفاتيح API",
+      "subtitle": "إدارة مفاتيح API للوصول البرمجي",
+      "create": "إنشاء مفتاح",
+      "createTitle": "إنشاء مفتاح API",
+      "revoke": "إلغاء",
+      "delete": "حذف",
+      "endpoints": "نقاط نهاية API",
+      "endpointsInfo": "أضف مفتاح API الخاص بك في رأس التفويض: Bearer YOUR_API_KEY",
+      "noKeys": "لا توجد مفاتيح API بعد",
+      "noKeysDescription": "أنشئ أول مفتاح API للبدء",
+      "name": "الاسم",
+      "namePlaceholder": "مثال: مفتاح الإنتاج",
+      "scopes": {
+        "title": "الصلاحيات",
+        "read": "قراءة",
+        "readDesc": "- قراءة بيانات الروبوت والرسائل",
+        "write": "كتابة",
+        "writeDesc": "- إرسال الرسائل وتحديث البيانات",
+        "admin": "إدارة",
+        "adminDesc": "- وصول كامل بما في ذلك الحذف"
+      },
+      "created": "تم الإنشاء",
+      "lastUsed": "آخر استخدام",
+      "keyCreated": "تم إنشاء مفتاح API الخاص بك. انسخه الآن - لن تتمكن من رؤيته مرة أخرى!",
+      "done": "تم",
+      "cancel": "إلغاء",
+      "confirmDelete": "هل أنت متأكد من حذف مفتاح API هذا؟ لا يمكن التراجع عن هذا الإجراء.",
+      "confirmRevoke": "هل أنت متأكد من إلغاء مفتاح API هذا؟"
+    },
+    "data": {
+      "title": "البيانات والخصوصية",
+      "export": "تصدير البيانات",
+      "exportTitle": "تصدير بياناتك",
+      "exportDescription": "قم بتنزيل نسخة من جميع بياناتك بتنسيق JSON",
+      "exporting": "جاري التصدير...",
+      "delete": "حذف الحساب",
+      "deleteTitle": "حذف الحساب",
+      "deleteDescription": "حذف حسابك وجميع البيانات المرتبطة به نهائياً. لا يمكن التراجع عن هذا الإجراء.",
+      "deleteConfirm": "اكتب DELETE لتأكيد حذف الحساب",
+      "deleteWarning": "سيؤدي هذا إلى حذف حسابك نهائياً وجميع البيانات المرتبطة بما في ذلك:",
+      "deleteItems": {
+        "chatbots": "جميع الروبوتات وإعداداتها",
+        "documents": "جميع المستندات المرفوعة وبيانات التدريب",
+        "conversations": "جميع سجلات المحادثات",
+        "analytics": "جميع التحليلات والعملاء المحتملين"
+      },
+      "cannotUndo": "لا يمكن التراجع عن هذا الإجراء!",
+      "deleting": "جاري الحذف..."
+    },
+    "account": {
+      "title": "الحساب",
+      "accountId": "معرف الحساب",
+      "memberSince": "عضو منذ",
+      "plan": "الباقة"
+    },
+    "plans": {
+      "free": "الباقة المجانية",
+      "pro": "الباقة الاحترافية",
+      "enterprise": "الباقة المؤسسية"
+    }
+  },
+  "promptTemplates": {
+    "title": "قوالب التعليمات",
+    "sales": {
+      "name": "مساعد المبيعات",
+      "description": "يركز على تحويل الزوار إلى عملاء"
+    },
+    "support": {
+      "name": "دعم العملاء",
+      "description": "وكيل دعم مساعد ومتعاطف"
+    },
+    "booking": {
+      "name": "مساعد الحجز",
+      "description": "يساعد في جدولة المواعيد والحجوزات"
+    },
+    "leadGen": {
+      "name": "توليد العملاء المحتملين",
+      "description": "يؤهل ويلتقط معلومات العملاء المحتملين"
+    },
+    "faq": {
+      "name": "روبوت الأسئلة الشائعة",
+      "description": "يجيب على الأسئلة الشائعة من قاعدة المعرفة"
+    },
+    "technical": {
+      "name": "الدعم التقني",
+      "description": "يساعد في المشكلات التقنية واستكشاف الأخطاء"
+    },
+    "realEstate": {
+      "name": "وكيل عقاري",
+      "description": "استفسارات العقارات وجدولة المعاينات"
+    },
+    "education": {
+      "name": "مستشار تعليمي",
+      "description": "معلومات الدورات ومساعدة التسجيل"
+    }
+  }
+}

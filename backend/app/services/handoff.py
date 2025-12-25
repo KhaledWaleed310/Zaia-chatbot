@@ -1,9 +1,12 @@
+import logging
 from datetime import datetime, timedelta
 from typing import Optional, Dict, Any, List
 import uuid
 import json
 from ..core.database import get_mongodb, get_redis
 from ..schemas.handoff import HandoffStatus, HandoffPriority, HandoffTrigger
+
+logger = logging.getLogger(__name__)
 
 
 async def create_handoff(
@@ -62,6 +65,18 @@ async def create_handoff(
     if handoff_config.get("auto_assign", True):
         await try_auto_assign(handoff["_id"], tenant_id)
 
+    # Schedule timeout check task if enabled
+    if handoff_config.get("timeout_enabled", True):
+        timeout_minutes = handoff_config.get("timeout_minutes", 2)
+        # Clamp to 1-10 minutes
+        timeout_minutes = max(1, min(10, timeout_minutes))
+
+        from ..tasks import check_handoff_timeout_task
+        check_handoff_timeout_task.apply_async(
+            args=[handoff["_id"], bot_id, tenant_id],
+            countdown=timeout_minutes * 60  # Convert to seconds
+        )
+
     # Publish to Redis for real-time notifications
     redis = get_redis()
     await redis.publish(
@@ -73,6 +88,76 @@ async def create_handoff(
             "priority": priority.value
         })
     )
+
+    # Send email notification to bot owner
+    logger.info(f"[HANDOFF EMAIL] Checking email notification for handoff {handoff['_id']}")
+    notification_email = handoff_config.get("notification_email")
+    logger.info(f"[HANDOFF EMAIL] Config notification_email: {notification_email}")
+
+    if not notification_email:
+        # Fall back to bot owner's email (tenant_id is the user's _id)
+        user = await db.users.find_one({"_id": tenant_id})
+        logger.info(f"[HANDOFF EMAIL] User lookup by _id={tenant_id}: {user.get('email') if user else 'NOT FOUND'}")
+        notification_email = user.get("email") if user else None
+
+    logger.info(f"[HANDOFF EMAIL] Final notification_email: {notification_email}")
+
+    if notification_email:
+        from .email import send_handoff_notification
+
+        # Build conversation preview from context (show both user and bot messages)
+        preview = ""
+        if messages:
+            import re
+            # Take last 4 messages for a fuller picture
+            recent_msgs = messages[-4:]
+            preview_parts = []
+            for m in recent_msgs:
+                role = m.get("role", "user")
+                content = m.get("content", "")
+
+                # Strip markdown formatting
+                content = re.sub(r'\*\*([^*]+)\*\*', r'\1', content)  # Bold **text**
+                content = re.sub(r'\*([^*]+)\*', r'\1', content)      # Italic *text*
+                content = re.sub(r'__([^_]+)__', r'\1', content)      # Bold __text__
+                content = re.sub(r'_([^_]+)_', r'\1', content)        # Italic _text_
+                content = re.sub(r'#+\s*', '', content)               # Headers
+                content = re.sub(r'\[([^\]]+)\]\([^)]+\)', r'\1', content)  # Links
+                content = re.sub(r'`([^`]+)`', r'\1', content)        # Inline code
+                content = re.sub(r'\n+', ' ', content)                # Newlines to spaces
+                content = content.strip()
+
+                # Truncate at word boundary (max 200 chars)
+                if len(content) > 200:
+                    content = content[:200].rsplit(' ', 1)[0] + '...'
+
+                prefix = "Customer" if role == "user" else "Bot"
+                preview_parts.append(f"{prefix}: {content}")
+            preview = "\n".join(preview_parts)
+
+        # Check if password is required (custom email set with password)
+        requires_password = bool(
+            handoff_config.get("notification_email") and
+            handoff_config.get("notification_password")
+        )
+
+        # Send notification (fire and forget - don't block handoff creation)
+        try:
+            logger.info(f"[HANDOFF EMAIL] Sending email to {notification_email}")
+            await send_handoff_notification(
+                to_email=notification_email,
+                bot_name=bot.get("name", "Aiden Link") if bot else "Aiden Link",
+                conversation_preview=preview,
+                bot_id=bot_id,
+                handoff_id=handoff["_id"],
+                requires_password=requires_password
+            )
+            logger.info(f"[HANDOFF EMAIL] Email sent successfully to {notification_email}")
+        except Exception as e:
+            # Log but don't fail handoff creation
+            logger.error(f"[HANDOFF EMAIL] Failed to send handoff email: {e}", exc_info=True)
+    else:
+        logger.warning(f"[HANDOFF EMAIL] No notification email found for bot {bot_id}")
 
     return handoff
 
@@ -139,7 +224,12 @@ async def get_handoff_by_session(session_id: str) -> Optional[Dict[str, Any]]:
     db = get_mongodb()
     return await db.handoffs.find_one({
         "session_id": session_id,
-        "status": {"$in": [HandoffStatus.PENDING.value, HandoffStatus.ASSIGNED.value, HandoffStatus.ACTIVE.value]}
+        "status": {"$in": [
+            HandoffStatus.PENDING.value,
+            HandoffStatus.ASSIGNED.value,
+            HandoffStatus.ACTIVE.value,
+            HandoffStatus.TIMEOUT_COLLECTING.value  # Include timeout collection state
+        ]}
     })
 
 
@@ -254,6 +344,38 @@ async def add_handoff_message(
         )
 
     return message
+
+
+async def agent_takeover(handoff_id: str, tenant_id: str) -> bool:
+    """
+    Handle agent taking over a handoff (especially from timeout collection).
+
+    When an agent sends a message during TIMEOUT_COLLECTING status,
+    this function changes the status to ACTIVE to stop the bot from responding.
+
+    Returns True if status was changed, False otherwise.
+    """
+    db = get_mongodb()
+
+    handoff = await db.handoffs.find_one({"_id": handoff_id})
+    if not handoff:
+        return False
+
+    # Only change if in timeout_collecting (bot is currently handling)
+    if handoff.get("status") == HandoffStatus.TIMEOUT_COLLECTING.value:
+        await db.handoffs.update_one(
+            {"_id": handoff_id},
+            {
+                "$set": {
+                    "status": HandoffStatus.ACTIVE.value,
+                    "updated_at": datetime.utcnow()
+                }
+            }
+        )
+        logger.info(f"Agent took over handoff {handoff_id} from timeout collection")
+        return True
+
+    return False
 
 
 async def update_agent_presence(

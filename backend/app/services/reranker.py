@@ -1,5 +1,5 @@
 """
-Cross-Encoder Reranking Service for Aiden RAG System.
+Cross-Encoder Reranking Service for Aiden Link RAG System.
 
 This module provides sophisticated reranking of retrieved documents using
 cross-encoder models for significantly improved relevance scoring.

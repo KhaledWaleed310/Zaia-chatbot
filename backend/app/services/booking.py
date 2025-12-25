@@ -106,6 +106,10 @@ BOOKING_TOOL = {
                     "type": "string",
                     "description": "Phone or WhatsApp number of the guest"
                 },
+                "email": {
+                    "type": "string",
+                    "description": "Email address of the guest for booking confirmation (optional but recommended)"
+                },
                 "date": {
                     "type": "string",
                     "description": "Date for the booking (e.g., 'tomorrow', '2024-12-16', 'next Monday')"
@@ -199,11 +203,12 @@ Chat:
 {conversation_text}
 
 Return this exact JSON format:
-{{"guest_name": "customer name from chat", "phone": "phone number from chat", "date": "date mentioned", "time": "time mentioned", "people_count": null, "booking_type": "meeting"}}
+{{"guest_name": "customer name from chat", "phone": "phone number from chat", "email": "email address if provided or null", "date": "date mentioned", "time": "time mentioned", "people_count": null, "booking_type": "meeting"}}
 
 IMPORTANT:
 - Look for the customer's name in Arabic (like محمد, أحمد) or English
 - Look for phone numbers (like 01028308630, 01027764824)
+- Look for email addresses (like user@example.com) - set to null if not provided
 - For date: keep original words (today, tomorrow, اليوم, غدا, بكرة)
 - For time: keep original format (9 PM, 7 مساء)
 - Return ONLY valid JSON, nothing else"""
@@ -289,8 +294,11 @@ async def get_bot_owner_email(bot_id: str) -> Optional[str]:
         logger.warning(f"Bot {bot_id} has no tenant_id")
         return None
 
-    # Find the user with this tenant_id
-    user = await db.users.find_one({"tenant_id": tenant_id})
+    # Find the user - tenant_id is typically the user's _id
+    user = await db.users.find_one({"_id": tenant_id})
+    if not user:
+        # Fallback: try finding by tenant_id field
+        user = await db.users.find_one({"tenant_id": tenant_id})
     if not user:
         logger.warning(f"No user found for tenant_id: {tenant_id}")
         return None
@@ -349,6 +357,7 @@ async def create_booking(
         "booking_type": booking_data.get("booking_type", "other"),
         "guest_name": booking_data.get("guest_name"),
         "phone": booking_data.get("phone"),
+        "email": booking_data.get("email"),  # Customer email for confirmation
         "date": booking_data.get("date"),
         "time": booking_data.get("time"),
         "people_count": booking_data.get("people_count"),
@@ -632,11 +641,11 @@ async def get_bookings_for_calendar(
 
     for booking in bookings:
         # Try to normalize the date
-        raw_date = booking.get("date", "")
+        raw_date = booking.get("date") or ""
         normalized_date = None
 
         # Check if already in YYYY-MM-DD format
-        if re.match(r'^\d{4}-\d{2}-\d{2}$', raw_date):
+        if raw_date and re.match(r'^\d{4}-\d{2}-\d{2}$', raw_date):
             normalized_date = raw_date
         else:
             # Try to parse the date
@@ -805,10 +814,10 @@ async def check_availability(
             continue
 
         # Normalize the booking's date
-        booking_date_str = booking.get("date", "")
+        booking_date_str = booking.get("date") or ""
         booking_parsed = None
 
-        if re.match(r'^\d{4}-\d{2}-\d{2}$', booking_date_str):
+        if booking_date_str and re.match(r'^\d{4}-\d{2}-\d{2}$', booking_date_str):
             booking_parsed = booking_date_str
         else:
             parsed = parse_date_string(booking_date_str, parsed_date)

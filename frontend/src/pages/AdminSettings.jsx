@@ -40,7 +40,7 @@ const AdminSettings = () => {
 
   const [settings, setSettings] = useState({
     // General
-    app_name: 'Aiden',
+    app_name: 'Aiden Link',
     app_description: 'AI-powered chatbot platform',
     support_email: 'info@zaiasystems.com',
 

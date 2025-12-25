@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { MessageSquare, Building2, Mail, Lock, Users, Briefcase, Target, Globe, Megaphone, CheckCircle } from 'lucide-react';
+import { trackEvent, EVENTS } from '../utils/tracking';
 
 const COMPANY_SIZES = [
   { value: '1', label: 'Just me' },
@@ -98,6 +99,11 @@ const Register = () => {
   const { register } = useAuth();
   const navigate = useNavigate();
 
+  // Track signup started
+  useEffect(() => {
+    trackEvent(EVENTS.SIGNUP_STARTED);
+  }, []);
+
   const handleChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
@@ -139,6 +145,14 @@ const Register = () => {
         formData.privacy_consent,
         formData.marketing_consent
       );
+      // Track successful registration
+      trackEvent(EVENTS.SIGNUP_COMPLETED, {
+        industry: formData.industry,
+        company_size: formData.company_size,
+        country: formData.country,
+        use_case: formData.use_case,
+        referral_source: formData.referral_source,
+      });
       setRegistered(true);
     } catch (err) {
       setError(err.response?.data?.detail || 'Registration failed');
@@ -215,7 +229,7 @@ const Register = () => {
               <>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    <Mail className="w-4 h-4 inline mr-1" />
+                    <Mail className="w-4 h-4 inline me-1" />
                     Email *
                   </label>
                   <input
@@ -230,7 +244,7 @@ const Register = () => {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    <Lock className="w-4 h-4 inline mr-1" />
+                    <Lock className="w-4 h-4 inline me-1" />
                     Password *
                   </label>
                   <input
@@ -247,7 +261,7 @@ const Register = () => {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    <Building2 className="w-4 h-4 inline mr-1" />
+                    <Building2 className="w-4 h-4 inline me-1" />
                     Company Name
                   </label>
                   <input
@@ -302,7 +316,7 @@ const Register = () => {
               <>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    <Users className="w-4 h-4 inline mr-1" />
+                    <Users className="w-4 h-4 inline me-1" />
                     Company Size
                   </label>
                   <select
@@ -319,7 +333,7 @@ const Register = () => {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    <Briefcase className="w-4 h-4 inline mr-1" />
+                    <Briefcase className="w-4 h-4 inline me-1" />
                     Industry
                   </label>
                   <select
@@ -336,7 +350,7 @@ const Register = () => {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    <Target className="w-4 h-4 inline mr-1" />
+                    <Target className="w-4 h-4 inline me-1" />
                     Primary Use Case
                   </label>
                   <select
@@ -353,7 +367,7 @@ const Register = () => {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    <Globe className="w-4 h-4 inline mr-1" />
+                    <Globe className="w-4 h-4 inline me-1" />
                     Country
                   </label>
                   <select
@@ -370,7 +384,7 @@ const Register = () => {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    <Megaphone className="w-4 h-4 inline mr-1" />
+                    <Megaphone className="w-4 h-4 inline me-1" />
                     How did you hear about us?
                   </label>
                   <select
@@ -419,6 +433,10 @@ const Register = () => {
                         formData.privacy_consent,
                         formData.marketing_consent
                       );
+                      // Track signup completed even when skipping optional fields
+                      trackEvent(EVENTS.SIGNUP_COMPLETED, {
+                        skipped_optional: true,
+                      });
                       setRegistered(true);
                     } catch (err) {
                       setError(err.response?.data?.detail || 'Registration failed');

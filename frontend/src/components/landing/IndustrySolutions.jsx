@@ -10,149 +10,124 @@ import {
   Check,
   ArrowRight,
 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import { useLanguage } from '@/context/LanguageContext';
 
-const industries = [
+const getIndustries = (t) => [
   {
     id: 'saas',
-    name: 'SaaS',
+    name: t('industries.saas.name'),
     icon: Monitor,
     color: 'text-blue-600',
     bgColor: 'bg-blue-50',
     borderColor: 'border-blue-200',
     hoverColor: 'hover:bg-blue-100',
     activeColor: 'bg-blue-600',
-    metric: '73% ticket reduction',
-    description: 'Automate customer onboarding, technical support, and feature requests with AI that understands your product.',
-    useCases: [
-      'Automated onboarding and product tours',
-      'Technical troubleshooting and bug triage',
-      'Feature request collection and routing',
-      'Integration support and API guidance',
-    ],
+    metric: t('industries.saas.metric'),
+    description: t('industries.saas.description'),
+    useCases: t('industries.saas.useCases', { returnObjects: true }),
     testimonial: {
-      quote: 'Our support team went from drowning in tickets to focusing on high-value customer relationships. Response times dropped from hours to seconds.',
-      author: 'Sarah Chen',
-      role: 'Head of Customer Success, CloudFlow',
+      quote: t('industries.saas.testimonial.quote'),
+      author: t('industries.saas.testimonial.author'),
+      role: t('industries.saas.testimonial.role'),
     },
   },
   {
     id: 'ecommerce',
-    name: 'E-commerce',
+    name: t('industries.ecommerce.name'),
     icon: ShoppingCart,
     color: 'text-green-600',
     bgColor: 'bg-green-50',
     borderColor: 'border-green-200',
     hoverColor: 'hover:bg-green-100',
     activeColor: 'bg-green-600',
-    metric: '45% faster resolution',
-    description: 'Handle order inquiries, returns, and product questions instantly while increasing customer satisfaction.',
-    useCases: [
-      'Order tracking and status updates',
-      'Return and exchange processing',
-      'Product recommendations and inquiries',
-      'Shipping and delivery support',
-    ],
+    metric: t('industries.ecommerce.metric'),
+    description: t('industries.ecommerce.description'),
+    useCases: t('industries.ecommerce.useCases', { returnObjects: true }),
     testimonial: {
-      quote: 'During Black Friday, ZAIA handled 10,000+ customer inquiries without breaking a sweat. Our human team focused on complex cases and sales.',
-      author: 'Marcus Rodriguez',
-      role: 'COO, StyleHub',
+      quote: t('industries.ecommerce.testimonial.quote'),
+      author: t('industries.ecommerce.testimonial.author'),
+      role: t('industries.ecommerce.testimonial.role'),
     },
   },
   {
     id: 'healthcare',
-    name: 'Healthcare',
+    name: t('industries.healthcare.name'),
     icon: Heart,
     color: 'text-red-600',
     bgColor: 'bg-red-50',
     borderColor: 'border-red-200',
     hoverColor: 'hover:bg-red-100',
     activeColor: 'bg-red-600',
-    metric: '60% admin time saved',
-    description: 'Streamline patient scheduling, insurance verification, and administrative tasks while maintaining HIPAA compliance.',
-    useCases: [
-      'Appointment scheduling and reminders',
-      'Insurance verification and billing inquiries',
-      'Patient intake and form collection',
-      'Prescription refill requests',
-    ],
+    metric: t('industries.healthcare.metric'),
+    description: t('industries.healthcare.description'),
+    useCases: t('industries.healthcare.useCases', { returnObjects: true }),
     testimonial: {
-      quote: 'ZAIA freed up our front desk staff to focus on patient care. Appointment scheduling is now 24/7, and no-shows dropped by 40%.',
-      author: 'Dr. Emily Watson',
-      role: 'Practice Manager, HealthFirst Clinic',
+      quote: t('industries.healthcare.testimonial.quote'),
+      author: t('industries.healthcare.testimonial.author'),
+      role: t('industries.healthcare.testimonial.role'),
     },
   },
   {
     id: 'education',
-    name: 'Education',
+    name: t('industries.education.name'),
     icon: GraduationCap,
     color: 'text-purple-600',
     bgColor: 'bg-purple-50',
     borderColor: 'border-purple-200',
     hoverColor: 'hover:bg-purple-100',
     activeColor: 'bg-purple-600',
-    metric: '2x enrollment conversion',
-    description: 'Support prospective students, answer admissions questions, and guide enrollment processes around the clock.',
-    useCases: [
-      'Admissions inquiry and program information',
-      'Application status and deadline tracking',
-      'Financial aid and scholarship guidance',
-      'Student onboarding and orientation',
-    ],
+    metric: t('industries.education.metric'),
+    description: t('industries.education.description'),
+    useCases: t('industries.education.useCases', { returnObjects: true }),
     testimonial: {
-      quote: 'Prospective students get instant answers at 2 AM. Our enrollment rate doubled because we never miss a lead.',
-      author: 'James Mitchell',
-      role: 'Director of Admissions, TechU',
+      quote: t('industries.education.testimonial.quote'),
+      author: t('industries.education.testimonial.author'),
+      role: t('industries.education.testimonial.role'),
     },
   },
   {
     id: 'legal',
-    name: 'Legal',
+    name: t('industries.legal.name'),
     icon: Scale,
     color: 'text-amber-600',
     bgColor: 'bg-amber-50',
     borderColor: 'border-amber-200',
     hoverColor: 'hover:bg-amber-100',
     activeColor: 'bg-amber-600',
-    metric: '5x intake efficiency',
-    description: 'Qualify leads, schedule consultations, and collect case information while maintaining client confidentiality.',
-    useCases: [
-      'Initial case evaluation and qualification',
-      'Consultation scheduling and coordination',
-      'Document collection and intake forms',
-      'Client communication and updates',
-    ],
+    metric: t('industries.legal.metric'),
+    description: t('industries.legal.description'),
+    useCases: t('industries.legal.useCases', { returnObjects: true }),
     testimonial: {
-      quote: 'We went from manually screening every inquiry to having qualified leads delivered to our attorneys. Intake process is now 5x faster.',
-      author: 'Rachel Thompson',
-      role: 'Managing Partner, Thompson & Associates',
+      quote: t('industries.legal.testimonial.quote'),
+      author: t('industries.legal.testimonial.author'),
+      role: t('industries.legal.testimonial.role'),
     },
   },
   {
     id: 'finance',
-    name: 'Finance',
+    name: t('industries.finance.name'),
     icon: Building2,
     color: 'text-cyan-600',
     bgColor: 'bg-cyan-50',
     borderColor: 'border-cyan-200',
     hoverColor: 'hover:bg-cyan-100',
     activeColor: 'bg-cyan-600',
-    metric: '90% compliance accuracy',
-    description: 'Provide account support, transaction assistance, and financial guidance with bank-level security.',
-    useCases: [
-      'Account balance and transaction inquiries',
-      'Fraud detection and security alerts',
-      'Loan application and status tracking',
-      'Investment and portfolio guidance',
-    ],
+    metric: t('industries.finance.metric'),
+    description: t('industries.finance.description'),
+    useCases: t('industries.finance.useCases', { returnObjects: true }),
     testimonial: {
-      quote: 'ZAIA handles routine inquiries with perfect compliance while our advisors focus on complex financial planning. Security is never compromised.',
-      author: 'David Park',
-      role: 'VP of Operations, SecureBank',
+      quote: t('industries.finance.testimonial.quote'),
+      author: t('industries.finance.testimonial.author'),
+      role: t('industries.finance.testimonial.role'),
     },
   },
 ];
 
 const IndustrySolutions = () => {
+  const { t } = useTranslation('landing');
+  const { isRtl } = useLanguage();
+  const industries = getIndustries(t);
   const [selectedIndustry, setSelectedIndustry] = useState(industries[0]);
 
   return (
@@ -166,10 +141,10 @@ const IndustrySolutions = () => {
             transition={{ duration: 0.5 }}
           >
             <h2 className="text-4xl font-bold text-gray-900 mb-4">
-              Built for Your Industry
+              {t('industries.title')}
             </h2>
             <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-              Industry-specific AI solutions that understand your unique challenges and workflows
+              {t('industries.subtitle')}
             </p>
           </motion.div>
         </div>
@@ -200,7 +175,7 @@ const IndustrySolutions = () => {
                   }
                 `}
               >
-                <Icon className="w-5 h-5 mr-2" />
+                <Icon className={`w-5 h-5 ${isRtl ? 'ms-2' : 'me-2'}`} />
                 {industry.name}
               </button>
             );
@@ -224,7 +199,7 @@ const IndustrySolutions = () => {
               </div>
 
               <h3 className="text-3xl font-bold text-gray-900 mb-4">
-                {selectedIndustry.name} Solutions
+                {t('industries.solutions', { name: selectedIndustry.name })}
               </h3>
 
               <p className="text-lg text-gray-600 mb-8">
@@ -232,16 +207,16 @@ const IndustrySolutions = () => {
               </p>
 
               <div className="space-y-4 mb-8">
-                <h4 className="text-xl font-bold text-gray-900">Key Use Cases</h4>
+                <h4 className="text-xl font-bold text-gray-900">{t('industries.useCases')}</h4>
                 {selectedIndustry.useCases.map((useCase, index) => (
                   <motion.div
                     key={index}
-                    initial={{ opacity: 0, x: -20 }}
+                    initial={{ opacity: 0, x: isRtl ? 20 : -20 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ duration: 0.3, delay: index * 0.1 }}
                     className="flex items-start"
                   >
-                    <div className={`${selectedIndustry.bgColor} ${selectedIndustry.color} rounded-full p-1 mr-3 mt-0.5`}>
+                    <div className={`${selectedIndustry.bgColor} ${selectedIndustry.color} rounded-full p-1 me-3 mt-0.5`}>
                       <Check className="w-4 h-4" />
                     </div>
                     <span className="text-gray-700">{useCase}</span>
@@ -256,8 +231,8 @@ const IndustrySolutions = () => {
                   flex items-center group
                 `}
               >
-                See {selectedIndustry.name} Demo
-                <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform duration-300" />
+                {t('industries.seeDemo', { name: selectedIndustry.name })}
+                <ArrowRight className={`w-5 h-5 ${isRtl ? 'me-2 rotate-180' : 'ms-2'} group-hover:translate-x-1 transition-transform duration-300`} />
               </button>
             </div>
 

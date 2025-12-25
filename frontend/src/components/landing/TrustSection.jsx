@@ -1,58 +1,61 @@
 import { motion } from 'framer-motion';
 import { Shield, Globe, FileCheck, Award, Lock, Server } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 
 const TrustSection = () => {
+  const { t } = useTranslation('landing');
+
   const certifications = [
     {
-      name: 'SOC 2 Ready',
+      name: t('trust.certs.soc2.name'),
       icon: Shield,
       highlighted: true,
-      description: 'Built with SOC 2 controls',
+      description: t('trust.certs.soc2.description'),
     },
     {
-      name: 'GDPR Ready',
+      name: t('trust.certs.gdpr.name'),
       icon: Globe,
       highlighted: true,
-      description: 'EU data protection compliant',
+      description: t('trust.certs.gdpr.description'),
     },
     {
-      name: 'HIPAA Ready',
+      name: t('trust.certs.hipaa.name'),
       icon: FileCheck,
       highlighted: false,
-      description: 'Healthcare data ready',
+      description: t('trust.certs.hipaa.description'),
     },
     {
-      name: 'ISO 27001',
+      name: t('trust.certs.iso.name'),
       icon: Award,
       highlighted: false,
-      description: 'Information security aligned',
+      description: t('trust.certs.iso.description'),
     },
   ];
 
   const securityFeatures = [
     {
       icon: Lock,
-      title: 'End-to-End Encryption',
-      description: 'AES-256 at rest, TLS 1.3 in transit',
+      title: t('trust.features.encryption.title'),
+      description: t('trust.features.encryption.description'),
       color: 'blue',
     },
     {
       icon: Server,
-      title: 'Secure Infrastructure',
-      description: 'AWS with multi-region redundancy, 99.9% uptime',
+      title: t('trust.features.infrastructure.title'),
+      description: t('trust.features.infrastructure.description'),
       color: 'blue',
     },
     {
       icon: Shield,
-      title: 'Access Controls',
-      description: 'RBAC, SSO integration, audit logs',
+      title: t('trust.features.access.title'),
+      description: t('trust.features.access.description'),
       color: 'blue',
     },
     {
       icon: FileCheck,
-      title: 'Regular Audits',
-      description: 'Third-party penetration testing',
+      title: t('trust.features.audits.title'),
+      description: t('trust.features.audits.description'),
       color: 'blue',
     },
   ];
@@ -95,15 +98,15 @@ const TrustSection = () => {
           transition={{ duration: 0.6 }}
           className="text-center mb-16"
         >
-          <div className="inline-flex items-center space-x-2 bg-green-500/20 text-green-400 px-4 py-2 rounded-full mb-6">
+          <div className="inline-flex items-center gap-2 bg-green-500/20 text-green-400 px-4 py-2 rounded-full mb-6">
             <Shield className="w-4 h-4" />
-            <span className="text-sm font-semibold">Enterprise-Grade Security</span>
+            <span className="text-sm font-semibold">{t('trust.badge')}</span>
           </div>
           <h2 className="text-4xl md:text-5xl font-bold text-white mb-4">
-            Built for Trust & Compliance
+            {t('trust.title')}
           </h2>
           <p className="text-xl text-gray-400 max-w-2xl mx-auto">
-            Enterprise security and compliance standards you can rely on
+            {t('trust.subtitle')}
           </p>
         </motion.div>
 
@@ -139,9 +142,9 @@ const TrustSection = () => {
                 <h3 className="font-bold text-white mb-2">{cert.name}</h3>
                 <p className="text-sm text-gray-400">{cert.description}</p>
                 {cert.highlighted && (
-                  <div className="absolute -top-2 -right-2">
+                  <div className="absolute -top-2 -end-2">
                     <div className="bg-green-500 text-white text-xs font-bold px-2 py-1 rounded-full">
-                      Ready
+                      {t('trust.ready')}
                     </div>
                   </div>
                 )}
@@ -167,7 +170,7 @@ const TrustSection = () => {
                 whileHover={{ y: -4 }}
                 className="bg-gradient-to-br from-gray-800/80 to-gray-900/80 rounded-2xl p-8 border border-gray-700/50 hover:border-blue-500/50 transition-all group"
               >
-                <div className="flex items-start space-x-4">
+                <div className="flex items-start gap-4">
                   <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform shadow-lg shadow-blue-500/25">
                     <Icon className="w-6 h-6 text-white" />
                   </div>
@@ -194,17 +197,17 @@ const TrustSection = () => {
               to="/privacy"
               className="px-6 py-3 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl hover:from-green-600 hover:to-green-700 font-semibold transition-all shadow-lg shadow-green-500/25"
             >
-              View Privacy Policy
+              {t('trust.viewPrivacy')}
             </Link>
             <a
               href="#security"
               className="px-6 py-3 border-2 border-gray-600 text-gray-300 rounded-xl hover:border-blue-500 hover:text-blue-400 font-semibold transition-all"
             >
-              Security Documentation
+              {t('trust.securityDocs')}
             </a>
           </div>
           <p className="text-gray-500 mt-6 text-sm">
-            Questions about our security? <a href="mailto:info@zaiasystems.com" className="text-blue-400 hover:text-blue-300 underline">Contact our security team</a>
+            {t('trust.questions')} <a href="mailto:info@zaiasystems.com" className="text-blue-400 hover:text-blue-300 underline">{t('trust.contactSecurity')}</a>
           </p>
         </motion.div>
       </div>

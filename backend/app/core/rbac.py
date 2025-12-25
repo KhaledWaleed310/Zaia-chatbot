@@ -11,6 +11,7 @@ class Role(str, Enum):
     USER = "user"
     ADMIN = "admin"
     SUPER_ADMIN = "super_admin"
+    MARKETING = "marketing"
 
 
 class Permission(str, Enum):
@@ -101,6 +102,12 @@ class Permission(str, Enum):
     GDPR_MANAGE = "gdpr:manage"
     DATA_RETENTION = "data:retention"
 
+    # Marketing
+    MARKETING_VIEW = "marketing:view"
+    MARKETING_EDIT = "marketing:edit"
+    MARKETING_EXPORT = "marketing:export"
+    PIXEL_MANAGE = "pixel:manage"
+
 
 # Role to Permissions Mapping
 ROLE_PERMISSIONS: dict[Role, Set[Permission]] = {
@@ -189,6 +196,19 @@ ROLE_PERMISSIONS: dict[Role, Set[Permission]] = {
         # GDPR & Data Management
         Permission.GDPR_MANAGE,
         Permission.DATA_RETENTION,
+    },
+
+    Role.MARKETING: {
+        # Marketing-specific permissions
+        Permission.MARKETING_VIEW,
+        Permission.MARKETING_EDIT,
+        Permission.MARKETING_EXPORT,
+        Permission.PIXEL_MANAGE,
+
+        # Analytics access (read-only)
+        Permission.ANALYTICS_VIEW,
+        Permission.ANALYTICS_EXPORT,
+        Permission.REPORTS_GENERATE,
     },
 
     Role.SUPER_ADMIN: {
@@ -346,11 +366,12 @@ def require_role(user_role: str, required_role: Role) -> None:
             detail="Invalid user role"
         )
 
-    # Role hierarchy: USER < ADMIN < SUPER_ADMIN
+    # Role hierarchy: USER < MARKETING < ADMIN < SUPER_ADMIN
     role_hierarchy = {
         Role.USER: 1,
-        Role.ADMIN: 2,
-        Role.SUPER_ADMIN: 3
+        Role.MARKETING: 2,
+        Role.ADMIN: 3,
+        Role.SUPER_ADMIN: 4
     }
 
     if role_hierarchy[role] < role_hierarchy[required_role]:
@@ -390,6 +411,23 @@ def is_super_admin(user_role: str) -> bool:
     try:
         role = Role(user_role)
         return role == Role.SUPER_ADMIN
+    except ValueError:
+        return False
+
+
+def is_marketing_user(user_role: str) -> bool:
+    """
+    Check if user has marketing access (marketing, admin, or super_admin).
+
+    Args:
+        user_role: The user's role as a string
+
+    Returns:
+        True if user has marketing access
+    """
+    try:
+        role = Role(user_role)
+        return role in [Role.MARKETING, Role.ADMIN, Role.SUPER_ADMIN]
     except ValueError:
         return False
 
