@@ -528,11 +528,27 @@ export const seo = {
   getPage: (pageId) => api.get(`/seo/pages/${pageId}`),
   updatePage: (pageId, data) => api.put(`/seo/pages/${pageId}`, data),
 
-  // Keywords
+  // Keywords (tracking)
   listKeywords: () => api.get('/seo/keywords'),
   createKeyword: (data) => api.post('/seo/keywords', data),
   updateKeyword: (keywordId, data) => api.put(`/seo/keywords/${keywordId}`, data),
   deleteKeyword: (keywordId) => api.delete(`/seo/keywords/${keywordId}`),
+
+  // Keyword Research
+  researchKeywords: (seedKeyword, language = 'en', limit = 20) =>
+    api.post('/seo/keywords/research', { seed_keyword: seedKeyword, language, limit }),
+  analyzeKeyword: (keyword) =>
+    api.post('/seo/keywords/analyze', { keyword }),
+  getQuestionKeywords: (seedKeyword, language = 'en', limit = 20) =>
+    api.post('/seo/keywords/questions', { seed_keyword: seedKeyword, language, limit }),
+  getLongTailKeywords: (seedKeyword, limit = 20) =>
+    api.post('/seo/keywords/long-tail', { seed_keyword: seedKeyword, limit }),
+  saveKeywordResearch: (seedKeyword, language = 'en', limit = 20) =>
+    api.post('/seo/keywords/research/save', { seed_keyword: seedKeyword, language, limit }),
+  getSavedKeywordResearch: (limit = 20) =>
+    api.get(`/seo/keywords/research/saved?limit=${limit}`),
+  deleteSavedKeywordResearch: (researchId) =>
+    api.delete(`/seo/keywords/research/saved/${researchId}`),
 
   // SEO Audit
   runAudit: () => api.get('/seo/audit'),
@@ -548,6 +564,83 @@ export const seo = {
 
   // File generation
   generateFiles: () => api.post('/seo/generate-files'),
+
+  // Content Analysis
+  analyzeContent: (data) => api.post('/seo/content/analyze', data),
+  getQuickScore: (content, primaryKeyword = null) =>
+    api.post('/seo/content/score', { content, primary_keyword: primaryKeyword }),
+  analyzeReadability: (content) =>
+    api.post('/seo/content/readability', { content }),
+  analyzeHeadingStructure: (htmlContent) =>
+    api.post('/seo/content/heading-structure', { html_content: htmlContent }),
+  auditImages: (htmlContent) =>
+    api.post('/seo/content/image-audit', { html_content: htmlContent }),
+
+  // Technical SEO
+  analyzePageSpeed: (url, strategy = 'mobile') =>
+    api.post('/seo/technical/page-speed', { url, strategy }),
+  getCoreWebVitals: (url) =>
+    api.post('/seo/technical/core-web-vitals', null, { params: { url } }),
+  checkMobileFriendliness: (url) =>
+    api.post('/seo/technical/mobile-check', null, { params: { url } }),
+  scanBrokenLinks: (url, checkExternal = true, maxLinks = 100) =>
+    api.post('/seo/technical/broken-links', { url, check_external: checkExternal, max_links: maxLinks }),
+  checkSSL: (url) =>
+    api.post('/seo/technical/ssl-check', { url }),
+  validateSchema: (url) =>
+    api.post('/seo/technical/schema-validate', { url }),
+  getSchemaTemplate: (schemaType) =>
+    api.get(`/seo/technical/schema-template/${schemaType}`),
+  listSchemaTypes: () =>
+    api.get('/seo/technical/schema-types'),
+  runTechnicalAudit: (url) =>
+    api.post('/seo/technical/audit', { url }),
+  runQuickTechnicalCheck: (url) =>
+    api.post('/seo/technical/quick-check', { url }),
+
+  // Redirect Manager
+  listRedirects: () => api.get('/seo/technical/redirects'),
+  createRedirect: (data) => api.post('/seo/technical/redirects', data),
+  updateRedirect: (id, data) => api.put(`/seo/technical/redirects/${id}`, data),
+  deleteRedirect: (id) => api.delete(`/seo/technical/redirects/${id}`),
+};
+
+// Learning API - AIDEN self-learning system
+export const learning = {
+  // Get learning stats for a bot
+  getStats: (botId) => api.get(`/learning/${botId}/stats`),
+
+  // Get learned patterns
+  getPatterns: (botId, limit = 20) => api.get(`/learning/${botId}/patterns?limit=${limit}`),
+
+  // Get crystallized knowledge
+  getKnowledge: (botId, limit = 20) => api.get(`/learning/${botId}/knowledge?limit=${limit}`),
+
+  // Get self-reflection insights
+  getInsights: (botId, limit = 20) => api.get(`/learning/${botId}/insights?limit=${limit}`),
+
+  // Get prompt experiments (A/B tests)
+  getExperiments: (botId) => api.get(`/learning/${botId}/experiments`),
+
+  // Manually trigger crystallization
+  triggerCrystallization: (botId, hours = 24) =>
+    api.post(`/learning/${botId}/crystallize?hours=${hours}`),
+
+  // Submit feedback
+  submitFeedback: (botId, sessionId, data) =>
+    api.post(`/learning/${botId}/feedback?session_id=${sessionId}`, data),
+};
+
+// Admin Learning API - Platform-wide learning monitoring
+export const adminLearning = {
+  // Get platform-wide learning stats
+  getPlatformStats: () => api.get('/admin/learning/platform-stats'),
+
+  // Get recent learning activity stream
+  getActivityStream: (limit = 50) => api.get(`/admin/learning/activity-stream?limit=${limit}`),
+
+  // Get graph data for neural visualization
+  getGraphData: () => api.get('/admin/learning/graph-data'),
 };
 
 export default api;

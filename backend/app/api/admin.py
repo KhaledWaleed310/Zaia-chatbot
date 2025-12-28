@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 from typing import Optional
 from datetime import datetime, timedelta
-from ..core.security import get_current_admin, get_password_hash, is_admin, ADMIN_EMAILS
+from ..core.security import get_current_admin, get_password_hash, is_admin
 from ..core.database import get_mongodb, get_qdrant, get_neo4j, get_redis
 from ..schemas.admin import (
     AdminUserResponse, AdminUserUpdate, AdminUserCreate,
@@ -420,7 +420,7 @@ async def list_users(
             "messages_count": messages_count,
             "created_at": user.get("created_at"),
             "last_login": user.get("last_login"),
-            "is_admin": user.get("email") in ADMIN_EMAILS or user.get("role") == "admin"
+            "is_admin": is_admin(user)
         })
 
     return {
@@ -460,7 +460,7 @@ async def get_user(user_id: str, current_admin: dict = Depends(get_current_admin
         "subscription_tier": user.get("subscription_tier", "free"),
         "created_at": user.get("created_at"),
         "last_login": user.get("last_login"),
-        "is_admin": user.get("email") in ADMIN_EMAILS or user.get("role") == "admin",
+        "is_admin": is_admin(user),
         "stats": {
             "chatbots_count": chatbots_count,
             "documents_count": documents_count,
@@ -1702,3 +1702,213 @@ async def get_audit_logs(
         "per_page": per_page,
         "pages": pages
     }
+
+
+# ==================== AIDEN LEARNING MONITOR ====================
+
+@router.get("/learning/platform-stats")
+async def get_platform_learning_stats(current_admin: dict = Depends(get_current_admin)):
+    """Get platform-wide learning statistics for neural network visualization"""
+    db = get_mongodb()
+
+    try:
+        # Get overall learning stats
+        total_experiences = await db.learning_experiences.count_documents({})
+        crystallized_experiences = await db.learning_experiences.count_documents({"crystallized": True})
+        total_patterns = await db.learned_patterns.count_documents({})
+        total_knowledge = await db.crystallized_knowledge.count_documents({})
+        total_feedback = await db.learning_feedback.count_documents({})
+
+        # Get active experiments
+        active_experiments = await db.prompt_variants.count_documents({"status": "testing"})
+
+        # Get per-bot learning stats
+        bots_cursor = db.chatbots.find({}, {"_id": 1, "name": 1, "tenant_id": 1})
+        bots = await bots_cursor.to_list(length=100)
+
+        bots_learning = []
+        for bot in bots:
+            bot_id = str(bot["_id"])
+            bot_experiences = await db.learning_experiences.count_documents({"bot_id": bot_id})
+            bot_patterns = await db.learned_patterns.count_documents({
+                "$or": [{"bot_id": bot_id}, {"scope": "global"}]
+            })
+            bot_feedback_positive = await db.learning_feedback.count_documents({
+                "bot_id": bot_id, "rating": 1.0
+            })
+            bot_feedback_negative = await db.learning_feedback.count_documents({
+                "bot_id": bot_id, "rating": 0.0
+            })
+
+            bots_learning.append({
+                "bot_id": bot_id,
+                "name": bot.get("name", "Unnamed"),
+                "experiences": bot_experiences,
+                "patterns": bot_patterns,
+                "feedback_positive": bot_feedback_positive,
+                "feedback_negative": bot_feedback_negative,
+            })
+
+        # Sort by experiences descending
+        bots_learning.sort(key=lambda x: x["experiences"], reverse=True)
+
+        return {
+            "total_experiences": total_experiences,
+            "crystallized_experiences": crystallized_experiences,
+            "pending_experiences": total_experiences - crystallized_experiences,
+            "total_patterns": total_patterns,
+            "total_knowledge": total_knowledge,
+            "total_feedback": total_feedback,
+            "active_experiments": active_experiments,
+            "bots_count": len(bots),
+            "bots_learning": bots_learning[:20],  # Top 20 bots
+        }
+
+    except Exception as e:
+        logger.error(f"Failed to get platform learning stats: {e}")
+        raise HTTPException(status_code=500, detail="Failed to fetch learning stats")
+
+
+@router.get("/learning/activity-stream")
+async def get_learning_activity_stream(
+    limit: int = Query(50, le=100),
+    current_admin: dict = Depends(get_current_admin)
+):
+    """Get recent learning activity for real-time feed"""
+    db = get_mongodb()
+
+    try:
+        activities = []
+
+        # Get recent learning experiences
+        exp_cursor = db.learning_experiences.find({}).sort("created_at", -1).limit(limit // 2)
+        async for exp in exp_cursor:
+            # Get bot name
+            bot = await db.chatbots.find_one({"_id": exp.get("bot_id")}, {"name": 1})
+            activities.append({
+                "id": str(exp.get("_id")),
+                "type": "experience",
+                "bot_id": exp.get("bot_id"),
+                "bot_name": bot.get("name", "Unknown") if bot else "Unknown",
+                "description": f"New learning experience: {exp.get('interaction_type', 'neutral')}",
+                "importance": exp.get("importance_score", 0.5),
+                "timestamp": exp.get("created_at"),
+            })
+
+        # Get recent patterns
+        pattern_cursor = db.learned_patterns.find({}).sort("created_at", -1).limit(limit // 4)
+        async for pattern in pattern_cursor:
+            bot = await db.chatbots.find_one({"_id": pattern.get("bot_id")}, {"name": 1})
+            activities.append({
+                "id": str(pattern.get("_id")),
+                "type": "pattern",
+                "bot_id": pattern.get("bot_id"),
+                "bot_name": bot.get("name", "Global") if bot else "Global",
+                "description": f"Pattern crystallized: {pattern.get('pattern_type', 'unknown')}",
+                "importance": pattern.get("confidence", 0.5),
+                "timestamp": pattern.get("created_at"),
+            })
+
+        # Get recent feedback
+        feedback_cursor = db.learning_feedback.find({}).sort("created_at", -1).limit(limit // 4)
+        async for fb in feedback_cursor:
+            bot = await db.chatbots.find_one({"_id": fb.get("bot_id")}, {"name": 1})
+            fb_type = "positive" if fb.get("rating", 0) > 0.5 else "negative"
+            activities.append({
+                "id": str(fb.get("_id")),
+                "type": "feedback",
+                "bot_id": fb.get("bot_id"),
+                "bot_name": bot.get("name", "Unknown") if bot else "Unknown",
+                "description": f"User feedback: {fb_type}",
+                "importance": abs(fb.get("rating", 0.5) - 0.5) * 2,
+                "timestamp": fb.get("created_at"),
+            })
+
+        # Sort by timestamp
+        activities.sort(key=lambda x: x.get("timestamp") or datetime.min, reverse=True)
+
+        return {
+            "activities": activities[:limit]
+        }
+
+    except Exception as e:
+        logger.error(f"Failed to get activity stream: {e}")
+        raise HTTPException(status_code=500, detail="Failed to fetch activity stream")
+
+
+@router.get("/learning/graph-data")
+async def get_learning_graph_data(current_admin: dict = Depends(get_current_admin)):
+    """Get node and link data for neural network visualization"""
+    db = get_mongodb()
+
+    try:
+        nodes = []
+        links = []
+
+        # Get all bots as primary nodes
+        bots_cursor = db.chatbots.find({}, {"_id": 1, "name": 1})
+        bots = await bots_cursor.to_list(length=50)
+
+        for bot in bots:
+            bot_id = str(bot["_id"])
+            exp_count = await db.learning_experiences.count_documents({"bot_id": bot_id})
+
+            nodes.append({
+                "id": f"bot-{bot_id}",
+                "type": "bot",
+                "label": bot.get("name", "Bot"),
+                "value": min(1.0, exp_count / 100),  # Normalize to 0-1
+                "metadata": {"experiences": exp_count}
+            })
+
+        # Get patterns
+        patterns_cursor = db.learned_patterns.find({}).limit(100)
+        async for pattern in patterns_cursor:
+            pattern_id = str(pattern.get("_id"))
+            nodes.append({
+                "id": f"pattern-{pattern_id}",
+                "type": "pattern",
+                "label": pattern.get("pattern_description", "")[:50],
+                "value": pattern.get("confidence", 0.5),
+                "metadata": {
+                    "pattern_type": pattern.get("pattern_type"),
+                    "evidence_count": pattern.get("evidence_count", 0)
+                }
+            })
+
+            # Link pattern to its bot
+            if pattern.get("bot_id"):
+                links.append({
+                    "source": f"bot-{pattern.get('bot_id')}",
+                    "target": f"pattern-{pattern_id}",
+                    "strength": pattern.get("confidence", 0.5),
+                })
+
+        # Get knowledge nodes
+        knowledge_cursor = db.crystallized_knowledge.find({}).limit(50)
+        async for know in knowledge_cursor:
+            know_id = str(know.get("_id"))
+            nodes.append({
+                "id": f"knowledge-{know_id}",
+                "type": "knowledge",
+                "label": know.get("description", "")[:50],
+                "value": know.get("confidence", 0.7),
+                "metadata": {"level": know.get("level")}
+            })
+
+            # Link knowledge to supporting patterns
+            for pattern_id in know.get("supporting_patterns", [])[:3]:
+                links.append({
+                    "source": f"pattern-{pattern_id}",
+                    "target": f"knowledge-{know_id}",
+                    "strength": know.get("confidence", 0.7),
+                })
+
+        return {
+            "nodes": nodes,
+            "links": links,
+        }
+
+    except Exception as e:
+        logger.error(f"Failed to get graph data: {e}")
+        raise HTTPException(status_code=500, detail="Failed to fetch graph data")

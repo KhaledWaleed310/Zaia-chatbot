@@ -4,6 +4,7 @@ import uuid
 import secrets
 import hashlib
 import logging
+import re
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 from ..schemas.user import UserCreate, UserLogin, UserResponse, TokenResponse, RegisterResponse
@@ -11,7 +12,7 @@ from ..schemas.password_reset import (
     ForgotPasswordRequest, ResetPasswordRequest, MessageResponse,
     ResendVerificationRequest, VerifyEmailRequest
 )
-from ..core.security import get_password_hash, verify_password, create_access_token, is_admin, get_current_user, ADMIN_EMAILS
+from ..core.security import get_password_hash, verify_password, create_access_token, is_admin, get_current_user
 from ..core.database import get_mongodb
 from ..services.limits import get_user_usage
 from ..services.email import send_password_reset_email, send_password_changed_confirmation, send_verification_email
@@ -23,16 +24,35 @@ limiter = Limiter(key_func=get_remote_address)
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
 
+def validate_password_strength(password: str) -> tuple:
+    """
+    Validate password meets security requirements.
+    Returns (is_valid, error_message).
+    """
+    if len(password) < 8:
+        return False, "Password must be at least 8 characters long"
+    if not re.search(r'[A-Z]', password):
+        return False, "Password must contain at least one uppercase letter"
+    if not re.search(r'[a-z]', password):
+        return False, "Password must contain at least one lowercase letter"
+    if not re.search(r'\d', password):
+        return False, "Password must contain at least one digit"
+    if not re.search(r'[!@#$%^&*(),.?":{}|<>\-_=+\[\]\\;\'`~]', password):
+        return False, "Password must contain at least one special character"
+    return True, ""
+
+
 @router.post("/register", response_model=RegisterResponse)
 @limiter.limit("5/minute")
 async def register(request: Request, user_data: UserCreate):
     db = get_mongodb()
 
     # Validate password strength
-    if len(user_data.password) < 8:
+    is_valid, error_msg = validate_password_strength(user_data.password)
+    if not is_valid:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Password must be at least 8 characters long"
+            detail=error_msg
         )
 
     # Check if user exists (exclude soft-deleted users)

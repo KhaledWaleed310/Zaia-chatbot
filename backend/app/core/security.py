@@ -10,8 +10,8 @@ from .database import get_mongodb
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 security = HTTPBearer()
 
-# Admin email list - users with these emails are automatically admins
-ADMIN_EMAILS = ["admin@aidenlink.cloud", "admin@zaiasystems.com"]
+# SECURITY: Admin access is now role-based only, not email-based
+# To make a user admin, set their role to "admin" or "super_admin" in the database
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
@@ -96,10 +96,9 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
 async def get_current_admin(current_user: dict = Depends(get_current_user)):
     """Dependency to check if the current user is an admin"""
     user_role = current_user.get("role", "user")
-    user_email = current_user.get("email", "")
 
-    # Check if user has admin role or is in admin emails list
-    if user_role != "admin" and user_email not in ADMIN_EMAILS:
+    # SECURITY: Only check role, not email - prevents auto-admin via email registration
+    if user_role not in ["admin", "super_admin"]:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Admin access required"
@@ -109,9 +108,9 @@ async def get_current_admin(current_user: dict = Depends(get_current_user)):
 
 
 def is_admin(user: dict) -> bool:
-    """Check if a user is an admin"""
+    """Check if a user is an admin - based on role only"""
     user_role = user.get("role", "user")
-    return user_role in ["admin", "super_admin"] or user.get("email") in ADMIN_EMAILS
+    return user_role in ["admin", "super_admin"]
 
 
 async def get_current_marketing_user(current_user: dict = Depends(get_current_user)):
@@ -120,11 +119,9 @@ async def get_current_marketing_user(current_user: dict = Depends(get_current_us
     Allows marketing, admin, or super_admin roles.
     """
     user_role = current_user.get("role", "user")
-    user_email = current_user.get("email", "")
 
-    # Check if user has marketing access (marketing, admin, or super_admin)
-    # Also check admin emails list for backwards compatibility
-    if user_role not in ["marketing", "admin", "super_admin"] and user_email not in ADMIN_EMAILS:
+    # SECURITY: Only check role - prevents auto-access via email registration
+    if user_role not in ["marketing", "admin", "super_admin"]:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Marketing access required"
@@ -134,6 +131,6 @@ async def get_current_marketing_user(current_user: dict = Depends(get_current_us
 
 
 def is_marketing_user(user: dict) -> bool:
-    """Check if a user has marketing access"""
+    """Check if a user has marketing access - based on role only"""
     user_role = user.get("role", "user")
-    return user_role in ["marketing", "admin", "super_admin"] or user.get("email") in ADMIN_EMAILS
+    return user_role in ["marketing", "admin", "super_admin"]

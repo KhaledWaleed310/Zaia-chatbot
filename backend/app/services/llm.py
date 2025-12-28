@@ -13,6 +13,29 @@ DEEPSEEK_PRICING = {
     "output": 1.68,               # $1.68 per 1M tokens
 }
 
+# Global HTTP client with connection pooling for LLM API
+_http_client: httpx.AsyncClient = None
+
+
+def get_http_client() -> httpx.AsyncClient:
+    """Get or create HTTP client with connection pooling."""
+    global _http_client
+    if _http_client is None:
+        _http_client = httpx.AsyncClient(
+            timeout=httpx.Timeout(30.0, connect=5.0),
+            limits=httpx.Limits(max_connections=20, max_keepalive_connections=10),
+            http2=True  # Enable HTTP/2 for better multiplexing
+        )
+    return _http_client
+
+
+async def close_http_client():
+    """Close the HTTP client (call on application shutdown)."""
+    global _http_client
+    if _http_client:
+        await _http_client.aclose()
+        _http_client = None
+
 
 def build_optimized_messages(
     system_prompt: str,
@@ -133,49 +156,48 @@ async def generate_response(
         query=query
     )
 
-    # Use aggressive timeout (30s instead of 60s) for better UX
-    async with httpx.AsyncClient() as client:
-        try:
-            response = await client.post(
-                f"{settings.DEEPSEEK_API_BASE}/chat/completions",
-                headers={
-                    "Authorization": f"Bearer {settings.DEEPSEEK_API_KEY}",
-                    "Content-Type": "application/json"
-                },
-                json={
-                    "model": settings.DEEPSEEK_MODEL,
-                    "messages": messages,
-                    "temperature": 0.7,
-                    "max_tokens": 1024
-                },
-                timeout=30.0  # Reduced from 60s for faster failure detection
-            )
-        except httpx.TimeoutException:
-            # Return graceful fallback on timeout
-            return "I apologize, but I'm taking longer than expected to respond. Please try asking your question again, or rephrase it to be more specific."
+    # Use pooled HTTP client for connection reuse
+    client = get_http_client()
+    try:
+        response = await client.post(
+            f"{settings.DEEPSEEK_API_BASE}/chat/completions",
+            headers={
+                "Authorization": f"Bearer {settings.DEEPSEEK_API_KEY}",
+                "Content-Type": "application/json"
+            },
+            json={
+                "model": settings.DEEPSEEK_MODEL,
+                "messages": messages,
+                "temperature": 0.7,
+                "max_tokens": 1024
+            }
+        )
+    except httpx.TimeoutException:
+        # Return graceful fallback on timeout
+        return "I apologize, but I'm taking longer than expected to respond. Please try asking your question again, or rephrase it to be more specific."
 
-        if response.status_code != 200:
-            raise Exception(f"DeepSeek API error: {response.text}")
+    if response.status_code != 200:
+        raise Exception(f"DeepSeek API error: {response.text}")
 
-        data = response.json()
+    data = response.json()
 
-        # Track token usage if we have tenant info
-        if tenant_id and bot_id:
-            usage = data.get("usage", {})
-            input_tokens = usage.get("prompt_tokens", 0)
-            output_tokens = usage.get("completion_tokens", 0)
-            cached_tokens = usage.get("prompt_cache_hit_tokens", 0)
+    # Track token usage if we have tenant info
+    if tenant_id and bot_id:
+        usage = data.get("usage", {})
+        input_tokens = usage.get("prompt_tokens", 0)
+        output_tokens = usage.get("completion_tokens", 0)
+        cached_tokens = usage.get("prompt_cache_hit_tokens", 0)
 
-            await track_token_usage(
-                tenant_id=tenant_id,
-                bot_id=bot_id,
-                session_id=session_id or "unknown",
-                input_tokens=input_tokens,
-                output_tokens=output_tokens,
-                cached_tokens=cached_tokens
-            )
+        await track_token_usage(
+            tenant_id=tenant_id,
+            bot_id=bot_id,
+            session_id=session_id or "unknown",
+            input_tokens=input_tokens,
+            output_tokens=output_tokens,
+            cached_tokens=cached_tokens
+        )
 
-        return data["choices"][0]["message"]["content"]
+    return data["choices"][0]["message"]["content"]
 
 
 async def generate_response_simple(
@@ -199,30 +221,31 @@ async def generate_response_simple(
     """
     messages = [{"role": "user", "content": prompt}]
 
-    async with httpx.AsyncClient() as client:
-        try:
-            response = await client.post(
-                f"{settings.DEEPSEEK_API_BASE}/chat/completions",
-                headers={
-                    "Authorization": f"Bearer {settings.DEEPSEEK_API_KEY}",
-                    "Content-Type": "application/json"
-                },
-                json={
-                    "model": settings.DEEPSEEK_MODEL,
-                    "messages": messages,
-                    "temperature": temperature,
-                    "max_tokens": max_tokens
-                },
-                timeout=15.0  # Short timeout for utility calls
-            )
-        except httpx.TimeoutException:
-            raise Exception("LLM request timed out")
+    # Use pooled HTTP client for connection reuse
+    client = get_http_client()
+    try:
+        response = await client.post(
+            f"{settings.DEEPSEEK_API_BASE}/chat/completions",
+            headers={
+                "Authorization": f"Bearer {settings.DEEPSEEK_API_KEY}",
+                "Content-Type": "application/json"
+            },
+            json={
+                "model": settings.DEEPSEEK_MODEL,
+                "messages": messages,
+                "temperature": temperature,
+                "max_tokens": max_tokens
+            },
+            timeout=15.0  # Short timeout for utility calls
+        )
+    except httpx.TimeoutException:
+        raise Exception("LLM request timed out")
 
-        if response.status_code != 200:
-            raise Exception(f"DeepSeek API error: {response.text}")
+    if response.status_code != 200:
+        raise Exception(f"DeepSeek API error: {response.text}")
 
-        data = response.json()
-        return data["choices"][0]["message"]["content"]
+    data = response.json()
+    return data["choices"][0]["message"]["content"]
 
 
 async def generate_response_stream(
@@ -249,38 +272,37 @@ async def generate_response_stream(
     estimated_input_tokens = len(input_text) // 4
     output_token_count = 0
 
-    # Use aggressive timeout (30s instead of 60s) for better UX
+    # Use pooled HTTP client for connection reuse
+    client = get_http_client()
     try:
-        async with httpx.AsyncClient() as client:
-            async with client.stream(
-                "POST",
-                f"{settings.DEEPSEEK_API_BASE}/chat/completions",
-                headers={
-                    "Authorization": f"Bearer {settings.DEEPSEEK_API_KEY}",
-                    "Content-Type": "application/json"
-                },
-                json={
-                    "model": settings.DEEPSEEK_MODEL,
-                    "messages": messages,
-                    "temperature": 0.7,
-                    "max_tokens": 1024,
-                    "stream": True
-                },
-                timeout=30.0  # Reduced from 60s for faster failure detection
-            ) as response:
-                async for line in response.aiter_lines():
-                    if line.startswith("data: "):
-                        data = line[6:]
-                        if data == "[DONE]":
-                            break
-                        try:
-                            chunk = json.loads(data)
-                            content = chunk["choices"][0]["delta"].get("content")
-                            if content:
-                                output_token_count += len(content) // 4  # Rough estimate
-                                yield content
-                        except json.JSONDecodeError:
-                            continue
+        async with client.stream(
+            "POST",
+            f"{settings.DEEPSEEK_API_BASE}/chat/completions",
+            headers={
+                "Authorization": f"Bearer {settings.DEEPSEEK_API_KEY}",
+                "Content-Type": "application/json"
+            },
+            json={
+                "model": settings.DEEPSEEK_MODEL,
+                "messages": messages,
+                "temperature": 0.7,
+                "max_tokens": 1024,
+                "stream": True
+            }
+        ) as response:
+            async for line in response.aiter_lines():
+                if line.startswith("data: "):
+                    data = line[6:]
+                    if data == "[DONE]":
+                        break
+                    try:
+                        chunk = json.loads(data)
+                        content = chunk["choices"][0]["delta"].get("content")
+                        if content:
+                            output_token_count += len(content) // 4  # Rough estimate
+                            yield content
+                    except json.JSONDecodeError:
+                        continue
     except httpx.TimeoutException:
         # Yield timeout message on failure
         yield "I apologize, but I'm taking longer than expected. Please try again."

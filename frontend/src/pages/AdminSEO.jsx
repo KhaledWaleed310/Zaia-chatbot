@@ -24,6 +24,9 @@ import {
   XCircle,
   Save,
   Eye,
+  Target,
+  ArrowRight,
+  Zap,
 } from 'lucide-react';
 
 const AdminSEO = () => {
@@ -222,13 +225,39 @@ const AdminSEO = () => {
               <p className="text-xs sm:text-sm text-gray-500">Optimize your public pages for search engines</p>
             </div>
           </div>
-          <button
-            onClick={loadData}
-            className="flex items-center justify-center gap-2 px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 w-full sm:w-auto"
-          >
-            <RefreshCw className="w-4 h-4" />
-            Refresh
-          </button>
+          <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+            <button
+              onClick={() => navigate('/admin/seo/keywords')}
+              className="flex items-center justify-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 w-full sm:w-auto"
+            >
+              <Target className="w-4 h-4" />
+              Keyword Research
+              <ArrowRight className="w-4 h-4" />
+            </button>
+            <button
+              onClick={() => navigate('/admin/seo/content')}
+              className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 w-full sm:w-auto"
+            >
+              <FileText className="w-4 h-4" />
+              Content Optimizer
+              <ArrowRight className="w-4 h-4" />
+            </button>
+            <button
+              onClick={() => navigate('/admin/seo/technical')}
+              className="flex items-center justify-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 w-full sm:w-auto"
+            >
+              <Zap className="w-4 h-4" />
+              Technical SEO
+              <ArrowRight className="w-4 h-4" />
+            </button>
+            <button
+              onClick={loadData}
+              className="flex items-center justify-center gap-2 px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 w-full sm:w-auto"
+            >
+              <RefreshCw className="w-4 h-4" />
+              Refresh
+            </button>
+          </div>
         </div>
 
         {error && (

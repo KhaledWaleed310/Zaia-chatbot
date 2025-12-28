@@ -8,7 +8,8 @@ import { marketing } from '@/utils/api';
 import { trackEvent, EVENTS } from '@/utils/tracking';
 
 // Landing page sections
-import HeroSection from '@/components/landing/HeroSection';
+import NeuralHeroSection from '@/components/landing/NeuralHeroSection';
+import HeroSection from '@/components/landing/HeroSection'; // Keep as fallback
 import ProblemSolution from '@/components/landing/ProblemSolution';
 import HowItWorks from '@/components/landing/HowItWorks';
 import Features from '@/components/landing/Features';
@@ -210,8 +211,8 @@ const Landing = () => {
         </div>
       </nav>
 
-      {/* Hero Section */}
-      <HeroSection />
+      {/* Hero Section - Neural Network Visualization */}
+      <NeuralHeroSection />
 
       {/* Problem → Solution */}
       <ProblemSolution />

@@ -14,6 +14,22 @@
       "costSavings": "Cost Savings"
     }
   },
+  "neuralHero": {
+    "badge": "Powered by Self-Learning AI",
+    "headline1": "An AI That",
+    "headlineGradient": "Learns & Evolves",
+    "headline2": "With Every Conversation",
+    "subheadline": "AIDEN doesn't just answer questions — it learns from every interaction, recognizes patterns, and becomes smarter over time.",
+    "subheadline2": "Built for MENA businesses. Native Arabic & English support.",
+    "cta": "Start Free Trial",
+    "watchDemo": "Watch AIDEN Learn",
+    "trustLine": "No credit card required • 14-day free trial • Setup in 5 minutes",
+    "stats": {
+      "messages": "Messages Processed",
+      "responseTime": "Response Time",
+      "costSavings": "Cost Savings"
+    }
+  },
   "features": {
     "title": "Everything You Need to Delight Customers",
     "subtitle": "Powerful features that set Aiden Link apart from basic chatbots",

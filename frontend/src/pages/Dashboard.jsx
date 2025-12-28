@@ -5,6 +5,7 @@ import Layout from '../components/Layout';
 import { chatbots } from '../utils/api';
 import { MessageSquare, FileText, Users, Plus } from 'lucide-react';
 import { useLanguage } from '@/context/LanguageContext';
+import AidenLearningWidget from '../components/learning/AidenLearningWidget';
 
 const Dashboard = () => {
   const { t } = useTranslation('dashboard');
@@ -86,6 +87,11 @@ const Dashboard = () => {
             );
           })}
         </div>
+
+        {/* AIDEN Learning Widget */}
+        {bots.length > 0 && (
+          <AidenLearningWidget chatbots={bots} className="w-full" />
+        )}
 
         {/* Recent Chatbots */}
         <div className="bg-white rounded-xl shadow-sm overflow-hidden">

@@ -27,6 +27,7 @@ import {
   RefreshCw,
   Gauge,
   PieChart,
+  Brain,
 } from 'lucide-react';
 
 const AdminDashboard = () => {
@@ -122,6 +123,15 @@ const AdminDashboard = () => {
       color: 'from-green-500 to-green-600',
       iconBg: 'bg-green-100',
       iconColor: 'text-green-600',
+    },
+    {
+      title: 'AIDEN Learning',
+      description: 'Neural network visualization of platform learning',
+      icon: Brain,
+      path: '/admin/learning',
+      color: 'from-indigo-500 to-purple-600',
+      iconBg: 'bg-indigo-100',
+      iconColor: 'text-indigo-600',
     },
     {
       title: 'Server Monitor',

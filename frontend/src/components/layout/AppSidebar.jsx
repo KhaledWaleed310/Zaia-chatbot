@@ -20,7 +20,8 @@ import {
   PanelLeft,
   Globe,
   Megaphone,
-  Search
+  Search,
+  Brain
 } from 'lucide-react';
 import { SidebarSection } from './SidebarSection';
 import { LanguageDropdown } from '@/components/shared/LanguageSwitcher';
@@ -79,6 +80,7 @@ const getAdminSection = (t) => ({
     { path: '/admin/analytics', icon: TrendingUp, label: t('sidebar.businessAnalytics', 'Business Analytics') },
     { path: '/admin/finance', icon: DollarSign, label: t('sidebar.financeAnalysis', 'Finance Analysis') },
     { path: '/admin/server', icon: Server, label: t('sidebar.serverMonitor', 'Server Monitor') },
+    { path: '/admin/learning', icon: Brain, label: t('sidebar.aidenLearning', 'AIDEN Learning') },
     { path: '/admin/users', icon: Users, label: t('sidebar.manageUsers', 'Manage Users') },
     { path: '/admin/chatbots', icon: MessageSquare, label: t('sidebar.manageChatbots', 'Manage Chatbots') },
     { path: '/admin/databases', icon: Database, label: t('sidebar.databases', 'Databases') },

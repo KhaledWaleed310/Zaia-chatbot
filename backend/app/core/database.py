@@ -197,6 +197,80 @@ async def ensure_audit_indexes():
         logger.error(f"Failed to create audit indexes: {e}")
 
 
+async def ensure_learning_indexes():
+    """Ensure AIDEN learning system indexes exist."""
+    try:
+        db_instance = get_mongodb()
+
+        # Learning experiences
+        await db_instance.learning_experiences.create_index([("bot_id", 1), ("created_at", -1)])
+        await db_instance.learning_experiences.create_index([("session_id", 1)])
+        await db_instance.learning_experiences.create_index([("crystallized", 1)])
+        await db_instance.learning_experiences.create_index([("importance_score", -1)])
+        await db_instance.learning_experiences.create_index([("is_landmark", 1)])
+
+        # Learned patterns
+        await db_instance.learned_patterns.create_index([("bot_id", 1), ("confidence", -1)])
+        await db_instance.learned_patterns.create_index([("scope", 1)])
+        await db_instance.learned_patterns.create_index([("pattern_type", 1)])
+        await db_instance.learned_patterns.create_index([("trigger_intents", 1)])
+
+        # Crystallized knowledge
+        await db_instance.crystallized_knowledge.create_index([("scope", 1), ("level", 1)])
+        await db_instance.crystallized_knowledge.create_index([("confidence", -1)])
+
+        # Prompt variants (A/B testing)
+        await db_instance.prompt_variants.create_index([("bot_id", 1), ("status", 1)])
+        await db_instance.prompt_variants.create_index([("created_at", -1)])
+
+        # Reflection insights
+        await db_instance.reflection_insights.create_index([("bot_id", 1), ("created_at", -1)])
+        await db_instance.reflection_insights.create_index([("session_id", 1)])
+
+        # Learning feedback
+        await db_instance.learning_feedback.create_index([("bot_id", 1), ("session_id", 1)])
+        await db_instance.learning_feedback.create_index([("message_id", 1)])
+        await db_instance.learning_feedback.create_index([("feedback_type", 1)])
+
+        # Replay tracking
+        await db_instance.replay_improvements.create_index([("bot_id", 1), ("created_at", -1)])
+        await db_instance.replay_regressions.create_index([("bot_id", 1), ("investigated", 1)])
+
+        # Knowledge gaps
+        await db_instance.knowledge_gaps.create_index([("bot_id", 1), ("status", 1)])
+
+        logger.info("AIDEN learning indexes created")
+    except Exception as e:
+        logger.error(f"Failed to create learning indexes: {e}")
+
+
+async def ensure_seo_indexes():
+    """Ensure SEO-related indexes exist."""
+    try:
+        db_instance = get_mongodb()
+
+        # SEO keyword research indexes
+        await db_instance.seo_keyword_research.create_index([("tenant_id", 1)])
+        await db_instance.seo_keyword_research.create_index([("seed_keyword", 1)])
+        await db_instance.seo_keyword_research.create_index([("created_at", -1)])
+        await db_instance.seo_keyword_research.create_index(
+            [("tenant_id", 1), ("created_at", -1)]
+        )
+
+        # SEO pages index
+        await db_instance.seo_pages.create_index([("page_id", 1)], unique=True)
+
+        # SEO keywords tracking index
+        await db_instance.seo_keywords.create_index([("keyword", 1)], unique=True)
+
+        # SEO audits index
+        await db_instance.seo_audits.create_index([("audit_date", -1)])
+
+        logger.info("SEO indexes created")
+    except Exception as e:
+        logger.error(f"Failed to create SEO indexes: {e}")
+
+
 async def connect_all():
     await connect_mongodb()
     await connect_qdrant()
@@ -204,6 +278,8 @@ async def connect_all():
     await connect_redis()
     await ensure_context_indexes()
     await ensure_audit_indexes()
+    await ensure_seo_indexes()
+    await ensure_learning_indexes()
 
 
 async def close_all():
@@ -229,3 +305,40 @@ def get_neo4j():
 
 def get_redis():
     return db.redis_client
+
+
+async def check_mongodb_health() -> tuple:
+    """Check MongoDB connectivity. Returns (is_healthy, message)."""
+    try:
+        await db.client.admin.command('ping')
+        return True, "ok"
+    except Exception as e:
+        return False, str(e)
+
+
+async def check_redis_health() -> tuple:
+    """Check Redis connectivity. Returns (is_healthy, message)."""
+    try:
+        await db.redis_client.ping()
+        return True, "ok"
+    except Exception as e:
+        return False, str(e)
+
+
+async def check_qdrant_health() -> tuple:
+    """Check Qdrant connectivity. Returns (is_healthy, message)."""
+    try:
+        db.qdrant.get_collections()
+        return True, "ok"
+    except Exception as e:
+        return False, str(e)
+
+
+async def check_neo4j_health() -> tuple:
+    """Check Neo4j connectivity. Returns (is_healthy, message)."""
+    try:
+        async with db.neo4j_driver.session() as session:
+            await session.run("RETURN 1")
+        return True, "ok"
+    except Exception as e:
+        return False, str(e)

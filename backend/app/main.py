@@ -5,9 +5,10 @@ from contextlib import asynccontextmanager
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 import os
-from .core.database import connect_all, close_all
+from .core.database import connect_all, close_all, check_mongodb_health, check_redis_health, check_qdrant_health, check_neo4j_health
+from .services.llm import close_http_client
 from .core.config import settings
-from .api import auth, chatbots, chat, integrations, admin, users, analytics, leads, handoff, translation, feedback, api_keys, greeting, gdpr, booking, messenger, messenger_webhook, marketing, seo
+from .api import auth, chatbots, chat, integrations, admin, users, analytics, leads, handoff, translation, feedback, api_keys, greeting, gdpr, booking, messenger, messenger_webhook, marketing, seo, learning
 
 
 @asynccontextmanager
@@ -17,6 +18,7 @@ async def lifespan(app: FastAPI):
     yield
     # Shutdown
     await close_all()
+    await close_http_client()
 
 
 app = FastAPI(
@@ -94,6 +96,7 @@ app.include_router(messenger.router, prefix="/api/v1")
 app.include_router(messenger_webhook.router, prefix="/api/v1")
 app.include_router(marketing.router, prefix="/api/v1")
 app.include_router(seo.router, prefix="/api/v1")
+app.include_router(learning.router, prefix="/api/v1")
 
 # Serve widget static files
 widget_path = "/app/widget"
@@ -108,9 +111,42 @@ async def root():
 
 @app.get("/health")
 async def health():
-    return {"status": "healthy"}
+    """Comprehensive health check for load balancers."""
+    mongo_ok, mongo_msg = await check_mongodb_health()
+    redis_ok, redis_msg = await check_redis_health()
+    qdrant_ok, qdrant_msg = await check_qdrant_health()
+    neo4j_ok, neo4j_msg = await check_neo4j_health()
+
+    all_healthy = mongo_ok and redis_ok and qdrant_ok and neo4j_ok
+
+    from fastapi.responses import JSONResponse
+    return JSONResponse(
+        status_code=200 if all_healthy else 503,
+        content={
+            "status": "healthy" if all_healthy else "degraded",
+            "services": {
+                "mongodb": {"status": "ok" if mongo_ok else "error", "message": mongo_msg},
+                "redis": {"status": "ok" if redis_ok else "error", "message": redis_msg},
+                "qdrant": {"status": "ok" if qdrant_ok else "error", "message": qdrant_msg},
+                "neo4j": {"status": "ok" if neo4j_ok else "error", "message": neo4j_msg}
+            }
+        }
+    )
 
 
 @app.get("/api/v1/health")
 async def api_health():
-    return {"status": "healthy", "service": "zaia-chatbot-api"}
+    """Simple health check for API availability."""
+    mongo_ok, _ = await check_mongodb_health()
+    redis_ok, _ = await check_redis_health()
+
+    all_healthy = mongo_ok and redis_ok
+
+    from fastapi.responses import JSONResponse
+    return JSONResponse(
+        status_code=200 if all_healthy else 503,
+        content={
+            "status": "healthy" if all_healthy else "degraded",
+            "service": "zaia-chatbot-api"
+        }
+    )

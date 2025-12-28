@@ -1,13 +1,18 @@
-from fastapi import APIRouter, HTTPException, Response, Query, Depends
+from fastapi import APIRouter, HTTPException, Response, Query, Depends, Request
 from fastapi.responses import StreamingResponse
 from typing import Optional
 from datetime import datetime
 import uuid
 import json
 import logging
+from slowapi import Limiter
+from slowapi.util import get_remote_address
 from ..schemas.chat import ChatMessage, ChatResponse, AnalyticsResponse
 from ..core.database import get_mongodb
 from ..core.security import get_current_user
+
+# Rate limiter for chat endpoints - 30 requests/minute per IP
+chat_limiter = Limiter(key_func=get_remote_address)
 from ..services.retrieval import triple_retrieval
 from ..services.llm import generate_response, generate_response_stream
 from ..services.limits import check_message_limit
@@ -29,7 +34,15 @@ try:
     CONTEXT_SYSTEM_AVAILABLE = True
 except ImportError:
     CONTEXT_SYSTEM_AVAILABLE = False
-    logger.warning("Context system not available, using basic history")
+
+# AIDEN Learning System (gracefully handles if not available)
+try:
+    from ..services.learning.feedback_collector import FeedbackCollector
+    from ..services.learning.knowledge_synthesizer import KnowledgeSynthesizer
+    from ..services.learning.memory_crystallizer import get_patterns_for_context
+    LEARNING_SYSTEM_AVAILABLE = True
+except ImportError:
+    LEARNING_SYSTEM_AVAILABLE = False
 
 logger = logging.getLogger(__name__)
 
@@ -38,24 +51,39 @@ router = APIRouter(prefix="/chat", tags=["Chat"])
 
 def validate_visitor_id(visitor_id: Optional[str]) -> None:
     """
-    Validate visitor_id is a valid UUID format.
+    Validate visitor_id format.
+    Accepts both UUID format and frontend-generated format (v_{timestamp}_{random}).
     Raises HTTPException if invalid.
     """
     if visitor_id is None:
         return  # None is acceptable for non-personal mode
 
+    # Check for frontend-generated format: v_{timestamp}_{random}
+    # Example: v_1766486136549_wib58hcwj
+    if visitor_id.startswith("v_") and "_" in visitor_id[2:]:
+        parts = visitor_id.split("_")
+        if len(parts) >= 3:
+            # Valid frontend format
+            return
+
+    # Try UUID format
     try:
-        # Attempt to parse as UUID
         uuid.UUID(visitor_id)
+        return
     except (ValueError, AttributeError):
-        raise HTTPException(
-            status_code=400,
-            detail="Invalid visitor_id format. Must be a valid UUID."
-        )
+        pass
+
+    # If neither format matches, reject
+    raise HTTPException(
+        status_code=400,
+        detail="Invalid visitor_id format."
+    )
 
 
 @router.post("/{bot_id}/message", response_model=ChatResponse)
+@chat_limiter.limit("30/minute")
 async def send_message(
+    request: Request,
     bot_id: str,
     message: ChatMessage,
     enhanced: bool = Query(default=True, description="Use enhanced RAG pipeline"),
@@ -193,6 +221,30 @@ async def send_message(
         # Build system prompt with booking and lead capture instructions if enabled
         base_system_prompt = bot.get("system_prompt", "You are a helpful assistant.")
         effective_system_prompt = base_system_prompt
+
+        # AIDEN: Inject learned knowledge into the system prompt
+        if LEARNING_SYSTEM_AVAILABLE:
+            try:
+                # Get relevant learned patterns and knowledge for this context
+                # Extract keywords from message for pattern matching
+                keywords = message.message.lower().split()[:10] if message.message else None
+                learned_knowledge = await get_patterns_for_context(
+                    bot_id=bot_id,
+                    intent=query_analysis.get("intent"),
+                    keywords=keywords
+                )
+                if learned_knowledge:
+                    knowledge_synthesizer = KnowledgeSynthesizer()
+                    knowledge_prompt = await knowledge_synthesizer.format_knowledge_for_prompt(
+                        bot_id=bot_id,
+                        intent=query_analysis.get("intent"),
+                        max_tokens=500
+                    )
+                    if knowledge_prompt:
+                        effective_system_prompt = f"{effective_system_prompt}\n\n## Learned Best Practices\n{knowledge_prompt}"
+                        logger.debug(f"[AIDEN] Injected learned knowledge into prompt for {bot_id}")
+            except Exception as e:
+                logger.warning(f"[AIDEN] Failed to inject learned knowledge: {e}")
 
         # Add booking instructions if enabled
         booking_config = bot.get("booking_config", {})
@@ -358,6 +410,23 @@ async def send_message(
                     {"$set": {"quality_score": quality_score}}
                 )
                 logger.debug(f"Analytics updated for session {session_id}: sentiment={user_sentiment.get('label') if isinstance(user_sentiment, dict) else user_sentiment}, quality={quality_score.get('overall') if isinstance(quality_score, dict) else quality_score}")
+
+                # AIDEN: Create learning experience from this interaction
+                if LEARNING_SYSTEM_AVAILABLE:
+                    try:
+                        feedback_collector = FeedbackCollector()
+                        await feedback_collector.create_learning_experience(
+                            session_id=session_id,
+                            bot_id=bot_id,
+                            tenant_id=tenant_id,
+                            user_message=message.message,
+                            assistant_response=response_text,
+                            context_used=context,
+                            detected_intent=working_memory.get("current_intent", {}).get("intent") if working_memory else None
+                        )
+                        logger.debug(f"[AIDEN] Learning experience created for session {session_id}")
+                    except Exception as le:
+                        logger.warning(f"[AIDEN] Failed to create learning experience: {le}")
             except Exception as e:
                 logger.warning(f"Background analytics failed: {e}")
 
@@ -450,7 +519,9 @@ async def send_message(
 
 
 @router.post("/{bot_id}/message/stream")
+@chat_limiter.limit("30/minute")
 async def send_message_stream(
+    request: Request,
     bot_id: str,
     message: ChatMessage,
     enhanced: bool = Query(default=True, description="Use enhanced RAG pipeline"),
@@ -586,6 +657,29 @@ async def send_message_stream(
     base_system_prompt = bot.get("system_prompt", "You are a helpful assistant.")
     effective_system_prompt = base_system_prompt
 
+    # AIDEN: Inject learned knowledge into the system prompt (streaming)
+    if LEARNING_SYSTEM_AVAILABLE:
+        try:
+            # Extract keywords from message for pattern matching
+            keywords = message.message.lower().split()[:10] if message.message else None
+            learned_knowledge = await get_patterns_for_context(
+                bot_id=bot_id,
+                intent=query_analysis.get("intent"),
+                keywords=keywords
+            )
+            if learned_knowledge:
+                knowledge_synthesizer = KnowledgeSynthesizer()
+                knowledge_prompt = await knowledge_synthesizer.format_knowledge_for_prompt(
+                    bot_id=bot_id,
+                    intent=query_analysis.get("intent"),
+                    max_tokens=500
+                )
+                if knowledge_prompt:
+                    effective_system_prompt = f"{effective_system_prompt}\n\n## Learned Best Practices\n{knowledge_prompt}"
+                    logger.debug(f"[AIDEN] Injected learned knowledge into streaming prompt for {bot_id}")
+        except Exception as e:
+            logger.warning(f"[AIDEN] Failed to inject learned knowledge (streaming): {e}")
+
     # Add booking instructions if enabled
     booking_config = bot.get("booking_config", {})
     if booking_config.get("enabled", False):
@@ -710,6 +804,23 @@ async def send_message_stream(
                         {"$set": {"quality_score": quality_score}}
                     )
                     logger.debug(f"[STREAMING] Analytics updated for session {session_id}")
+
+                    # AIDEN: Create learning experience from this interaction
+                    if LEARNING_SYSTEM_AVAILABLE:
+                        try:
+                            feedback_collector = FeedbackCollector()
+                            await feedback_collector.create_learning_experience(
+                                session_id=session_id,
+                                bot_id=bot_id,
+                                tenant_id=tenant_id,
+                                user_message=message.message,
+                                assistant_response=full_response,
+                                context_used=context,
+                                detected_intent=working_memory.get("current_intent", {}).get("intent") if working_memory else None
+                            )
+                            logger.debug(f"[AIDEN] Learning experience created for streaming session {session_id}")
+                        except Exception as le:
+                            logger.warning(f"[AIDEN] Failed to create learning experience: {le}")
                 except Exception as e:
                     logger.warning(f"[STREAMING] Background analytics failed: {e}")
 

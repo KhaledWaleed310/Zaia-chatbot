@@ -47,8 +47,14 @@ import AdminSettings from './pages/AdminSettings';
 import AdminAnalytics from './pages/AdminAnalytics';
 import AdminFinance from './pages/AdminFinance';
 import AdminServer from './pages/AdminServer';
+import AdminLearning from './pages/AdminLearning';
 import AdminMarketing from './pages/AdminMarketing';
 import AdminSEO from './pages/AdminSEO';
+
+// SEO Sub-pages
+import KeywordResearch from './pages/seo/KeywordResearch';
+import ContentOptimizer from './pages/seo/ContentOptimizer';
+import TechnicalSEO from './pages/seo/TechnicalSEO';
 
 const ProtectedRoute = ({ children }) => {
   const { user, loading } = useAuth();
@@ -291,6 +297,14 @@ function AppRoutes() {
         }
       />
       <Route
+        path="/admin/learning"
+        element={
+          <ProtectedRoute>
+            <AdminLearning />
+          </ProtectedRoute>
+        }
+      />
+      <Route
         path="/admin/marketing"
         element={
           <ProtectedRoute>
@@ -303,6 +317,30 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <AdminSEO />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/seo/keywords"
+        element={
+          <ProtectedRoute>
+            <KeywordResearch />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/seo/content"
+        element={
+          <ProtectedRoute>
+            <ContentOptimizer />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/seo/technical"
+        element={
+          <ProtectedRoute>
+            <TechnicalSEO />
           </ProtectedRoute>
         }
       />
