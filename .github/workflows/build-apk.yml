@@ -33,6 +33,28 @@ jobs:
           channel: 'stable'
           cache: true
 
+      - name: Create Android platform
+        working-directory: aiden_mobile
+        run: |
+          flutter create --platforms=android .
+
+      - name: Create placeholder assets
+        working-directory: aiden_mobile
+        run: |
+          # Create placeholder font files if they don't exist
+          mkdir -p assets/fonts assets/images assets/icons
+          touch assets/fonts/.gitkeep assets/images/.gitkeep assets/icons/.gitkeep
+          # Download Inter font
+          curl -L -o assets/fonts/Inter-Regular.ttf "https://github.com/rsms/inter/raw/master/docs/font-files/Inter-Regular.otf" || touch assets/fonts/Inter-Regular.ttf
+          curl -L -o assets/fonts/Inter-Medium.ttf "https://github.com/rsms/inter/raw/master/docs/font-files/Inter-Medium.otf" || touch assets/fonts/Inter-Medium.ttf
+          curl -L -o assets/fonts/Inter-SemiBold.ttf "https://github.com/rsms/inter/raw/master/docs/font-files/Inter-SemiBold.otf" || touch assets/fonts/Inter-SemiBold.ttf
+          curl -L -o assets/fonts/Inter-Bold.ttf "https://github.com/rsms/inter/raw/master/docs/font-files/Inter-Bold.otf" || touch assets/fonts/Inter-Bold.ttf
+          # Download Cairo font (Arabic support)
+          curl -L -o assets/fonts/Cairo-Regular.ttf "https://github.com/google/fonts/raw/main/ofl/cairo/Cairo%5Bslnt%2Cwght%5D.ttf" || touch assets/fonts/Cairo-Regular.ttf
+          cp assets/fonts/Cairo-Regular.ttf assets/fonts/Cairo-Medium.ttf 2>/dev/null || touch assets/fonts/Cairo-Medium.ttf
+          cp assets/fonts/Cairo-Regular.ttf assets/fonts/Cairo-SemiBold.ttf 2>/dev/null || touch assets/fonts/Cairo-SemiBold.ttf
+          cp assets/fonts/Cairo-Regular.ttf assets/fonts/Cairo-Bold.ttf 2>/dev/null || touch assets/fonts/Cairo-Bold.ttf
+
       - name: Get Flutter dependencies
         working-directory: aiden_mobile
         run: flutter pub get
