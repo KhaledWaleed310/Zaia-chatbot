@@ -172,25 +172,25 @@ class ChatbotRemoteDatasourceImpl implements ChatbotRemoteDatasource {
 
       switch (statusCode) {
         case 400:
-          return BadRequestException(message);
+          return ServerException(message: message, statusCode: 400);
         case 401:
-          return UnauthorizedException(message);
+          return UnauthorizedException(message: message);
         case 403:
-          return ForbiddenException(message);
+          return ForbiddenException(message: message);
         case 404:
-          return NotFoundException(message);
+          return NotFoundException(message: message);
         case 409:
-          return ConflictException(message);
+          return ServerException(message: message, statusCode: 409);
         case 422:
-          return ValidationException(message);
+          return ValidationException(message: message);
         case 429:
-          return RateLimitException(message);
+          return RateLimitException(message: message);
         case 500:
         case 502:
         case 503:
-          return ServerException(message);
+          return ServerException(message: message, statusCode: statusCode);
         default:
-          return ApiException(message, statusCode: statusCode);
+          return ApiException(message: message, statusCode: statusCode);
       }
     }
 

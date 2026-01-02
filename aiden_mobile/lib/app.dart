@@ -3,6 +3,8 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 
 import 'package:aiden_mobile/core/config/themes.dart';
 import 'package:aiden_mobile/core/localization/app_localizations.dart';
+import 'package:aiden_mobile/di/injection_container.dart';
+import 'package:aiden_mobile/presentation/features/auth/bloc/auth_bloc.dart';
 import 'package:aiden_mobile/presentation/navigation/app_router.dart';
 
 /// Main application widget
@@ -26,7 +28,7 @@ class _AidenAppState extends State<AidenApp> {
   ThemeMode _themeMode = ThemeMode.system;
 
   /// Router instance
-  late final _router = createAppRouter();
+  late final _router = createAppRouter(getIt<AuthBloc>());
 
   /// Get current locale
   Locale get locale => _locale;

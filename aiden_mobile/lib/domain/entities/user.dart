@@ -59,14 +59,14 @@ class User extends Equatable {
   }
 
   /// Empty user instance
-  static const empty = User(
+  static final empty = User(
     id: '',
     email: '',
     role: 'user',
     isVerified: false,
     isActive: false,
     subscriptionTier: 'free',
-    createdAt: null,
+    createdAt: DateTime.fromMillisecondsSinceEpoch(0),
   );
 
   /// Check if user is empty
