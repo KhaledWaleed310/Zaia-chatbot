@@ -36,33 +36,59 @@ jobs:
         run: |
           # Create a temp Flutter project to get Android files
           flutter create --platforms=android --org com.zaia temp_flutter_project
+
+          # Debug: show temp project structure
+          echo "=== Temp project structure ==="
+          ls -la temp_flutter_project/
+          ls -la temp_flutter_project/android/ || echo "No android folder in temp"
+
           # Copy Android folder to our project
-          cp -r temp_flutter_project/android aiden_mobile/
-          # Update package name in Android files
-          sed -i 's/com.zaia.temp_flutter_project/com.zaia.aiden/g' aiden_mobile/android/app/build.gradle
-          sed -i 's/com.zaia.temp_flutter_project/com.zaia.aiden/g' aiden_mobile/android/app/src/main/AndroidManifest.xml
-          sed -i 's/com.zaia.temp_flutter_project/com.zaia.aiden/g' aiden_mobile/android/app/src/debug/AndroidManifest.xml
-          sed -i 's/com.zaia.temp_flutter_project/com.zaia.aiden/g' aiden_mobile/android/app/src/profile/AndroidManifest.xml
-          # Rename Kotlin directory structure
-          mkdir -p aiden_mobile/android/app/src/main/kotlin/com/zaia/aiden
-          mv aiden_mobile/android/app/src/main/kotlin/com/zaia/temp_flutter_project/MainActivity.kt aiden_mobile/android/app/src/main/kotlin/com/zaia/aiden/
-          sed -i 's/package com.zaia.temp_flutter_project/package com.zaia.aiden/g' aiden_mobile/android/app/src/main/kotlin/com/zaia/aiden/MainActivity.kt
-          rm -rf aiden_mobile/android/app/src/main/kotlin/com/zaia/temp_flutter_project
-          # Update app name
-          sed -i 's/temp_flutter_project/AIDEN/g' aiden_mobile/android/app/src/main/AndroidManifest.xml
+          cp -rv temp_flutter_project/android aiden_mobile/
+
+          # Debug: show copied structure
+          echo "=== Copied Android structure ==="
+          ls -la aiden_mobile/android/
+          ls -la aiden_mobile/android/app/ || echo "No app folder"
+
+          # Find and show build.gradle location
+          echo "=== Finding build.gradle files ==="
+          find aiden_mobile/android -name "build.gradle*" -o -name "*.gradle" | head -20
+
+          # Update package name in Android files (with error handling)
+          for file in aiden_mobile/android/app/build.gradle aiden_mobile/android/app/build.gradle.kts; do
+            if [ -f "$file" ]; then
+              echo "Updating $file"
+              sed -i 's/com.zaia.temp_flutter_project/com.zaia.aiden/g' "$file"
+            fi
+          done
+
+          # Update AndroidManifest files
+          find aiden_mobile/android -name "AndroidManifest.xml" -exec sed -i 's/com.zaia.temp_flutter_project/com.zaia.aiden/g' {} \;
+          find aiden_mobile/android -name "AndroidManifest.xml" -exec sed -i 's/temp_flutter_project/AIDEN/g' {} \;
+
+          # Handle Kotlin/MainActivity
+          KOTLIN_SRC=$(find aiden_mobile/android -name "MainActivity.kt" | head -1)
+          if [ -n "$KOTLIN_SRC" ]; then
+            mkdir -p aiden_mobile/android/app/src/main/kotlin/com/zaia/aiden
+            cp "$KOTLIN_SRC" aiden_mobile/android/app/src/main/kotlin/com/zaia/aiden/
+            sed -i 's/package com.zaia.temp_flutter_project/package com.zaia.aiden/g' aiden_mobile/android/app/src/main/kotlin/com/zaia/aiden/MainActivity.kt
+            rm -rf aiden_mobile/android/app/src/main/kotlin/com/zaia/temp_flutter_project
+          fi
+
           # Cleanup temp project
           rm -rf temp_flutter_project
 
           # Fix Kotlin version in settings.gradle
           echo "=== Fixing Kotlin version ==="
-          # Use perl for more reliable regex replacement
-          perl -i -pe 's/(org\.jetbrains\.kotlin\.android.*version\s*=?\s*["\x27])[^"\x27]*/\${1}2.0.21/g' aiden_mobile/android/settings.gradle
-          # Also try direct version replacement
-          sed -i 's/version = "1\.[0-9]\.[0-9]*"/version = "2.0.21"/g' aiden_mobile/android/settings.gradle
-          sed -i "s/version = '1\.[0-9]\.[0-9]*'/version = '2.0.21'/g" aiden_mobile/android/settings.gradle
-
-          echo "=== settings.gradle content ==="
-          cat aiden_mobile/android/settings.gradle
+          SETTINGS_FILE=$(find aiden_mobile/android -name "settings.gradle*" | head -1)
+          if [ -n "$SETTINGS_FILE" ]; then
+            echo "Found settings file: $SETTINGS_FILE"
+            cat "$SETTINGS_FILE"
+            # Update Kotlin version
+            sed -i 's/version = "[0-9]\.[0-9]*\.[0-9]*"/version = "2.0.21"/g' "$SETTINGS_FILE"
+            echo "=== After update ==="
+            cat "$SETTINGS_FILE"
+          fi
 
       - name: Get Flutter dependencies
         working-directory: aiden_mobile
