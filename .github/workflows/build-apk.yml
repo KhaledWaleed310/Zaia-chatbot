@@ -57,19 +57,31 @@ jobs:
       - name: Create placeholder assets
         working-directory: aiden_mobile
         run: |
-          # Create placeholder font files if they don't exist
+          # Create asset directories
           mkdir -p assets/fonts assets/images assets/icons
-          touch assets/fonts/.gitkeep assets/images/.gitkeep assets/icons/.gitkeep
-          # Download Inter font
-          curl -L -o assets/fonts/Inter-Regular.ttf "https://github.com/rsms/inter/raw/master/docs/font-files/Inter-Regular.otf" || touch assets/fonts/Inter-Regular.ttf
-          curl -L -o assets/fonts/Inter-Medium.ttf "https://github.com/rsms/inter/raw/master/docs/font-files/Inter-Medium.otf" || touch assets/fonts/Inter-Medium.ttf
-          curl -L -o assets/fonts/Inter-SemiBold.ttf "https://github.com/rsms/inter/raw/master/docs/font-files/Inter-SemiBold.otf" || touch assets/fonts/Inter-SemiBold.ttf
-          curl -L -o assets/fonts/Inter-Bold.ttf "https://github.com/rsms/inter/raw/master/docs/font-files/Inter-Bold.otf" || touch assets/fonts/Inter-Bold.ttf
-          # Download Cairo font (Arabic support)
-          curl -L -o assets/fonts/Cairo-Regular.ttf "https://github.com/google/fonts/raw/main/ofl/cairo/Cairo%5Bslnt%2Cwght%5D.ttf" || touch assets/fonts/Cairo-Regular.ttf
-          cp assets/fonts/Cairo-Regular.ttf assets/fonts/Cairo-Medium.ttf 2>/dev/null || touch assets/fonts/Cairo-Medium.ttf
-          cp assets/fonts/Cairo-Regular.ttf assets/fonts/Cairo-SemiBold.ttf 2>/dev/null || touch assets/fonts/Cairo-SemiBold.ttf
-          cp assets/fonts/Cairo-Regular.ttf assets/fonts/Cairo-Bold.ttf 2>/dev/null || touch assets/fonts/Cairo-Bold.ttf
+
+          # Download Inter fonts from Google Fonts CDN
+          curl -L -o assets/fonts/Inter-Regular.ttf "https://fonts.gstatic.com/s/inter/v13/UcCO3FwrK3iLTeHuS_fvQtMwCp50KnMw2boKoduKmMEVuLyfAZ9hjp-Ek-_EeA.woff2" || echo "" > assets/fonts/Inter-Regular.ttf
+          curl -L -o assets/fonts/Inter-Medium.ttf "https://fonts.gstatic.com/s/inter/v13/UcCO3FwrK3iLTeHuS_fvQtMwCp50KnMw2boKoduKmMEVuI6fAZ9hjp-Ek-_EeA.woff2" || echo "" > assets/fonts/Inter-Medium.ttf
+          curl -L -o assets/fonts/Inter-SemiBold.ttf "https://fonts.gstatic.com/s/inter/v13/UcCO3FwrK3iLTeHuS_fvQtMwCp50KnMw2boKoduKmMEVuGKYAZ9hjp-Ek-_EeA.woff2" || echo "" > assets/fonts/Inter-SemiBold.ttf
+          curl -L -o assets/fonts/Inter-Bold.ttf "https://fonts.gstatic.com/s/inter/v13/UcCO3FwrK3iLTeHuS_fvQtMwCp50KnMw2boKoduKmMEVuFuYAZ9hjp-Ek-_EeA.woff2" || echo "" > assets/fonts/Inter-Bold.ttf
+
+          # Download Cairo fonts
+          curl -L -o assets/fonts/Cairo-Regular.ttf "https://fonts.gstatic.com/s/cairo/v28/SLXgc1nY6HkvangtZmpQdkhzfH5lkSs2SgRjCAGMQ1z0hOA-W1ToLQ-HsA.woff2" || echo "" > assets/fonts/Cairo-Regular.ttf
+          curl -L -o assets/fonts/Cairo-Medium.ttf "https://fonts.gstatic.com/s/cairo/v28/SLXgc1nY6HkvangtZmpQdkhzfH5lkSs2SgRjCAGMQ1z0hOA-a1ToLQ-HsA.woff2" || echo "" > assets/fonts/Cairo-Medium.ttf
+          curl -L -o assets/fonts/Cairo-SemiBold.ttf "https://fonts.gstatic.com/s/cairo/v28/SLXgc1nY6HkvangtZmpQdkhzfH5lkSs2SgRjCAGMQ1z0hOA-h1PoLQ-HsA.woff2" || echo "" > assets/fonts/Cairo-SemiBold.ttf
+          curl -L -o assets/fonts/Cairo-Bold.ttf "https://fonts.gstatic.com/s/cairo/v28/SLXgc1nY6HkvangtZmpQdkhzfH5lkSs2SgRjCAGMQ1z0hOA-uFPoLQ-HsA.woff2" || echo "" > assets/fonts/Cairo-Bold.ttf
+
+          # Create a placeholder image
+          echo "" > assets/images/.gitkeep
+          echo "" > assets/icons/.gitkeep
+
+          # Verify fonts exist (create empty if download failed)
+          for font in Inter-Regular Inter-Medium Inter-SemiBold Inter-Bold Cairo-Regular Cairo-Medium Cairo-SemiBold Cairo-Bold; do
+            [ ! -s "assets/fonts/${font}.ttf" ] && echo "placeholder" > "assets/fonts/${font}.ttf"
+          done
+
+          ls -la assets/fonts/
 
       - name: Get Flutter dependencies
         working-directory: aiden_mobile
