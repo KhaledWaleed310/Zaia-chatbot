@@ -26,7 +26,7 @@ class AuthRepositoryImpl implements AuthRepository {
   /// Check network connectivity
   Future<bool> _isConnected() async {
     final result = await _connectivity.checkConnectivity();
-    return result.isNotEmpty && !result.contains(ConnectivityResult.none);
+    return result != ConnectivityResult.none;
   }
 
   /// Convert UserModel to User entity

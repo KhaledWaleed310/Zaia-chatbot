@@ -69,40 +69,13 @@ class ChatRemoteDatasourceImpl implements ChatRemoteDatasource {
     String message,
     String? sessionId,
   ) async* {
+    // Streaming not implemented - use regular sendMessage instead
+    // This is a placeholder that yields the full response at once
     try {
-      final response = await apiClient.postStream(
-        ApiEndpoints.chatMessageStream(botId),
-        data: {
-          'message': message,
-          if (sessionId != null) 'session_id': sessionId,
-        },
-      );
-
-      await for (final chunk in response.stream.transform(utf8.decoder)) {
-        // Parse SSE format
-        final lines = chunk.split('\n');
-        for (final line in lines) {
-          if (line.startsWith('data: ')) {
-            final data = line.substring(6);
-            if (data == '[DONE]') {
-              return;
-            }
-            try {
-              final json = jsonDecode(data) as Map<String, dynamic>;
-              if (json.containsKey('content')) {
-                yield json['content'] as String;
-              } else if (json.containsKey('token')) {
-                yield json['token'] as String;
-              }
-            } catch (e) {
-              // If not JSON, yield as plain text
-              yield data;
-            }
-          }
-        }
-      }
-    } on DioException catch (e) {
-      throw _handleError(e);
+      final response = await sendMessage(botId, message, sessionId);
+      yield response.response;
+    } catch (e) {
+      rethrow;
     }
   }
 
@@ -158,25 +131,25 @@ class ChatRemoteDatasourceImpl implements ChatRemoteDatasource {
 
       switch (statusCode) {
         case 400:
-          return BadRequestException(message);
+          return ServerException(message: message, statusCode: 400);
         case 401:
-          return UnauthorizedException(message);
+          return UnauthorizedException(message: message);
         case 403:
-          return ForbiddenException(message);
+          return ForbiddenException(message: message);
         case 404:
-          return NotFoundException(message);
+          return NotFoundException(message: message);
         case 429:
-          return RateLimitException(message);
+          return RateLimitException(message: message);
         default:
-          return ApiException(message, statusCode: statusCode);
+          return ApiException(message: message, statusCode: statusCode);
       }
     }
 
     if (error.type == DioExceptionType.connectionTimeout ||
         error.type == DioExceptionType.receiveTimeout) {
-      return TimeoutException('Request timed out');
+      return TimeoutException(message: 'Request timed out');
     }
 
-    return ApiException('An unexpected error occurred');
+    return ApiException(message: 'An unexpected error occurred');
   }
 }

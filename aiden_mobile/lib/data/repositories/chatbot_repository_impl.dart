@@ -25,7 +25,7 @@ class ChatbotRepositoryImpl implements ChatbotRepository {
 
   Future<bool> _isConnected() async {
     final result = await connectivity.checkConnectivity();
-    return !result.contains(ConnectivityResult.none);
+    return result != ConnectivityResult.none;
   }
 
   @override
@@ -134,7 +134,7 @@ class ChatbotRepositoryImpl implements ChatbotRepository {
 
       return Right(_mapModelToEntity(chatbot));
     } on ValidationException catch (e) {
-      return Left(ValidationFailure(e.message));
+      return Left(ValidationFailure(message: e.message));
     } on ApiException catch (e) {
       return Left(ServerFailure(e.message));
     } catch (e) {
@@ -181,7 +181,7 @@ class ChatbotRepositoryImpl implements ChatbotRepository {
     } on NotFoundException {
       return const Left(NotFoundFailure('Chatbot not found'));
     } on ValidationException catch (e) {
-      return Left(ValidationFailure(e.message));
+      return Left(ValidationFailure(message: e.message));
     } on ApiException catch (e) {
       return Left(ServerFailure(e.message));
     } catch (e) {
@@ -253,7 +253,7 @@ class ChatbotRepositoryImpl implements ChatbotRepository {
 
       return Right(_mapDocumentModelToEntity(document));
     } on ValidationException catch (e) {
-      return Left(ValidationFailure(e.message));
+      return Left(ValidationFailure(message: e.message));
     } on ApiException catch (e) {
       return Left(ServerFailure(e.message));
     } catch (e) {

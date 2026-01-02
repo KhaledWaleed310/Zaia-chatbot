@@ -345,7 +345,7 @@ class _SplashScreenState extends State<_SplashScreen> {
     // Check auth status after a brief delay
     Future.delayed(const Duration(milliseconds: 500), () {
       if (mounted) {
-        context.read<AuthBloc>().add(const AuthCheckStatus());
+        context.read<AuthBloc>().add(AuthCheckStatus());
       }
     });
   }
@@ -461,7 +461,7 @@ class _PlaceholderScreen extends StatelessWidget {
           IconButton(
             icon: const Icon(Icons.logout),
             onPressed: () {
-              context.read<AuthBloc>().add(const AuthLogoutRequested());
+              context.read<AuthBloc>().add(AuthLogoutRequested());
             },
           ),
         ],

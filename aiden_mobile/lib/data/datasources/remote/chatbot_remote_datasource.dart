@@ -197,13 +197,13 @@ class ChatbotRemoteDatasourceImpl implements ChatbotRemoteDatasource {
     if (error.type == DioExceptionType.connectionTimeout ||
         error.type == DioExceptionType.receiveTimeout ||
         error.type == DioExceptionType.sendTimeout) {
-      return TimeoutException('Request timed out');
+      return TimeoutException(message: 'Request timed out');
     }
 
     if (error.type == DioExceptionType.connectionError) {
-      return NetworkException('No internet connection');
+      return NetworkException(message: 'No internet connection');
     }
 
-    return ApiException('An unexpected error occurred');
+    return ApiException(message: 'An unexpected error occurred');
   }
 }
