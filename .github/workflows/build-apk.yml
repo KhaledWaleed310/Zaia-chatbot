@@ -54,33 +54,9 @@ jobs:
           # Cleanup
           rm -rf temp_flutter_project
 
-      - name: Create placeholder assets and fix pubspec
-        working-directory: aiden_mobile
-        run: |
-          # Create asset directories
-          mkdir -p assets/fonts assets/images assets/icons
-
-          # Create placeholder files
-          echo "" > assets/images/.gitkeep
-          echo "" > assets/icons/.gitkeep
-
-          # Remove fonts section from pubspec.yaml (use system fonts for now)
-          # Also remove assets/fonts/ reference since we won't use custom fonts
-          sed -i '/^  fonts:/,$d' pubspec.yaml
-          sed -i 's/- assets\/fonts\///' pubspec.yaml
-
-          # Show modified pubspec
-          echo "=== Modified pubspec.yaml flutter section ==="
-          tail -20 pubspec.yaml
-
       - name: Get Flutter dependencies
         working-directory: aiden_mobile
-        run: |
-          echo "=== Current pubspec.yaml ==="
-          cat pubspec.yaml
-          echo ""
-          echo "=== Running flutter pub get ==="
-          flutter pub get -v
+        run: flutter pub get
 
       - name: Run code generation
         working-directory: aiden_mobile
