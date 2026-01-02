@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 
 import 'package:aiden_mobile/di/injection_container.dart';
 import 'package:aiden_mobile/presentation/features/auth/bloc/auth_bloc.dart';
+import 'package:aiden_mobile/presentation/features/auth/bloc/auth_event.dart';
 import 'package:aiden_mobile/presentation/features/auth/bloc/auth_state.dart';
 import 'package:aiden_mobile/presentation/features/auth/screens/forgot_password_screen.dart';
 import 'package:aiden_mobile/presentation/features/auth/screens/login_screen.dart';
