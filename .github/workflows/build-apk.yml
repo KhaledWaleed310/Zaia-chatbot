@@ -51,8 +51,18 @@ jobs:
           rm -rf aiden_mobile/android/app/src/main/kotlin/com/zaia/temp_flutter_project
           # Update app name
           sed -i 's/temp_flutter_project/AIDEN/g' aiden_mobile/android/app/src/main/AndroidManifest.xml
-          # Update Kotlin version to latest stable
-          sed -i 's/org.jetbrains.kotlin.android" version "[^"]*"/org.jetbrains.kotlin.android" version "1.9.22"/' aiden_mobile/android/settings.gradle
+          # Update Kotlin version to latest stable (fix for Flutter 3.24)
+          echo "=== Before Kotlin fix ==="
+          cat aiden_mobile/android/settings.gradle
+          sed -i 's/1.7.10/2.0.0/g' aiden_mobile/android/settings.gradle
+          sed -i 's/1.8.22/2.0.0/g' aiden_mobile/android/settings.gradle
+          sed -i 's/1.9.0/2.0.0/g' aiden_mobile/android/settings.gradle
+          # Also check build.gradle for kotlin_version
+          if grep -q "kotlin_version" aiden_mobile/android/build.gradle; then
+            sed -i "s/ext.kotlin_version = '[^']*'/ext.kotlin_version = '2.0.0'/" aiden_mobile/android/build.gradle
+          fi
+          echo "=== After Kotlin fix ==="
+          cat aiden_mobile/android/settings.gradle
           # Cleanup
           rm -rf temp_flutter_project
 
