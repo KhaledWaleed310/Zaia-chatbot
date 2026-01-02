@@ -41,7 +41,7 @@ class ChatRepositoryImpl implements ChatRepository {
     } on ApiException catch (e) {
       return Left(ServerFailure(e.message));
     } catch (e) {
-      return Left(UnexpectedFailure(e.toString()));
+      return Left(UnknownFailure(e.toString()));
     }
   }
 
@@ -62,7 +62,7 @@ class ChatRepositoryImpl implements ChatRepository {
     } on ApiException catch (e) {
       yield Left(ServerFailure(e.message));
     } catch (e) {
-      yield Left(UnexpectedFailure(e.toString()));
+      yield Left(UnknownFailure(e.toString()));
     }
   }
 
@@ -85,7 +85,7 @@ class ChatRepositoryImpl implements ChatRepository {
     } on ApiException catch (e) {
       return Left(ServerFailure(e.message));
     } catch (e) {
-      return Left(UnexpectedFailure(e.toString()));
+      return Left(UnknownFailure(e.toString()));
     }
   }
 
@@ -123,7 +123,7 @@ class ChatRepositoryImpl implements ChatRepository {
     } on ApiException catch (e) {
       return Left(ServerFailure(e.message));
     } catch (e) {
-      return Left(UnexpectedFailure(e.toString()));
+      return Left(UnknownFailure(e.toString()));
     }
   }
 
@@ -138,7 +138,7 @@ class ChatRepositoryImpl implements ChatRepository {
     } on ApiException catch (e) {
       return Left(ServerFailure(e.message));
     } catch (e) {
-      return Left(UnexpectedFailure(e.toString()));
+      return Left(UnknownFailure(e.toString()));
     }
   }
 }

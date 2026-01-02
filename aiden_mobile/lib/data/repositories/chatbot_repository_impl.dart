@@ -64,7 +64,7 @@ class ChatbotRepositoryImpl implements ChatbotRepository {
     } on ApiException catch (e) {
       return Left(ServerFailure(e.message));
     } catch (e) {
-      return Left(UnexpectedFailure(e.toString()));
+      return Left(UnknownFailure(e.toString()));
     }
   }
 
@@ -93,7 +93,7 @@ class ChatbotRepositoryImpl implements ChatbotRepository {
     } on ApiException catch (e) {
       return Left(ServerFailure(e.message));
     } catch (e) {
-      return Left(UnexpectedFailure(e.toString()));
+      return Left(UnknownFailure(e.toString()));
     }
   }
 
@@ -138,7 +138,7 @@ class ChatbotRepositoryImpl implements ChatbotRepository {
     } on ApiException catch (e) {
       return Left(ServerFailure(e.message));
     } catch (e) {
-      return Left(UnexpectedFailure(e.toString()));
+      return Left(UnknownFailure(e.toString()));
     }
   }
 
@@ -185,7 +185,7 @@ class ChatbotRepositoryImpl implements ChatbotRepository {
     } on ApiException catch (e) {
       return Left(ServerFailure(e.message));
     } catch (e) {
-      return Left(UnexpectedFailure(e.toString()));
+      return Left(UnknownFailure(e.toString()));
     }
   }
 
@@ -207,7 +207,7 @@ class ChatbotRepositoryImpl implements ChatbotRepository {
     } on ApiException catch (e) {
       return Left(ServerFailure(e.message));
     } catch (e) {
-      return Left(UnexpectedFailure(e.toString()));
+      return Left(UnknownFailure(e.toString()));
     }
   }
 
@@ -231,7 +231,7 @@ class ChatbotRepositoryImpl implements ChatbotRepository {
     } on ApiException catch (e) {
       return Left(ServerFailure(e.message));
     } catch (e) {
-      return Left(UnexpectedFailure(e.toString()));
+      return Left(UnknownFailure(e.toString()));
     }
   }
 
@@ -257,7 +257,7 @@ class ChatbotRepositoryImpl implements ChatbotRepository {
     } on ApiException catch (e) {
       return Left(ServerFailure(e.message));
     } catch (e) {
-      return Left(UnexpectedFailure(e.toString()));
+      return Left(UnknownFailure(e.toString()));
     }
   }
 
@@ -283,7 +283,7 @@ class ChatbotRepositoryImpl implements ChatbotRepository {
     } on ApiException catch (e) {
       return Left(ServerFailure(e.message));
     } catch (e) {
-      return Left(UnexpectedFailure(e.toString()));
+      return Left(UnknownFailure(e.toString()));
     }
   }
 
