@@ -15,9 +15,9 @@ class AppConfig {
       case Environment.development:
         return 'http://10.0.2.2:8000/api/v1'; // Android emulator localhost
       case Environment.staging:
-        return 'https://staging-api.aiden.app/api/v1';
+        return 'https://aidenlink.cloud/api/v1';
       case Environment.production:
-        return 'https://api.aiden.app/api/v1';
+        return 'https://aidenlink.cloud/api/v1';
     }
   }
 
@@ -27,9 +27,9 @@ class AppConfig {
       case Environment.development:
         return 'ws://10.0.2.2:8000/api/v1';
       case Environment.staging:
-        return 'wss://staging-api.aiden.app/api/v1';
+        return 'wss://aidenlink.cloud/ws/v1';
       case Environment.production:
-        return 'wss://api.aiden.app/api/v1';
+        return 'wss://aidenlink.cloud/ws/v1';
     }
   }
 
@@ -39,9 +39,9 @@ class AppConfig {
       case Environment.development:
         return 'http://localhost:8000/api/v1';
       case Environment.staging:
-        return 'https://staging-api.aiden.app/api/v1';
+        return 'https://aidenlink.cloud/api/v1';
       case Environment.production:
-        return 'https://api.aiden.app/api/v1';
+        return 'https://aidenlink.cloud/api/v1';
     }
   }
 
