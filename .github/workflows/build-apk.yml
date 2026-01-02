@@ -51,6 +51,8 @@ jobs:
           rm -rf aiden_mobile/android/app/src/main/kotlin/com/zaia/temp_flutter_project
           # Update app name
           sed -i 's/temp_flutter_project/AIDEN/g' aiden_mobile/android/app/src/main/AndroidManifest.xml
+          # Update Kotlin version to latest stable
+          sed -i 's/org.jetbrains.kotlin.android" version "[^"]*"/org.jetbrains.kotlin.android" version "1.9.22"/' aiden_mobile/android/settings.gradle
           # Cleanup
           rm -rf temp_flutter_project
 
