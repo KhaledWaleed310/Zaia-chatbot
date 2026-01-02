@@ -34,9 +34,25 @@ jobs:
           cache: true
 
       - name: Create Android platform
-        working-directory: aiden_mobile
         run: |
-          flutter create --platforms=android .
+          # Create a temp Flutter project to get Android files
+          flutter create --platforms=android --org com.zaia temp_flutter_project
+          # Copy Android folder to our project
+          cp -r temp_flutter_project/android aiden_mobile/
+          # Update package name in Android files
+          sed -i 's/com.zaia.temp_flutter_project/com.zaia.aiden/g' aiden_mobile/android/app/build.gradle
+          sed -i 's/com.zaia.temp_flutter_project/com.zaia.aiden/g' aiden_mobile/android/app/src/main/AndroidManifest.xml
+          sed -i 's/com.zaia.temp_flutter_project/com.zaia.aiden/g' aiden_mobile/android/app/src/debug/AndroidManifest.xml
+          sed -i 's/com.zaia.temp_flutter_project/com.zaia.aiden/g' aiden_mobile/android/app/src/profile/AndroidManifest.xml
+          # Rename Kotlin directory structure
+          mkdir -p aiden_mobile/android/app/src/main/kotlin/com/zaia/aiden
+          mv aiden_mobile/android/app/src/main/kotlin/com/zaia/temp_flutter_project/MainActivity.kt aiden_mobile/android/app/src/main/kotlin/com/zaia/aiden/
+          sed -i 's/package com.zaia.temp_flutter_project/package com.zaia.aiden/g' aiden_mobile/android/app/src/main/kotlin/com/zaia/aiden/MainActivity.kt
+          rm -rf aiden_mobile/android/app/src/main/kotlin/com/zaia/temp_flutter_project
+          # Update app name
+          sed -i 's/temp_flutter_project/AIDEN/g' aiden_mobile/android/app/src/main/AndroidManifest.xml
+          # Cleanup
+          rm -rf temp_flutter_project
 
       - name: Create placeholder assets
         working-directory: aiden_mobile
