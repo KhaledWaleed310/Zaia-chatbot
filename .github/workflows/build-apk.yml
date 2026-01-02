@@ -1,0 +1,70 @@
+name: Build AIDEN Mobile APK
+
+on:
+  push:
+    branches: [master, main]
+    paths:
+      - 'aiden_mobile/**'
+  pull_request:
+    branches: [master, main]
+    paths:
+      - 'aiden_mobile/**'
+  workflow_dispatch:  # Allows manual trigger from GitHub UI
+
+jobs:
+  build-android:
+    name: Build Android APK
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.24.0'
+          channel: 'stable'
+          cache: true
+
+      - name: Get Flutter dependencies
+        working-directory: aiden_mobile
+        run: flutter pub get
+
+      - name: Run code generation
+        working-directory: aiden_mobile
+        run: flutter pub run build_runner build --delete-conflicting-outputs
+
+      - name: Build APK (Release)
+        working-directory: aiden_mobile
+        run: flutter build apk --release
+
+      - name: Build APK (Debug)
+        working-directory: aiden_mobile
+        run: flutter build apk --debug
+
+      - name: Rename APKs with version
+        run: |
+          VERSION=$(grep 'version:' aiden_mobile/pubspec.yaml | sed 's/version: //' | tr -d ' ')
+          mv aiden_mobile/build/app/outputs/flutter-apk/app-release.apk aiden_mobile/build/app/outputs/flutter-apk/aiden-mobile-${VERSION}-release.apk
+          mv aiden_mobile/build/app/outputs/flutter-apk/app-debug.apk aiden_mobile/build/app/outputs/flutter-apk/aiden-mobile-${VERSION}-debug.apk
+
+      - name: Upload Release APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: aiden-mobile-release-apk
+          path: aiden_mobile/build/app/outputs/flutter-apk/*-release.apk
+          retention-days: 30
+
+      - name: Upload Debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: aiden-mobile-debug-apk
+          path: aiden_mobile/build/app/outputs/flutter-apk/*-debug.apk
+          retention-days: 14
