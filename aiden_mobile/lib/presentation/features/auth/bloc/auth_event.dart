@@ -13,6 +13,11 @@ class AuthCheckStatus extends AuthEvent {
   const AuthCheckStatus();
 }
 
+/// Auth check timed out
+class AuthCheckTimeout extends AuthEvent {
+  const AuthCheckTimeout();
+}
+
 /// Login with email and password
 class AuthLoginRequested extends AuthEvent {
   final String email;

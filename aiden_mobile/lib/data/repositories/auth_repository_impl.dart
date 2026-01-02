@@ -23,10 +23,17 @@ class AuthRepositoryImpl implements AuthRepository {
         _localDatasource = localDatasource,
         _connectivity = connectivity;
 
-  /// Check network connectivity
+  /// Check network connectivity with timeout
   Future<bool> _isConnected() async {
-    final result = await _connectivity.checkConnectivity();
-    return result != ConnectivityResult.none;
+    try {
+      final result = await _connectivity
+          .checkConnectivity()
+          .timeout(const Duration(seconds: 3));
+      return result != ConnectivityResult.none;
+    } catch (e) {
+      // Assume connected on timeout - let API call fail gracefully
+      return true;
+    }
   }
 
   /// Convert UserModel to User entity

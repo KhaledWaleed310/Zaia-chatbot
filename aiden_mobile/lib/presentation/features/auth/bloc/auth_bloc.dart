@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:aiden_mobile/domain/repositories/auth_repository.dart';
@@ -12,6 +14,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       : _authRepository = authRepository,
         super(const AuthState.initial()) {
     on<AuthCheckStatus>(_onCheckStatus);
+    on<AuthCheckTimeout>(_onCheckTimeout);
     on<AuthLoginRequested>(_onLoginRequested);
     on<AuthRegisterRequested>(_onRegisterRequested);
     on<AuthLogoutRequested>(_onLogoutRequested);
@@ -23,35 +26,68 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     on<AuthClearError>(_onClearError);
   }
 
-  /// Check initial auth status
+  /// Check initial auth status with timeout protection
   Future<void> _onCheckStatus(
     AuthCheckStatus event,
     Emitter<AuthState> emit,
   ) async {
     emit(const AuthState.loading());
 
+    try {
+      // Add timeout to entire auth check (10 seconds)
+      final result = await _performAuthCheck().timeout(
+        const Duration(seconds: 10),
+        onTimeout: () => const AuthState.timeout(),
+      );
+      emit(result);
+    } on TimeoutException {
+      emit(const AuthState.timeout());
+    } catch (e) {
+      // Fallback to unauthenticated on any error
+      String? rememberedEmail;
+      try {
+        rememberedEmail = await _authRepository
+            .getRememberedEmail()
+            .timeout(const Duration(seconds: 2));
+      } catch (_) {
+        rememberedEmail = null;
+      }
+      emit(AuthState.unauthenticated(rememberedEmail: rememberedEmail));
+    }
+  }
+
+  /// Perform the actual auth check
+  Future<AuthState> _performAuthCheck() async {
     final isLoggedIn = await _authRepository.isLoggedIn();
 
     if (isLoggedIn) {
       final result = await _authRepository.getCurrentUser();
 
-      result.fold(
+      return result.fold(
         (failure) async {
           final rememberedEmail = await _authRepository.getRememberedEmail();
-          emit(AuthState.unauthenticated(rememberedEmail: rememberedEmail));
+          return AuthState.unauthenticated(rememberedEmail: rememberedEmail);
         },
         (user) {
           if (!user.isVerified) {
-            emit(AuthState.emailVerificationRequired(user.email));
+            return AuthState.emailVerificationRequired(user.email);
           } else {
-            emit(AuthState.authenticated(user));
+            return AuthState.authenticated(user);
           }
         },
       );
     } else {
       final rememberedEmail = await _authRepository.getRememberedEmail();
-      emit(AuthState.unauthenticated(rememberedEmail: rememberedEmail));
+      return AuthState.unauthenticated(rememberedEmail: rememberedEmail);
     }
+  }
+
+  /// Handle auth check timeout
+  void _onCheckTimeout(
+    AuthCheckTimeout event,
+    Emitter<AuthState> emit,
+  ) {
+    emit(const AuthState.timeout());
   }
 
   /// Handle login request

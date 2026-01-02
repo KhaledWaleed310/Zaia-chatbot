@@ -31,14 +31,22 @@ class AuthInterceptor extends Interceptor {
       return handler.next(options);
     }
 
-    // Get token from secure storage
-    final token = await _secureStorage.read(key: 'access_token');
+    // Get token from secure storage with timeout
+    String? token;
+    try {
+      token = await _secureStorage
+          .read(key: 'access_token')
+          .timeout(const Duration(seconds: 3));
+    } catch (e) {
+      // Proceed without token on timeout/error
+      token = null;
+    }
 
     if (token != null && token.isNotEmpty) {
       options.headers['Authorization'] = 'Bearer $token';
     }
 
-    handler.next(options);
+    return handler.next(options);
   }
 
   @override

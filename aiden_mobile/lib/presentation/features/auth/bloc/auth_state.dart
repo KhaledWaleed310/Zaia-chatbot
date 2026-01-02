@@ -13,6 +13,7 @@ enum AuthStatus {
   passwordResetSuccess,
   emailVerified,
   error,
+  timeout,
 }
 
 /// Auth state
@@ -92,6 +93,13 @@ class AuthState extends Equatable {
           user: previousState?.user,
           pendingEmail: previousState?.pendingEmail,
           rememberedEmail: previousState?.rememberedEmail,
+        );
+
+  /// Timeout state - auth check took too long
+  const AuthState.timeout()
+      : this(
+          status: AuthStatus.timeout,
+          errorMessage: 'Connection timed out. Please try again.',
         );
 
   /// Check if authenticated

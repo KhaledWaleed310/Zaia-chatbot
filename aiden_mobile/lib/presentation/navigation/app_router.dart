@@ -85,6 +85,11 @@ GoRouter createAppRouter(AuthBloc authBloc) {
           state.matchedLocation.startsWith(AppRoutes.verifyEmail);
       final isOnSplash = state.matchedLocation == AppRoutes.splash;
 
+      // Handle timeout state - redirect to login
+      if (authState.status == AuthStatus.timeout) {
+        return AppRoutes.login;
+      }
+
       // Still checking auth status
       if (authState.status == AuthStatus.initial ||
           (authState.status == AuthStatus.loading && isOnSplash)) {
@@ -331,7 +336,7 @@ GoRouter createAppRouter(AuthBloc authBloc) {
   );
 }
 
-/// Splash screen - checks auth status
+/// Splash screen - checks auth status with timeout protection
 class _SplashScreen extends StatefulWidget {
   const _SplashScreen();
 
@@ -340,15 +345,32 @@ class _SplashScreen extends StatefulWidget {
 }
 
 class _SplashScreenState extends State<_SplashScreen> {
+  Timer? _timeoutTimer;
+
   @override
   void initState() {
     super.initState();
+
+    // Set maximum splash screen timeout (15 seconds) as fallback
+    _timeoutTimer = Timer(const Duration(seconds: 15), () {
+      if (mounted) {
+        // Force timeout if still on splash
+        context.read<AuthBloc>().add(const AuthCheckTimeout());
+      }
+    });
+
     // Check auth status after a brief delay
     Future.delayed(const Duration(milliseconds: 500), () {
       if (mounted) {
-        context.read<AuthBloc>().add(AuthCheckStatus());
+        context.read<AuthBloc>().add(const AuthCheckStatus());
       }
     });
+  }
+
+  @override
+  void dispose() {
+    _timeoutTimer?.cancel();
+    super.dispose();
   }
 
   @override
