@@ -27,7 +27,7 @@ async def run_nightly_crystallization():
     from .experience_replay import ExperienceReplaySystem
     from .knowledge_synthesizer import KnowledgeSynthesizer
     from .meta_cognition import MetaCognitiveReflector
-    from ...core.database import get_mongodb
+    from ...core.database import get_mongodb, connect_mongodb, db as db_instance
 
     logger.info("Starting nightly learning pipeline...")
     start_time = datetime.utcnow()
@@ -36,6 +36,11 @@ async def run_nightly_crystallization():
         "started_at": start_time.isoformat(),
         "stages": {}
     }
+
+    # Initialize database connection if not already connected
+    if db_instance.client is None:
+        logger.info("Initializing database connection...")
+        await connect_mongodb()
 
     db = get_mongodb()
 

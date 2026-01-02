@@ -57,7 +57,7 @@ class ChatbotCard extends StatelessWidget {
                         width: 48,
                         height: 48,
                         decoration: BoxDecoration(
-                          color: botColor.withValues(alpha: 0.1),
+                          color: botColor.withOpacity(0.1),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Icon(

@@ -1,9 +1,10 @@
 /**
  * AidenLearningWidget - Dashboard widget showing AIDEN's learning progress
  * Displays neural network visualization with stats overlay
+ * Responsive: optimized for mobile, tablet, and desktop
  */
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { Brain, Sparkles, TrendingUp, Zap, ChevronRight, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import NeuralNetworkCanvas from './NeuralNetworkCanvas';
@@ -107,6 +108,8 @@ const generateVisualizationData = (data, chatbots) => {
 const AidenLearningWidget = ({ chatbots = [], className = '' }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [hoveredNode, setHoveredNode] = useState(null);
+  const [canvasSize, setCanvasSize] = useState({ width: 400, height: 160 });
+  const containerRef = useRef(null);
 
   const botIds = useMemo(() => chatbots.map(bot => bot.id || bot._id), [chatbots]);
 
@@ -114,6 +117,31 @@ const AidenLearningWidget = ({ chatbots = [], className = '' }) => {
     pollInterval: 60000, // 1 minute
     enabled: botIds.length > 0,
   });
+
+  // Responsive canvas sizing
+  useEffect(() => {
+    const updateSize = () => {
+      if (containerRef.current) {
+        const width = containerRef.current.offsetWidth;
+        // Calculate responsive height based on screen size
+        const isMobile = window.innerWidth < 768;
+        const isTablet = window.innerWidth >= 768 && window.innerWidth < 1024;
+
+        let height;
+        if (isExpanded) {
+          height = isMobile ? 220 : isTablet ? 320 : 380;
+        } else {
+          height = isMobile ? 140 : isTablet ? 200 : 240;
+        }
+
+        setCanvasSize({ width: width - 40, height }); // 40px for padding
+      }
+    };
+
+    updateSize();
+    window.addEventListener('resize', updateSize);
+    return () => window.removeEventListener('resize', updateSize);
+  }, [isExpanded]);
 
   // Calculate learning progress percentage
   const learningProgress = useMemo(() => {
@@ -139,9 +167,9 @@ const AidenLearningWidget = ({ chatbots = [], className = '' }) => {
 
   if (loading) {
     return (
-      <div className={`bg-gradient-to-br from-slate-900 to-indigo-950 rounded-2xl p-6 ${className}`}>
-        <div className="flex items-center justify-center h-48">
-          <Loader2 className="w-8 h-8 text-purple-400 animate-spin" />
+      <div className={`bg-gradient-to-br from-slate-900 to-indigo-950 rounded-2xl p-4 md:p-6 lg:p-8 ${className}`}>
+        <div className="flex items-center justify-center h-48 md:h-64 lg:h-80">
+          <Loader2 className="w-8 h-8 md:w-10 md:h-10 text-purple-400 animate-spin" />
         </div>
       </div>
     );
@@ -149,6 +177,7 @@ const AidenLearningWidget = ({ chatbots = [], className = '' }) => {
 
   return (
     <motion.div
+      ref={containerRef}
       className={`relative overflow-hidden rounded-2xl ${className}`}
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
@@ -158,34 +187,34 @@ const AidenLearningWidget = ({ chatbots = [], className = '' }) => {
       <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-indigo-950 to-purple-950" />
 
       {/* Animated background glow */}
-      <div className="absolute top-1/4 left-1/2 w-96 h-96 -translate-x-1/2 -translate-y-1/2 bg-purple-500/20 rounded-full blur-3xl animate-pulse" />
-      <div className="absolute bottom-0 right-0 w-64 h-64 bg-cyan-500/10 rounded-full blur-2xl" />
+      <div className="absolute top-1/4 left-1/2 w-64 md:w-96 h-64 md:h-96 -translate-x-1/2 -translate-y-1/2 bg-purple-500/20 rounded-full blur-3xl animate-pulse" />
+      <div className="absolute bottom-0 right-0 w-48 md:w-64 h-48 md:h-64 bg-cyan-500/10 rounded-full blur-2xl" />
 
-      <div className="relative z-10 p-5">
+      <div className="relative z-10 p-4 md:p-6 lg:p-8">
         {/* Header */}
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-3">
+        <div className="flex items-center justify-between mb-4 md:mb-6">
+          <div className="flex items-center gap-3 md:gap-4">
             <div className="relative">
-              <div className="p-2.5 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-xl">
-                <Brain className="w-5 h-5 text-white" />
+              <div className="p-2.5 md:p-3 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-xl">
+                <Brain className="w-5 h-5 md:w-6 md:h-6 lg:w-7 lg:h-7 text-white" />
               </div>
-              <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-400 rounded-full border-2 border-slate-900 animate-pulse" />
+              <div className="absolute -top-1 -right-1 w-3 h-3 md:w-4 md:h-4 bg-green-400 rounded-full border-2 border-slate-900 animate-pulse" />
             </div>
             <div>
-              <h3 className="text-white font-semibold text-sm flex items-center gap-2">
+              <h3 className="text-white font-semibold text-sm md:text-base lg:text-lg flex items-center gap-2">
                 Your AIDEN is Evolving
-                <Sparkles className="w-4 h-4 text-yellow-400" />
+                <Sparkles className="w-4 h-4 md:w-5 md:h-5 text-yellow-400" />
               </h3>
-              <p className="text-slate-400 text-xs">{evolutionStatus.message}</p>
+              <p className="text-slate-400 text-xs md:text-sm">{evolutionStatus.message}</p>
             </div>
           </div>
 
           <button
             onClick={() => setIsExpanded(!isExpanded)}
-            className="p-1.5 hover:bg-white/10 rounded-lg transition-colors"
+            className="p-1.5 md:p-2 hover:bg-white/10 rounded-lg transition-colors"
           >
             <ChevronRight
-              className={`w-5 h-5 text-slate-400 transition-transform duration-300 ${
+              className={`w-5 h-5 md:w-6 md:h-6 text-slate-400 transition-transform duration-300 ${
                 isExpanded ? 'rotate-90' : ''
               }`}
             />
@@ -194,17 +223,17 @@ const AidenLearningWidget = ({ chatbots = [], className = '' }) => {
 
         {/* Neural Network Visualization */}
         <div
-          className="relative rounded-xl overflow-hidden mb-4"
-          style={{ height: isExpanded ? 280 : 160 }}
+          className="relative rounded-xl overflow-hidden mb-4 md:mb-6 transition-all duration-300"
+          style={{ height: canvasSize.height }}
         >
           <NeuralNetworkCanvas
             data={generateVisualizationData(data, chatbots)}
-            width={400}
-            height={isExpanded ? 280 : 160}
+            width={canvasSize.width}
+            height={canvasSize.height}
             mode={isExpanded ? 'interactive' : 'ambient'}
             darkMode={true}
             onNodeHover={setHoveredNode}
-            className="w-full"
+            className="w-full h-full"
           />
 
           {/* Hover tooltip */}
@@ -214,49 +243,49 @@ const AidenLearningWidget = ({ chatbots = [], className = '' }) => {
                 initial={{ opacity: 0, y: 5 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0 }}
-                className="absolute bottom-3 left-3 right-3 bg-black/70 backdrop-blur-sm rounded-lg px-3 py-2"
+                className="absolute bottom-3 left-3 right-3 md:bottom-4 md:left-4 md:right-4 bg-black/70 backdrop-blur-sm rounded-lg px-3 py-2 md:px-4 md:py-3"
               >
-                <p className="text-white text-xs font-medium">{hoveredNode.label}</p>
-                <p className="text-slate-400 text-xs capitalize">{hoveredNode.type}</p>
+                <p className="text-white text-xs md:text-sm font-medium">{hoveredNode.label}</p>
+                <p className="text-slate-400 text-xs md:text-sm capitalize">{hoveredNode.type}</p>
               </motion.div>
             )}
           </AnimatePresence>
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-3 gap-3">
-          <div className="bg-white/5 rounded-xl p-3 backdrop-blur-sm">
-            <div className="flex items-center gap-1.5 mb-1">
-              <Zap className="w-3.5 h-3.5 text-cyan-400" />
-              <span className="text-slate-400 text-xs">Experiences</span>
+        <div className="grid grid-cols-3 gap-2 md:gap-4 lg:gap-6">
+          <div className="bg-white/5 rounded-xl p-3 md:p-4 lg:p-5 backdrop-blur-sm">
+            <div className="flex items-center gap-1.5 md:gap-2 mb-1 md:mb-2">
+              <Zap className="w-3.5 h-3.5 md:w-4 md:h-4 lg:w-5 lg:h-5 text-cyan-400" />
+              <span className="text-slate-400 text-xs md:text-sm">Experiences</span>
             </div>
-            <p className="text-white font-bold text-lg">{data.totalExperiences}</p>
+            <p className="text-white font-bold text-lg md:text-xl lg:text-2xl">{data.totalExperiences}</p>
           </div>
 
-          <div className="bg-white/5 rounded-xl p-3 backdrop-blur-sm">
-            <div className="flex items-center gap-1.5 mb-1">
-              <Sparkles className="w-3.5 h-3.5 text-purple-400" />
-              <span className="text-slate-400 text-xs">Patterns</span>
+          <div className="bg-white/5 rounded-xl p-3 md:p-4 lg:p-5 backdrop-blur-sm">
+            <div className="flex items-center gap-1.5 md:gap-2 mb-1 md:mb-2">
+              <Sparkles className="w-3.5 h-3.5 md:w-4 md:h-4 lg:w-5 lg:h-5 text-purple-400" />
+              <span className="text-slate-400 text-xs md:text-sm">Patterns</span>
             </div>
-            <p className="text-white font-bold text-lg">{data.totalPatterns}</p>
+            <p className="text-white font-bold text-lg md:text-xl lg:text-2xl">{data.totalPatterns}</p>
           </div>
 
-          <div className="bg-white/5 rounded-xl p-3 backdrop-blur-sm">
-            <div className="flex items-center gap-1.5 mb-1">
-              <TrendingUp className="w-3.5 h-3.5 text-yellow-400" />
-              <span className="text-slate-400 text-xs">Knowledge</span>
+          <div className="bg-white/5 rounded-xl p-3 md:p-4 lg:p-5 backdrop-blur-sm">
+            <div className="flex items-center gap-1.5 md:gap-2 mb-1 md:mb-2">
+              <TrendingUp className="w-3.5 h-3.5 md:w-4 md:h-4 lg:w-5 lg:h-5 text-yellow-400" />
+              <span className="text-slate-400 text-xs md:text-sm">Knowledge</span>
             </div>
-            <p className="text-white font-bold text-lg">{data.totalKnowledge}</p>
+            <p className="text-white font-bold text-lg md:text-xl lg:text-2xl">{data.totalKnowledge}</p>
           </div>
         </div>
 
         {/* Progress bar */}
-        <div className="mt-4">
-          <div className="flex items-center justify-between mb-1.5">
-            <span className="text-slate-400 text-xs">Learning Progress</span>
-            <span className="text-purple-400 text-xs font-medium">{learningProgress}%</span>
+        <div className="mt-4 md:mt-6">
+          <div className="flex items-center justify-between mb-1.5 md:mb-2">
+            <span className="text-slate-400 text-xs md:text-sm">Learning Progress</span>
+            <span className="text-purple-400 text-xs md:text-sm font-medium">{learningProgress}%</span>
           </div>
-          <div className="h-2 bg-slate-800 rounded-full overflow-hidden">
+          <div className="h-2 md:h-3 bg-slate-800 rounded-full overflow-hidden">
             <motion.div
               className="h-full bg-gradient-to-r from-purple-500 to-cyan-400 rounded-full"
               initial={{ width: 0 }}
@@ -273,19 +302,19 @@ const AidenLearningWidget = ({ chatbots = [], className = '' }) => {
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
-              className="mt-4 pt-4 border-t border-white/10"
+              className="mt-4 md:mt-6 pt-4 md:pt-6 border-t border-white/10"
             >
-              <h4 className="text-slate-300 text-xs font-medium mb-2">Learning by Bot</h4>
-              <div className="space-y-2 max-h-32 overflow-y-auto">
+              <h4 className="text-slate-300 text-xs md:text-sm font-medium mb-2 md:mb-3">Learning by Bot</h4>
+              <div className="space-y-2 md:space-y-3 max-h-40 md:max-h-52 lg:max-h-64 overflow-y-auto">
                 {data.botStats?.map((bot, idx) => (
                   <div
                     key={bot.botId}
-                    className="flex items-center justify-between bg-white/5 rounded-lg px-3 py-2"
+                    className="flex items-center justify-between bg-white/5 rounded-lg px-3 py-2 md:px-4 md:py-3"
                   >
-                    <span className="text-white text-xs truncate flex-1">
+                    <span className="text-white text-xs md:text-sm truncate flex-1">
                       {chatbots[idx]?.name || `Bot ${idx + 1}`}
                     </span>
-                    <div className="flex items-center gap-2 text-xs">
+                    <div className="flex items-center gap-2 md:gap-3 text-xs md:text-sm">
                       <span className="text-cyan-400">{bot.experiences?.total || 0} exp</span>
                       <span className="text-purple-400">{bot.patterns || 0} pat</span>
                     </div>
@@ -293,7 +322,7 @@ const AidenLearningWidget = ({ chatbots = [], className = '' }) => {
                 ))}
               </div>
 
-              <p className="text-slate-500 text-xs mt-3 text-center">
+              <p className="text-slate-500 text-xs md:text-sm mt-3 md:mt-4 text-center">
                 AIDEN learns from every conversation to serve your customers better
               </p>
             </motion.div>

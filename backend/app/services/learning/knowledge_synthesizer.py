@@ -331,13 +331,24 @@ Respond with JSON:
                         "principle_id": principle.id,
                     })
 
+    def _normalize_scope(self, scope_value: str) -> str:
+        """Normalize scope value to valid KnowledgeScope enum value."""
+        scope_mapping = {
+            "bot": "bot_specific",
+            "bot_specific": "bot_specific",
+            "tenant": "tenant_level",
+            "tenant_level": "tenant_level",
+            "global": "global",
+        }
+        return scope_mapping.get(scope_value, "bot_specific")
+
     def _doc_to_pattern(self, doc: Dict[str, Any]) -> LearnedPattern:
         """Convert a MongoDB document to a LearnedPattern."""
         return LearnedPattern(
             id=doc["_id"],
             bot_id=doc.get("bot_id"),
             tenant_id=doc.get("tenant_id"),
-            scope=KnowledgeScope(doc.get("scope", "bot_specific")),
+            scope=KnowledgeScope(self._normalize_scope(doc.get("scope", "bot_specific"))),
             pattern_type=PatternType(doc.get("pattern_type", "response_strategy")),
             pattern_description=doc.get("pattern_description", ""),
             trigger_conditions=doc.get("trigger_conditions", []),

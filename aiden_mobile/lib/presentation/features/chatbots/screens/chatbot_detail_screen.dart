@@ -109,7 +109,7 @@ class _ChatbotDetailScreenState extends State<ChatbotDetailScreen> {
                       width: 64,
                       height: 64,
                       decoration: BoxDecoration(
-                        color: botColor.withValues(alpha: 0.1),
+                        color: botColor.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(16),
                       ),
                       child: Icon(
@@ -325,7 +325,7 @@ class _ActionTile extends StatelessWidget {
           width: 40,
           height: 40,
           decoration: BoxDecoration(
-            color: color.withValues(alpha: 0.1),
+            color: color.withOpacity(0.1),
             borderRadius: BorderRadius.circular(10),
           ),
           child: Icon(icon, color: color, size: 22),

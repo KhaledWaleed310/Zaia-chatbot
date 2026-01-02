@@ -1861,28 +1861,152 @@ async def get_learning_graph_data(current_admin: dict = Depends(get_current_admi
                 "metadata": {"experiences": exp_count}
             })
 
-        # Get patterns
+        # Get important experiences (with explicit feedback or high importance)
+        exp_cursor = db.learning_experiences.find({
+            "$or": [
+                {"importance_score": {"$gte": 0.7}},
+                {"feedback_signals.explicit_feedback": {"$exists": True}},
+                {"feedback_signals.outcome_signals.booking_made": True},
+                {"feedback_signals.outcome_signals.lead_captured": True},
+            ]
+        }).sort("created_at", -1).limit(30)
+
+        # Track experiences by intent for clustering
+        experiences_by_intent = {}
+        experience_nodes = []
+
+        async for exp in exp_cursor:
+            exp_id = str(exp.get("_id"))
+            importance = exp.get("importance_score", 0.5)
+            feedback = exp.get("feedback_signals", {})
+            explicit = feedback.get("explicit_feedback")
+            intent = exp.get("detected_intent", "")
+            bot_id = exp.get("bot_id")
+
+            # Determine experience type for coloring
+            if explicit == 1.0:
+                exp_type = "positive"
+            elif explicit == 0.0:
+                exp_type = "negative"
+            else:
+                exp_type = "neutral"
+
+            # Create label from interaction type and intent
+            interaction = exp.get("interaction_type", "chat")
+            label = f"{interaction}: {intent[:20]}" if intent else interaction
+
+            exp_node = {
+                "id": f"experience-{exp_id}",
+                "type": "experience",
+                "label": label,
+                "value": importance,
+                "metadata": {
+                    "feedback": exp_type,
+                    "importance": importance,
+                    "crystallized": exp.get("crystallized", False),
+                    "created_at": str(exp.get("created_at", ""))[:10],
+                    "intent": intent,
+                    "bot_id": bot_id,
+                }
+            }
+            nodes.append(exp_node)
+            experience_nodes.append(exp_node)
+
+            # Track by intent for cross-bot clustering
+            if intent:
+                if intent not in experiences_by_intent:
+                    experiences_by_intent[intent] = []
+                experiences_by_intent[intent].append(exp_node)
+
+            # Link experience to its bot
+            if bot_id:
+                links.append({
+                    "source": f"bot-{bot_id}",
+                    "target": f"experience-{exp_id}",
+                    "strength": importance * 0.5,
+                })
+
+        # Create cross-bot experience connections (similar intent = connected)
+        for intent, exp_list in experiences_by_intent.items():
+            if len(exp_list) > 1:
+                # Connect experiences with same intent from different bots
+                for i in range(len(exp_list)):
+                    for j in range(i + 1, min(i + 3, len(exp_list))):  # Limit connections
+                        exp1 = exp_list[i]
+                        exp2 = exp_list[j]
+                        # Only connect if different bots
+                        if exp1["metadata"].get("bot_id") != exp2["metadata"].get("bot_id"):
+                            links.append({
+                                "source": exp1["id"],
+                                "target": exp2["id"],
+                                "strength": 0.3,  # Light connection for similar experiences
+                                "type": "similar",
+                            })
+
+        # Get patterns - with cross-bot connections for global/tenant patterns
+        bot_ids = [str(bot["_id"]) for bot in bots]
         patterns_cursor = db.learned_patterns.find({}).limit(100)
+
         async for pattern in patterns_cursor:
             pattern_id = str(pattern.get("_id"))
+            scope = pattern.get("scope", "bot_specific")
+            confidence = pattern.get("confidence", 0.5)
+            pattern_bot_id = pattern.get("bot_id")
+            evidence_ids = pattern.get("evidence_ids", [])
+
             nodes.append({
                 "id": f"pattern-{pattern_id}",
                 "type": "pattern",
                 "label": pattern.get("pattern_description", "")[:50],
-                "value": pattern.get("confidence", 0.5),
+                "value": confidence,
                 "metadata": {
                     "pattern_type": pattern.get("pattern_type"),
-                    "evidence_count": pattern.get("evidence_count", 0)
+                    "evidence_count": pattern.get("evidence_count", 0),
+                    "scope": scope,
                 }
             })
 
-            # Link pattern to its bot
-            if pattern.get("bot_id"):
+            # Link pattern based on scope
+            if scope == "global":
+                # Global patterns connect to ALL bots
+                for bid in bot_ids[:10]:  # Limit to prevent clutter
+                    links.append({
+                        "source": f"bot-{bid}",
+                        "target": f"pattern-{pattern_id}",
+                        "strength": confidence * 0.4,  # Lighter for shared
+                        "type": "global",
+                    })
+            elif scope == "tenant_level" and pattern.get("tenant_id"):
+                # Tenant patterns connect to all tenant's bots
+                tenant_bots = await db.chatbots.find(
+                    {"tenant_id": pattern.get("tenant_id")},
+                    {"_id": 1}
+                ).to_list(length=20)
+                for tbot in tenant_bots:
+                    links.append({
+                        "source": f"bot-{tbot['_id']}",
+                        "target": f"pattern-{pattern_id}",
+                        "strength": confidence * 0.5,
+                        "type": "tenant",
+                    })
+            elif pattern_bot_id:
+                # Bot-specific pattern
                 links.append({
-                    "source": f"bot-{pattern.get('bot_id')}",
+                    "source": f"bot-{pattern_bot_id}",
                     "target": f"pattern-{pattern_id}",
-                    "strength": pattern.get("confidence", 0.5),
+                    "strength": confidence,
                 })
+
+            # Link pattern to its evidence experiences (if visible)
+            for exp_node in experience_nodes:
+                exp_orig_id = exp_node["id"].replace("experience-", "")
+                if exp_orig_id in evidence_ids[:5]:  # Limit connections
+                    links.append({
+                        "source": exp_node["id"],
+                        "target": f"pattern-{pattern_id}",
+                        "strength": 0.6,
+                        "type": "evidence",
+                    })
 
         # Get knowledge nodes
         knowledge_cursor = db.crystallized_knowledge.find({}).limit(50)

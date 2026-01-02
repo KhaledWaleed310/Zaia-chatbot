@@ -37,6 +37,18 @@ from ...core.database import get_mongodb, get_neo4j
 logger = logging.getLogger(__name__)
 
 
+def _normalize_scope(scope_value: str) -> str:
+    """Normalize scope value to valid KnowledgeScope enum value."""
+    scope_mapping = {
+        "bot": "bot_specific",
+        "bot_specific": "bot_specific",
+        "tenant": "tenant_level",
+        "tenant_level": "tenant_level",
+        "global": "global",
+    }
+    return scope_mapping.get(scope_value, "bot_specific")
+
+
 class MemoryCrystallizer:
     """
     Converts ephemeral session data into crystallized knowledge.
@@ -534,7 +546,7 @@ Respond with JSON:
                 id=doc["_id"],
                 bot_id=doc.get("bot_id"),
                 tenant_id=doc.get("tenant_id"),
-                scope=KnowledgeScope(doc.get("scope", "bot_specific")),
+                scope=KnowledgeScope(_normalize_scope(doc.get("scope", "bot_specific"))),
                 pattern_type=PatternType(doc.get("pattern_type", "response_strategy")),
                 pattern_description=doc.get("pattern_description", ""),
                 trigger_conditions=doc.get("trigger_conditions", []),

@@ -160,7 +160,7 @@ class _DocumentListScreenState extends State<DocumentListScreen> {
             Icon(
               Icons.description_outlined,
               size: 80,
-              color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.5),
+              color: Theme.of(context).colorScheme.primary.withOpacity(0.5),
             ),
             const SizedBox(height: 24),
             Text(
@@ -245,7 +245,7 @@ class _DocumentCard extends StatelessWidget {
               width: 48,
               height: 48,
               decoration: BoxDecoration(
-                color: _getIconColor(document.extension).withValues(alpha: 0.1),
+                color: _getIconColor(document.extension).withOpacity(0.1),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(

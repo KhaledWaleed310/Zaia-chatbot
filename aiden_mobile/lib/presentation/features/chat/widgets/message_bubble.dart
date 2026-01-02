@@ -128,7 +128,7 @@ class MessageBubble extends StatelessWidget {
             color: Theme.of(context)
                 .colorScheme
                 .onSurfaceVariant
-                .withValues(alpha: 0.5 + (value * 0.5)),
+                .withOpacity(0.5 + (value * 0.5)),
             shape: BoxShape.circle,
           ),
         );

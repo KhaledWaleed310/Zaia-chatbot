@@ -193,7 +193,7 @@ class _NeuralNetworkPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = color.withValues(alpha: 0.3)
+      ..color = color.withOpacity(0.3)
       ..strokeWidth = 1
       ..style = PaintingStyle.stroke;
 

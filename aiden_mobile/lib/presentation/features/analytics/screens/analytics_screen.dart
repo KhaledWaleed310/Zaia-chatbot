@@ -281,7 +281,7 @@ class _SentimentIndicator extends StatelessWidget {
               child: CircularProgressIndicator(
                 value: value,
                 strokeWidth: 6,
-                backgroundColor: color.withValues(alpha: 0.2),
+                backgroundColor: color.withOpacity(0.2),
                 valueColor: AlwaysStoppedAnimation(color),
               ),
             ),
