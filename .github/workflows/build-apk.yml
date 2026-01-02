@@ -75,7 +75,12 @@ jobs:
 
       - name: Get Flutter dependencies
         working-directory: aiden_mobile
-        run: flutter pub get
+        run: |
+          echo "=== Current pubspec.yaml ==="
+          cat pubspec.yaml
+          echo ""
+          echo "=== Running flutter pub get ==="
+          flutter pub get -v
 
       - name: Run code generation
         working-directory: aiden_mobile
