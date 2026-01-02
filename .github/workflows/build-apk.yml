@@ -29,7 +29,6 @@ jobs:
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.24.0'
           channel: 'stable'
           cache: true
 
@@ -51,20 +50,19 @@ jobs:
           rm -rf aiden_mobile/android/app/src/main/kotlin/com/zaia/temp_flutter_project
           # Update app name
           sed -i 's/temp_flutter_project/AIDEN/g' aiden_mobile/android/app/src/main/AndroidManifest.xml
-          # Update Kotlin version to latest stable (fix for Flutter 3.24)
-          echo "=== Before Kotlin fix ==="
-          cat aiden_mobile/android/settings.gradle
-          sed -i 's/1.7.10/2.0.0/g' aiden_mobile/android/settings.gradle
-          sed -i 's/1.8.22/2.0.0/g' aiden_mobile/android/settings.gradle
-          sed -i 's/1.9.0/2.0.0/g' aiden_mobile/android/settings.gradle
-          # Also check build.gradle for kotlin_version
-          if grep -q "kotlin_version" aiden_mobile/android/build.gradle; then
-            sed -i "s/ext.kotlin_version = '[^']*'/ext.kotlin_version = '2.0.0'/" aiden_mobile/android/build.gradle
-          fi
-          echo "=== After Kotlin fix ==="
-          cat aiden_mobile/android/settings.gradle
-          # Cleanup
+          # Cleanup temp project
           rm -rf temp_flutter_project
+
+          # Fix Kotlin version in settings.gradle
+          echo "=== Fixing Kotlin version ==="
+          # Use perl for more reliable regex replacement
+          perl -i -pe 's/(org\.jetbrains\.kotlin\.android.*version\s*=?\s*["\x27])[^"\x27]*/\${1}2.0.21/g' aiden_mobile/android/settings.gradle
+          # Also try direct version replacement
+          sed -i 's/version = "1\.[0-9]\.[0-9]*"/version = "2.0.21"/g' aiden_mobile/android/settings.gradle
+          sed -i "s/version = '1\.[0-9]\.[0-9]*'/version = '2.0.21'/g" aiden_mobile/android/settings.gradle
+
+          echo "=== settings.gradle content ==="
+          cat aiden_mobile/android/settings.gradle
 
       - name: Get Flutter dependencies
         working-directory: aiden_mobile
