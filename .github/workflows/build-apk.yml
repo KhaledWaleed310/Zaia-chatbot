@@ -54,34 +54,24 @@ jobs:
           # Cleanup
           rm -rf temp_flutter_project
 
-      - name: Create placeholder assets
+      - name: Create placeholder assets and fix pubspec
         working-directory: aiden_mobile
         run: |
           # Create asset directories
           mkdir -p assets/fonts assets/images assets/icons
 
-          # Download Inter fonts from Google Fonts CDN
-          curl -L -o assets/fonts/Inter-Regular.ttf "https://fonts.gstatic.com/s/inter/v13/UcCO3FwrK3iLTeHuS_fvQtMwCp50KnMw2boKoduKmMEVuLyfAZ9hjp-Ek-_EeA.woff2" || echo "" > assets/fonts/Inter-Regular.ttf
-          curl -L -o assets/fonts/Inter-Medium.ttf "https://fonts.gstatic.com/s/inter/v13/UcCO3FwrK3iLTeHuS_fvQtMwCp50KnMw2boKoduKmMEVuI6fAZ9hjp-Ek-_EeA.woff2" || echo "" > assets/fonts/Inter-Medium.ttf
-          curl -L -o assets/fonts/Inter-SemiBold.ttf "https://fonts.gstatic.com/s/inter/v13/UcCO3FwrK3iLTeHuS_fvQtMwCp50KnMw2boKoduKmMEVuGKYAZ9hjp-Ek-_EeA.woff2" || echo "" > assets/fonts/Inter-SemiBold.ttf
-          curl -L -o assets/fonts/Inter-Bold.ttf "https://fonts.gstatic.com/s/inter/v13/UcCO3FwrK3iLTeHuS_fvQtMwCp50KnMw2boKoduKmMEVuFuYAZ9hjp-Ek-_EeA.woff2" || echo "" > assets/fonts/Inter-Bold.ttf
-
-          # Download Cairo fonts
-          curl -L -o assets/fonts/Cairo-Regular.ttf "https://fonts.gstatic.com/s/cairo/v28/SLXgc1nY6HkvangtZmpQdkhzfH5lkSs2SgRjCAGMQ1z0hOA-W1ToLQ-HsA.woff2" || echo "" > assets/fonts/Cairo-Regular.ttf
-          curl -L -o assets/fonts/Cairo-Medium.ttf "https://fonts.gstatic.com/s/cairo/v28/SLXgc1nY6HkvangtZmpQdkhzfH5lkSs2SgRjCAGMQ1z0hOA-a1ToLQ-HsA.woff2" || echo "" > assets/fonts/Cairo-Medium.ttf
-          curl -L -o assets/fonts/Cairo-SemiBold.ttf "https://fonts.gstatic.com/s/cairo/v28/SLXgc1nY6HkvangtZmpQdkhzfH5lkSs2SgRjCAGMQ1z0hOA-h1PoLQ-HsA.woff2" || echo "" > assets/fonts/Cairo-SemiBold.ttf
-          curl -L -o assets/fonts/Cairo-Bold.ttf "https://fonts.gstatic.com/s/cairo/v28/SLXgc1nY6HkvangtZmpQdkhzfH5lkSs2SgRjCAGMQ1z0hOA-uFPoLQ-HsA.woff2" || echo "" > assets/fonts/Cairo-Bold.ttf
-
-          # Create a placeholder image
+          # Create placeholder files
           echo "" > assets/images/.gitkeep
           echo "" > assets/icons/.gitkeep
 
-          # Verify fonts exist (create empty if download failed)
-          for font in Inter-Regular Inter-Medium Inter-SemiBold Inter-Bold Cairo-Regular Cairo-Medium Cairo-SemiBold Cairo-Bold; do
-            [ ! -s "assets/fonts/${font}.ttf" ] && echo "placeholder" > "assets/fonts/${font}.ttf"
-          done
+          # Remove fonts section from pubspec.yaml (use system fonts for now)
+          # Also remove assets/fonts/ reference since we won't use custom fonts
+          sed -i '/^  fonts:/,$d' pubspec.yaml
+          sed -i 's/- assets\/fonts\///' pubspec.yaml
 
-          ls -la assets/fonts/
+          # Show modified pubspec
+          echo "=== Modified pubspec.yaml flutter section ==="
+          tail -20 pubspec.yaml
 
       - name: Get Flutter dependencies
         working-directory: aiden_mobile
