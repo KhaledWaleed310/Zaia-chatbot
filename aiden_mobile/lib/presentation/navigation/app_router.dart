@@ -346,6 +346,7 @@ class _SplashScreen extends StatefulWidget {
 
 class _SplashScreenState extends State<_SplashScreen> {
   Timer? _timeoutTimer;
+  String _statusMessage = 'Starting...';
 
   @override
   void initState() {
@@ -362,6 +363,7 @@ class _SplashScreenState extends State<_SplashScreen> {
     // Check auth status after a brief delay
     Future.delayed(const Duration(milliseconds: 500), () {
       if (mounted) {
+        setState(() => _statusMessage = 'Checking authentication...');
         context.read<AuthBloc>().add(const AuthCheckStatus());
       }
     });
@@ -375,35 +377,51 @@ class _SplashScreenState extends State<_SplashScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            // Logo
-            Container(
-              width: 100,
-              height: 100,
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.primary,
-                borderRadius: BorderRadius.circular(24),
+    return BlocListener<AuthBloc, AuthState>(
+      listener: (context, state) {
+        // Update status message based on auth state
+        if (state.status == AuthStatus.loading) {
+          setState(() => _statusMessage = 'Verifying session...');
+        }
+      },
+      child: Scaffold(
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              // Logo
+              Container(
+                width: 100,
+                height: 100,
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.primary,
+                  borderRadius: BorderRadius.circular(24),
+                ),
+                child: const Icon(
+                  Icons.smart_toy,
+                  size: 60,
+                  color: Colors.white,
+                ),
               ),
-              child: const Icon(
-                Icons.smart_toy,
-                size: 60,
-                color: Colors.white,
+              const SizedBox(height: 24),
+              Text(
+                'AIDEN',
+                style: Theme.of(context).textTheme.headlineLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
               ),
-            ),
-            const SizedBox(height: 24),
-            Text(
-              'AIDEN',
-              style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-            ),
-            const SizedBox(height: 48),
-            const CircularProgressIndicator(),
-          ],
+              const SizedBox(height: 48),
+              const CircularProgressIndicator(),
+              const SizedBox(height: 16),
+              // Status message
+              Text(
+                _statusMessage,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+              ),
+            ],
+          ),
         ),
       ),
     );
