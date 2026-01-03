@@ -5,6 +5,7 @@ on:
     branches: [master, main]
     paths:
       - 'aiden_mobile/**'
+      - '.github/workflows/build-apk.yml'
   pull_request:
     branches: [master, main]
     paths:
@@ -37,24 +38,10 @@ jobs:
           # Create a temp Flutter project to get Android files
           flutter create --platforms=android --org com.zaia temp_flutter_project
 
-          # Debug: show temp project structure
-          echo "=== Temp project structure ==="
-          ls -la temp_flutter_project/
-          ls -la temp_flutter_project/android/ || echo "No android folder in temp"
-
           # Copy Android folder to our project
           cp -rv temp_flutter_project/android aiden_mobile/
 
-          # Debug: show copied structure
-          echo "=== Copied Android structure ==="
-          ls -la aiden_mobile/android/
-          ls -la aiden_mobile/android/app/ || echo "No app folder"
-
-          # Find and show build.gradle location
-          echo "=== Finding build.gradle files ==="
-          find aiden_mobile/android -name "build.gradle*" -o -name "*.gradle" | head -20
-
-          # Update package name in Android files (with error handling)
+          # Update package name in Android files
           for file in aiden_mobile/android/app/build.gradle aiden_mobile/android/app/build.gradle.kts; do
             if [ -f "$file" ]; then
               echo "Updating $file"
@@ -79,15 +66,37 @@ jobs:
           rm -rf temp_flutter_project
 
           # Fix Kotlin version in settings.gradle
-          echo "=== Fixing Kotlin version ==="
           SETTINGS_FILE=$(find aiden_mobile/android -name "settings.gradle*" | head -1)
           if [ -n "$SETTINGS_FILE" ]; then
-            echo "Found settings file: $SETTINGS_FILE"
-            cat "$SETTINGS_FILE"
-            # Update Kotlin version
             sed -i 's/version = "[0-9]\.[0-9]*\.[0-9]*"/version = "2.0.21"/g' "$SETTINGS_FILE"
-            echo "=== After update ==="
-            cat "$SETTINGS_FILE"
+          fi
+
+      - name: Fix Maven repository issues
+        run: |
+          # Add alternative repositories to settings.gradle.kts
+          SETTINGS_FILE="aiden_mobile/android/settings.gradle.kts"
+          if [ -f "$SETTINGS_FILE" ]; then
+            # Check if repositories block exists and add alternatives
+            if grep -q "dependencyResolutionManagement" "$SETTINGS_FILE"; then
+              # Add mavenCentral mirror repositories
+              sed -i '/repositories {/a\        maven { url = uri("https://maven.aliyun.com/repository/public") }\n        maven { url = uri("https://maven.aliyun.com/repository/google") }' "$SETTINGS_FILE"
+            fi
+          fi
+
+          # Also update the build.gradle to add repositories
+          BUILD_GRADLE="aiden_mobile/android/build.gradle.kts"
+          if [ -f "$BUILD_GRADLE" ]; then
+            cat >> "$BUILD_GRADLE" << 'GRADLE_APPEND'
+
+allprojects {
+    repositories {
+        google()
+        mavenCentral()
+        maven { url = uri("https://maven.aliyun.com/repository/public") }
+        maven { url = uri("https://maven.aliyun.com/repository/google") }
+    }
+}
+GRADLE_APPEND
           fi
 
       - name: Get Flutter dependencies
@@ -101,6 +110,9 @@ jobs:
       - name: Build APK (Release)
         working-directory: aiden_mobile
         run: flutter build apk --release
+        env:
+          # Retry on network failures
+          GRADLE_OPTS: "-Dorg.gradle.daemon=false"
 
       - name: Build APK (Debug)
         working-directory: aiden_mobile
