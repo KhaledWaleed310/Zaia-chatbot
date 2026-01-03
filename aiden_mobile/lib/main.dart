@@ -8,18 +8,19 @@ import 'package:aiden_mobile/bootstrap.dart';
 import 'package:aiden_mobile/app.dart';
 
 void main() async {
-  // Ensure Flutter is initialized
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Set up global error handling
+  // Show loading screen IMMEDIATELY while bootstrap runs
+  runApp(const _LoadingApp());
+
+  // Set up error handling
   FlutterError.onError = (details) {
     if (kDebugMode) {
       print('Flutter error: ${details.exception}');
-      print('Stack trace: ${details.stack}');
     }
   };
 
-  // Wrap everything in try-catch for safety
+  // Run bootstrap
   try {
     final result = await bootstrap();
 
@@ -33,12 +34,60 @@ void main() async {
   } catch (e, stackTrace) {
     if (kDebugMode) {
       print('Main error: $e');
-      print('Stack trace: $stackTrace');
+      print('Stack: $stackTrace');
     }
-    // Show error app if bootstrap completely fails
     runApp(BootstrapErrorApp(
-      errorMessage: 'App failed to start: ${e.toString()}',
+      errorMessage: 'App failed to start: $e',
     ));
+  }
+}
+
+/// Minimal loading app shown immediately during bootstrap
+class _LoadingApp extends StatelessWidget {
+  const _LoadingApp();
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      home: Scaffold(
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                width: 100,
+                height: 100,
+                decoration: BoxDecoration(
+                  color: Colors.blue,
+                  borderRadius: BorderRadius.circular(24),
+                ),
+                child: const Icon(
+                  Icons.smart_toy,
+                  size: 60,
+                  color: Colors.white,
+                ),
+              ),
+              const SizedBox(height: 24),
+              const Text(
+                'AIDEN',
+                style: TextStyle(
+                  fontSize: 32,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 48),
+              const CircularProgressIndicator(),
+              const SizedBox(height: 16),
+              const Text(
+                'Loading...',
+                style: TextStyle(color: Colors.grey),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }
 
@@ -96,7 +145,6 @@ class _BootstrapErrorScreenState extends State<BootstrapErrorScreen> {
       final result = await bootstrap();
 
       if (result.success && mounted) {
-        // Restart the app by running AidenApp
         runApp(const AidenApp());
       } else if (mounted) {
         setState(() {
@@ -142,10 +190,7 @@ class _BootstrapErrorScreenState extends State<BootstrapErrorScreen> {
     setState(() => _isClearing = true);
 
     try {
-      // Clear all app data
       await _clearAllAppData();
-
-      // Retry bootstrap
       final result = await bootstrap();
 
       if (result.success && mounted) {
@@ -166,23 +211,19 @@ class _BootstrapErrorScreenState extends State<BootstrapErrorScreen> {
     }
   }
 
-  /// Clear all app data for recovery
   Future<void> _clearAllAppData() async {
-    // Close Hive boxes
     try {
       await Hive.close();
     } catch (e) {
       if (kDebugMode) print('Error closing Hive: $e');
     }
 
-    // Delete Hive data
     try {
       await Hive.deleteFromDisk();
     } catch (e) {
       if (kDebugMode) print('Error deleting Hive: $e');
     }
 
-    // Clear secure storage
     try {
       const storage = FlutterSecureStorage(
         aOptions: AndroidOptions(encryptedSharedPreferences: true),
@@ -193,7 +234,6 @@ class _BootstrapErrorScreenState extends State<BootstrapErrorScreen> {
       if (kDebugMode) print('Error clearing secure storage: $e');
     }
 
-    // Re-initialize Hive
     try {
       await Hive.initFlutter();
     } catch (e) {
@@ -210,7 +250,6 @@ class _BootstrapErrorScreenState extends State<BootstrapErrorScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              // Error icon
               Container(
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
@@ -224,8 +263,6 @@ class _BootstrapErrorScreenState extends State<BootstrapErrorScreen> {
                 ),
               ),
               const SizedBox(height: 32),
-
-              // Title
               Text(
                 'Unable to Start App',
                 style: Theme.of(context).textTheme.headlineSmall?.copyWith(
@@ -234,8 +271,6 @@ class _BootstrapErrorScreenState extends State<BootstrapErrorScreen> {
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 16),
-
-              // Error message
               Text(
                 _currentError,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
@@ -244,8 +279,6 @@ class _BootstrapErrorScreenState extends State<BootstrapErrorScreen> {
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 48),
-
-              // Retry button
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
@@ -260,8 +293,6 @@ class _BootstrapErrorScreenState extends State<BootstrapErrorScreen> {
                 ),
               ),
               const SizedBox(height: 16),
-
-              // Clear data button
               SizedBox(
                 width: double.infinity,
                 child: OutlinedButton(
@@ -284,8 +315,6 @@ class _BootstrapErrorScreenState extends State<BootstrapErrorScreen> {
                 ),
               ),
               const SizedBox(height: 24),
-
-              // Help text
               Text(
                 'If the problem persists, try uninstalling and reinstalling the app.',
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
