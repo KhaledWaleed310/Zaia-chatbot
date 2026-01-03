@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -6,17 +8,36 @@ import 'package:aiden_mobile/bootstrap.dart';
 import 'package:aiden_mobile/app.dart';
 
 void main() async {
+  // Ensure Flutter is initialized
   WidgetsFlutterBinding.ensureInitialized();
 
-  final result = await bootstrap();
+  // Set up global error handling
+  FlutterError.onError = (details) {
+    if (kDebugMode) {
+      print('Flutter error: ${details.exception}');
+      print('Stack trace: ${details.stack}');
+    }
+  };
 
-  if (result.success) {
-    runApp(const AidenApp());
-  } else {
-    // Run error recovery app
+  // Wrap everything in try-catch for safety
+  try {
+    final result = await bootstrap();
+
+    if (result.success) {
+      runApp(const AidenApp());
+    } else {
+      runApp(BootstrapErrorApp(
+        errorMessage: result.errorMessage ?? 'Unknown error',
+      ));
+    }
+  } catch (e, stackTrace) {
+    if (kDebugMode) {
+      print('Main error: $e');
+      print('Stack trace: $stackTrace');
+    }
+    // Show error app if bootstrap completely fails
     runApp(BootstrapErrorApp(
-      errorMessage: result.errorMessage ?? 'Unknown error',
-      failureType: result.failureType ?? BootstrapFailureType.unknown,
+      errorMessage: 'App failed to start: ${e.toString()}',
     ));
   }
 }
@@ -24,12 +45,10 @@ void main() async {
 /// Error app shown when bootstrap fails
 class BootstrapErrorApp extends StatelessWidget {
   final String errorMessage;
-  final BootstrapFailureType failureType;
 
   const BootstrapErrorApp({
     super.key,
     required this.errorMessage,
-    required this.failureType,
   });
 
   @override
@@ -41,10 +60,7 @@ class BootstrapErrorApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
         useMaterial3: true,
       ),
-      home: BootstrapErrorScreen(
-        errorMessage: errorMessage,
-        failureType: failureType,
-      ),
+      home: BootstrapErrorScreen(errorMessage: errorMessage),
     );
   }
 }
@@ -52,12 +68,10 @@ class BootstrapErrorApp extends StatelessWidget {
 /// Error screen with retry and clear data options
 class BootstrapErrorScreen extends StatefulWidget {
   final String errorMessage;
-  final BootstrapFailureType failureType;
 
   const BootstrapErrorScreen({
     super.key,
     required this.errorMessage,
-    required this.failureType,
   });
 
   @override
@@ -67,26 +81,36 @@ class BootstrapErrorScreen extends StatefulWidget {
 class _BootstrapErrorScreenState extends State<BootstrapErrorScreen> {
   bool _isRetrying = false;
   bool _isClearing = false;
+  String _currentError = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _currentError = widget.errorMessage;
+  }
 
   Future<void> _retry() async {
     setState(() => _isRetrying = true);
 
-    final result = await bootstrap();
+    try {
+      final result = await bootstrap();
 
-    if (result.success && mounted) {
-      // Navigate to main app by replacing the entire widget tree
-      Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(builder: (_) => const AidenApp()),
-        (route) => false,
-      );
-    } else if (mounted) {
-      setState(() => _isRetrying = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(result.errorMessage ?? 'Retry failed'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      if (result.success && mounted) {
+        // Restart the app by running AidenApp
+        runApp(const AidenApp());
+      } else if (mounted) {
+        setState(() {
+          _isRetrying = false;
+          _currentError = result.errorMessage ?? 'Retry failed';
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isRetrying = false;
+          _currentError = 'Retry error: $e';
+        });
+      }
     }
   }
 
@@ -125,65 +149,55 @@ class _BootstrapErrorScreenState extends State<BootstrapErrorScreen> {
       final result = await bootstrap();
 
       if (result.success && mounted) {
-        Navigator.of(context).pushAndRemoveUntil(
-          MaterialPageRoute(builder: (_) => const AidenApp()),
-          (route) => false,
-        );
+        runApp(const AidenApp());
       } else if (mounted) {
-        setState(() => _isClearing = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(result.errorMessage ?? 'Failed to restart'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        setState(() {
+          _isClearing = false;
+          _currentError = result.errorMessage ?? 'Failed to restart';
+        });
       }
     } catch (e) {
       if (mounted) {
-        setState(() => _isClearing = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error clearing data: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        setState(() {
+          _isClearing = false;
+          _currentError = 'Error: $e';
+        });
       }
     }
   }
 
   /// Clear all app data for recovery
   Future<void> _clearAllAppData() async {
+    // Close Hive boxes
     try {
-      // Close and delete all Hive boxes
-      try {
-        await Hive.close();
-      } catch (e) {
-        if (kDebugMode) print('Error closing Hive: $e');
-      }
+      await Hive.close();
+    } catch (e) {
+      if (kDebugMode) print('Error closing Hive: $e');
+    }
 
-      try {
-        await Hive.deleteFromDisk();
-      } catch (e) {
-        if (kDebugMode) print('Error deleting Hive: $e');
-      }
+    // Delete Hive data
+    try {
+      await Hive.deleteFromDisk();
+    } catch (e) {
+      if (kDebugMode) print('Error deleting Hive: $e');
+    }
 
-      // Clear secure storage
+    // Clear secure storage
+    try {
       const storage = FlutterSecureStorage(
         aOptions: AndroidOptions(encryptedSharedPreferences: true),
         iOptions: IOSOptions(accessibility: KeychainAccessibility.first_unlock),
       );
+      await storage.deleteAll().timeout(const Duration(seconds: 3));
+    } catch (e) {
+      if (kDebugMode) print('Error clearing secure storage: $e');
+    }
 
-      try {
-        await storage.deleteAll().timeout(const Duration(seconds: 3));
-      } catch (e) {
-        if (kDebugMode) print('Error clearing secure storage: $e');
-      }
-
-      // Re-initialize Hive for fresh start
+    // Re-initialize Hive
+    try {
       await Hive.initFlutter();
     } catch (e) {
-      // Best effort - continue even if some clearing fails
-      if (kDebugMode) print('Error during data clear: $e');
+      if (kDebugMode) print('Error re-initializing Hive: $e');
     }
   }
 
@@ -223,7 +237,7 @@ class _BootstrapErrorScreenState extends State<BootstrapErrorScreen> {
 
               // Error message
               Text(
-                widget.errorMessage,
+                _currentError,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       color: Colors.grey[600],
                     ),

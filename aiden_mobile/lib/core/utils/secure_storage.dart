@@ -15,7 +15,7 @@ class SecureStorageService {
   static const String keyUserRole = 'user_role';
 
   /// Default timeout for storage operations
-  static const Duration _defaultTimeout = Duration(seconds: 3);
+  static const Duration _timeout = Duration(seconds: 3);
 
   SecureStorageService({FlutterSecureStorage? storage})
       : _storage = storage ??
@@ -29,96 +29,72 @@ class SecureStorageService {
             );
 
   // ============================================
-  // PRIVATE HELPERS WITH TIMEOUT
-  // ============================================
-
-  /// Execute storage read operation with timeout
-  Future<String?> _readWithTimeout(
-    String key, {
-    Duration? timeout,
-  }) async {
-    try {
-      return await _storage.read(key: key).timeout(
-            timeout ?? _defaultTimeout,
-            onTimeout: () {
-              if (kDebugMode) print('SecureStorage read timed out for key: $key');
-              return null;
-            },
-          );
-    } catch (e) {
-      if (kDebugMode) print('SecureStorage read failed for key $key: $e');
-      return null;
-    }
-  }
-
-  /// Execute storage write operation with timeout (returns success/failure)
-  Future<bool> _writeWithTimeout(
-    String key,
-    String value, {
-    Duration? timeout,
-  }) async {
-    try {
-      await _storage.write(key: key, value: value).timeout(
-            timeout ?? _defaultTimeout,
-          );
-      return true;
-    } catch (e) {
-      if (kDebugMode) print('SecureStorage write failed for key $key: $e');
-      return false;
-    }
-  }
-
-  /// Execute storage delete operation with timeout (returns success/failure)
-  Future<bool> _deleteWithTimeout(
-    String key, {
-    Duration? timeout,
-  }) async {
-    try {
-      await _storage.delete(key: key).timeout(
-            timeout ?? _defaultTimeout,
-          );
-      return true;
-    } catch (e) {
-      if (kDebugMode) print('SecureStorage delete failed for key $key: $e');
-      return false;
-    }
-  }
-
-  // ============================================
   // TOKEN OPERATIONS
   // ============================================
 
   /// Save access token
-  Future<bool> saveAccessToken(String token) async {
-    return _writeWithTimeout(keyAccessToken, token);
+  Future<void> saveAccessToken(String token) async {
+    try {
+      await _storage.write(key: keyAccessToken, value: token).timeout(_timeout);
+    } catch (e) {
+      if (kDebugMode) print('Error saving access token: $e');
+      // Swallow error to prevent crashes
+    }
   }
 
   /// Get access token (returns null on timeout/error)
   Future<String?> getAccessToken() async {
-    return _readWithTimeout(keyAccessToken);
+    try {
+      return await _storage.read(key: keyAccessToken).timeout(
+        _timeout,
+        onTimeout: () => null,
+      );
+    } catch (e) {
+      if (kDebugMode) print('Error getting access token: $e');
+      return null;
+    }
   }
 
   /// Save refresh token
-  Future<bool> saveRefreshToken(String token) async {
-    return _writeWithTimeout(keyRefreshToken, token);
+  Future<void> saveRefreshToken(String token) async {
+    try {
+      await _storage.write(key: keyRefreshToken, value: token).timeout(_timeout);
+    } catch (e) {
+      if (kDebugMode) print('Error saving refresh token: $e');
+    }
   }
 
   /// Get refresh token
   Future<String?> getRefreshToken() async {
-    return _readWithTimeout(keyRefreshToken);
+    try {
+      return await _storage.read(key: keyRefreshToken).timeout(
+        _timeout,
+        onTimeout: () => null,
+      );
+    } catch (e) {
+      if (kDebugMode) print('Error getting refresh token: $e');
+      return null;
+    }
   }
 
-  /// Check if user has valid token (safe - returns false on timeout)
+  /// Check if user has valid token (safe - returns false on timeout/error)
   Future<bool> hasToken() async {
     final token = await getAccessToken();
     return token != null && token.isNotEmpty;
   }
 
   /// Clear all tokens
-  Future<bool> clearTokens() async {
-    final accessResult = await _deleteWithTimeout(keyAccessToken);
-    final refreshResult = await _deleteWithTimeout(keyRefreshToken);
-    return accessResult && refreshResult;
+  Future<void> clearTokens() async {
+    try {
+      await _storage.delete(key: keyAccessToken).timeout(_timeout);
+    } catch (e) {
+      if (kDebugMode) print('Error clearing access token: $e');
+    }
+    try {
+      await _storage.delete(key: keyRefreshToken).timeout(_timeout);
+    } catch (e) {
+      if (kDebugMode) print('Error clearing refresh token: $e');
+    }
   }
 
   // ============================================
@@ -126,33 +102,69 @@ class SecureStorageService {
   // ============================================
 
   /// Save user ID
-  Future<bool> saveUserId(String userId) async {
-    return _writeWithTimeout(keyUserId, userId);
+  Future<void> saveUserId(String userId) async {
+    try {
+      await _storage.write(key: keyUserId, value: userId).timeout(_timeout);
+    } catch (e) {
+      if (kDebugMode) print('Error saving user ID: $e');
+    }
   }
 
   /// Get user ID
   Future<String?> getUserId() async {
-    return _readWithTimeout(keyUserId);
+    try {
+      return await _storage.read(key: keyUserId).timeout(
+        _timeout,
+        onTimeout: () => null,
+      );
+    } catch (e) {
+      if (kDebugMode) print('Error getting user ID: $e');
+      return null;
+    }
   }
 
   /// Save user email
-  Future<bool> saveUserEmail(String email) async {
-    return _writeWithTimeout(keyUserEmail, email);
+  Future<void> saveUserEmail(String email) async {
+    try {
+      await _storage.write(key: keyUserEmail, value: email).timeout(_timeout);
+    } catch (e) {
+      if (kDebugMode) print('Error saving user email: $e');
+    }
   }
 
   /// Get user email
   Future<String?> getUserEmail() async {
-    return _readWithTimeout(keyUserEmail);
+    try {
+      return await _storage.read(key: keyUserEmail).timeout(
+        _timeout,
+        onTimeout: () => null,
+      );
+    } catch (e) {
+      if (kDebugMode) print('Error getting user email: $e');
+      return null;
+    }
   }
 
   /// Save user role
-  Future<bool> saveUserRole(String role) async {
-    return _writeWithTimeout(keyUserRole, role);
+  Future<void> saveUserRole(String role) async {
+    try {
+      await _storage.write(key: keyUserRole, value: role).timeout(_timeout);
+    } catch (e) {
+      if (kDebugMode) print('Error saving user role: $e');
+    }
   }
 
   /// Get user role
   Future<String?> getUserRole() async {
-    return _readWithTimeout(keyUserRole);
+    try {
+      return await _storage.read(key: keyUserRole).timeout(
+        _timeout,
+        onTimeout: () => null,
+      );
+    } catch (e) {
+      if (kDebugMode) print('Error getting user role: $e');
+      return null;
+    }
   }
 
   // ============================================
@@ -160,28 +172,42 @@ class SecureStorageService {
   // ============================================
 
   /// Save a key-value pair
-  Future<bool> write(String key, String value) async {
-    return _writeWithTimeout(key, value);
+  Future<void> write(String key, String value) async {
+    try {
+      await _storage.write(key: key, value: value).timeout(_timeout);
+    } catch (e) {
+      if (kDebugMode) print('Error writing $key: $e');
+    }
   }
 
   /// Read a value by key
   Future<String?> read(String key) async {
-    return _readWithTimeout(key);
+    try {
+      return await _storage.read(key: key).timeout(
+        _timeout,
+        onTimeout: () => null,
+      );
+    } catch (e) {
+      if (kDebugMode) print('Error reading $key: $e');
+      return null;
+    }
   }
 
   /// Delete a value by key
-  Future<bool> delete(String key) async {
-    return _deleteWithTimeout(key);
+  Future<void> delete(String key) async {
+    try {
+      await _storage.delete(key: key).timeout(_timeout);
+    } catch (e) {
+      if (kDebugMode) print('Error deleting $key: $e');
+    }
   }
 
   /// Clear all stored data
-  Future<bool> clearAll() async {
+  Future<void> clearAll() async {
     try {
-      await _storage.deleteAll().timeout(_defaultTimeout);
-      return true;
+      await _storage.deleteAll().timeout(_timeout);
     } catch (e) {
-      if (kDebugMode) print('SecureStorage clearAll failed: $e');
-      return false;
+      if (kDebugMode) print('Error clearing all: $e');
     }
   }
 
@@ -189,11 +215,11 @@ class SecureStorageService {
   Future<bool> containsKey(String key) async {
     try {
       return await _storage.containsKey(key: key).timeout(
-            _defaultTimeout,
-            onTimeout: () => false,
-          );
+        _timeout,
+        onTimeout: () => false,
+      );
     } catch (e) {
-      if (kDebugMode) print('SecureStorage containsKey failed for $key: $e');
+      if (kDebugMode) print('Error checking key $key: $e');
       return false;
     }
   }
@@ -202,11 +228,11 @@ class SecureStorageService {
   Future<Map<String, String>> readAll() async {
     try {
       return await _storage.readAll().timeout(
-            _defaultTimeout,
-            onTimeout: () => <String, String>{},
-          );
+        _timeout,
+        onTimeout: () => <String, String>{},
+      );
     } catch (e) {
-      if (kDebugMode) print('SecureStorage readAll failed: $e');
+      if (kDebugMode) print('Error reading all: $e');
       return <String, String>{};
     }
   }
