@@ -118,8 +118,26 @@ const Register = () => {
         setError('Please fill in all required fields');
         return;
       }
-      if (formData.password.length < 6) {
-        setError('Password must be at least 6 characters');
+      // Password validation matching backend requirements
+      const password = formData.password;
+      if (password.length < 8) {
+        setError('Password must be at least 8 characters long');
+        return;
+      }
+      if (!/[A-Z]/.test(password)) {
+        setError('Password must contain at least one uppercase letter');
+        return;
+      }
+      if (!/[a-z]/.test(password)) {
+        setError('Password must contain at least one lowercase letter');
+        return;
+      }
+      if (!/\d/.test(password)) {
+        setError('Password must contain at least one number');
+        return;
+      }
+      if (!/[!@#$%^&*(),.?":{}|<>\-_=+\[\]\\;'`~]/.test(password)) {
+        setError('Password must contain at least one special character (!@#$%^&* etc.)');
         return;
       }
       if (!formData.privacy_consent) {
@@ -256,9 +274,9 @@ const Register = () => {
                     className="w-full px-3 sm:px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base min-h-[44px]"
                     placeholder="••••••••"
                     required
-                    minLength={6}
+                    minLength={8}
                   />
-                  <p className="text-xs text-gray-500 mt-1">{t('register.passwordHint', 'At least 6 characters')}</p>
+                  <p className="text-xs text-gray-500 mt-1">{t('register.passwordHint', 'Min 8 chars with uppercase, lowercase, number & special character')}</p>
                 </div>
 
                 <div>
