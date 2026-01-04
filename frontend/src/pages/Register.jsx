@@ -276,7 +276,30 @@ const Register = () => {
                     required
                     minLength={8}
                   />
-                  <p className="text-xs text-gray-500 mt-1">{t('register.passwordHint', 'Min 8 chars with uppercase, lowercase, number & special character')}</p>
+                  {/* Password requirements checklist */}
+                  <div className="mt-2 space-y-1">
+                    <p className="text-xs font-medium text-gray-600 mb-1">{t('register.passwordRequirements', 'Password must include:')}</p>
+                    <div className={`flex items-center gap-1.5 text-xs ${formData.password.length >= 8 ? 'text-green-600' : 'text-gray-400'}`}>
+                      {formData.password.length >= 8 ? <CheckCircle className="w-3.5 h-3.5" /> : <span className="w-3.5 h-3.5 rounded-full border border-current flex items-center justify-center text-[8px]">✗</span>}
+                      {t('register.pwdLength', 'At least 8 characters')}
+                    </div>
+                    <div className={`flex items-center gap-1.5 text-xs ${/[A-Z]/.test(formData.password) ? 'text-green-600' : 'text-gray-400'}`}>
+                      {/[A-Z]/.test(formData.password) ? <CheckCircle className="w-3.5 h-3.5" /> : <span className="w-3.5 h-3.5 rounded-full border border-current flex items-center justify-center text-[8px]">✗</span>}
+                      {t('register.pwdUppercase', 'One uppercase letter')}
+                    </div>
+                    <div className={`flex items-center gap-1.5 text-xs ${/[a-z]/.test(formData.password) ? 'text-green-600' : 'text-gray-400'}`}>
+                      {/[a-z]/.test(formData.password) ? <CheckCircle className="w-3.5 h-3.5" /> : <span className="w-3.5 h-3.5 rounded-full border border-current flex items-center justify-center text-[8px]">✗</span>}
+                      {t('register.pwdLowercase', 'One lowercase letter')}
+                    </div>
+                    <div className={`flex items-center gap-1.5 text-xs ${/\d/.test(formData.password) ? 'text-green-600' : 'text-gray-400'}`}>
+                      {/\d/.test(formData.password) ? <CheckCircle className="w-3.5 h-3.5" /> : <span className="w-3.5 h-3.5 rounded-full border border-current flex items-center justify-center text-[8px]">✗</span>}
+                      {t('register.pwdNumber', 'One number')}
+                    </div>
+                    <div className={`flex items-center gap-1.5 text-xs ${/[!@#$%^&*(),.?":{}|<>\-_=+\[\]\\;'`~]/.test(formData.password) ? 'text-green-600' : 'text-gray-400'}`}>
+                      {/[!@#$%^&*(),.?":{}|<>\-_=+\[\]\\;'`~]/.test(formData.password) ? <CheckCircle className="w-3.5 h-3.5" /> : <span className="w-3.5 h-3.5 rounded-full border border-current flex items-center justify-center text-[8px]">✗</span>}
+                      {t('register.pwdSpecial', 'One special character (!@#$%^&* etc.)')}
+                    </div>
+                  </div>
                 </div>
 
                 <div>
